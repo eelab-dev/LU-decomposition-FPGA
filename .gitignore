@@ -1,6 +1,6 @@
 
-# Created by https://www.toptal.com/developers/gitignore/api/c,c++,latex
-# Edit at https://www.toptal.com/developers/gitignore?templates=c,c++,latex
+# Created by https://www.toptal.com/developers/gitignore/api/c,c++,visualstudiocode,latex
+# Edit at https://www.toptal.com/developers/gitignore?templates=c,c++,visualstudiocode,latex
 
 ### C ###
 # Prerequisites
@@ -371,4 +371,20 @@ TSWLatexianTemp*
 # glossaries
 *.glstex
 
-# End of https://www.toptal.com/developers/gitignore/api/c,c++,latex
+### VisualStudioCode ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# Local History for Visual Studio Code
+.history/
+
+### VisualStudioCode Patch ###
+# Ignore all local history of files
+.history
+.ionide
+
+# End of https://www.toptal.com/developers/gitignore/api/c,c++,visualstudiocode,latex
