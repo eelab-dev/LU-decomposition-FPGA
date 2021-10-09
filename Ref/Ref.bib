@@ -1,0 +1,83 @@
+% Encoding: UTF-8
+
+@InProceedings{5377665,
+  author    = {Kapre, Nachiket and DeHon, André},
+  booktitle = {2009 International Conference on Field-Programmable Technology},
+  title     = {Parallelizing sparse Matrix Solve for SPICE circuit simulation using FPGAs},
+  year      = {2009},
+  month     = {Dec},
+  pages     = {190-198},
+  abstract  = {Fine-grained dataflow processing of sparse matrix-solve computation (Ax¿ = b¿) in the SPICE circuit simulator can provide an order of magnitude performance improvement on modern FPGAs. Matrix solve is the dominant component of the simulator especially for large circuits and is invoked repeatedly during the simulation, once for every iteration. We process sparse-matrix computation generated from the SPICE-oriented KLU solver in dataflow fashion across multiple spatial floating-point operators coupled to high-bandwidth on-chip memories and interconnected by a low-latency network. Using this approach, we are able to show speedups of 1.2-64× (geometric mean of 8.8×) for a range of circuits and benchmark matrices when comparing double-precision implementations on a 250 MHz Xilinx Virtex-5 FPGA (65 nm) and an Intel Core i7 965 processor (45 nm).},
+  doi       = {10.1109/FPT.2009.5377665},
+  file      = {:Parallelizing_sparse_Matrix_Solve_for_SPICE_circuit_simulation_using_FPGAs.pdf:PDF},
+}
+
+@InProceedings{6241646,
+  author    = {Ren, Ling and Chen, Xiaoming and Wang, Yu and Zhang, Chenxi and Yang, Huazhong},
+  booktitle = {DAC Design Automation Conference 2012},
+  title     = {Sparse LU factorization for parallel circuit simulation on GPU},
+  year      = {2012},
+  month     = {June},
+  pages     = {1125-1130},
+  abstract  = {Sparse solver has become the bottleneck of SPICE simulators. There has been few work on GPU-based sparse solver because of the high data-dependency. The strong data-dependency determines that parallel sparse LU factorization runs efficiently on shared-memory computing devices. But the number of CPU cores sharing the same memory is often limited. The state of the art Graphic Processing Units (GPU) naturally have numerous cores sharing the device memory, and provide a possible solution to the problem. In this paper, we propose a GPU-based sparse LU solver for circuit simulation. We optimize the work partitioning, the number of active thread groups, and the memory access pattern, based on GPU architecture. On matrices whose factorization involves many floating-point operations, our GPU-based sparse LU factorization achieves 7.90× speedup over 1-core CPU and 1.49× speedup over 8-core CPU. We also analyze the scalability of parallel sparse LU factorization and investigate the specifications on CPUs and GPUs that most influence the performance.},
+  file      = {:Sparse_LU_factorization_for_parallel_circuit_simulation_on_GPU.pdf:PDF},
+  issn      = {0738-100X},
+}
+
+@Article{6774937,
+  author   = {Chen, Xiaoming and Ren, Ling and Wang, Yu and Yang, Huazhong},
+  journal  = {IEEE Transactions on Parallel and Distributed Systems},
+  title    = {GPU-Accelerated Sparse LU Factorization for Circuit Simulation with Performance Modeling},
+  year     = {2015},
+  issn     = {1558-2183},
+  month    = {March},
+  number   = {3},
+  pages    = {786-795},
+  volume   = {26},
+  abstract = {The sparse matrix solver by LU factorization is a serious bottleneck in Simulation Program with Integrated Circuit Emphasis (SPICE)-based circuit simulators. The state-of-the-art Graphics Processing Units (GPU) have numerous cores sharing the same memory, provide attractive memory bandwidth and compute capability, and support massive thread-level parallelism, so GPUs can potentially accelerate the sparse solver in circuit simulators. In this paper, an efficient GPU-based sparse solver for circuit problems is proposed. We develop a hybrid parallel LU factorization approach combining task-level and data-level parallelism on GPUs. Work partitioning, number of active thread groups, and memory access patterns are optimized based on the GPU architecture. Experiments show that the proposed LU factorization approach on NVIDIA GTX580 attains an average speedup of 7.02× (geometric mean) compared with sequential PARDISO, and 1.55× compared with 16-threaded PARDISO. We also investigate bottlenecks of the proposed approach by a parametric performance model. The performance of the sparse LU factorization on GPUs is constrained by the global memory bandwidth, so the performance can be further improved by future GPUs with larger memory bandwidth.},
+  doi      = {10.1109/TPDS.2014.2312199},
+  file     = {:GPU-Accelerated_Sparse_LU_Factorization_for_Circuit_Simulation_with_Performance_Modeling.pdf:PDF},
+}
+
+@InProceedings{6164974,
+  author    = {Chen, Xiaoming and Wang, Yu and Yang, Huazhong},
+  booktitle = {17th Asia and South Pacific Design Automation Conference},
+  title     = {An adaptive LU factorization algorithm for parallel circuit simulation},
+  year      = {2012},
+  month     = {Jan},
+  pages     = {359-364},
+  abstract  = {Sparse matrix solver has become the bottleneck in SPICE simulator. It is difficult to parallelize the solver because of the high data-dependency during the numerical LU factorization. This paper proposes a parallel LU factorization (with partial pivoting) algorithm on shared-memory computers with multi-core CPUs, to accelerate circuit simulation. Since not every matrix is suitable for parallel algorithm, a predictive method is proposed to decide whether a matrix should use parallel or sequential algorithm. The experimental results on 35 circuit matrices reveal that the developed algorithm achieves speedups of 2.11×~8.38× (on geometric-average), compared with KLU, with 1~8 threads, on the matrices which are suitable for parallel algorithm. Our solver can be downloaded from http://nicslu.weebly.com.},
+  doi       = {10.1109/ASPDAC.2012.6164974},
+  file      = {:An_adaptive_LU_factorization_algorithm_for_parallel_circuit_simulation.pdf:PDF},
+  issn      = {2153-697X},
+}
+
+@Article{8430608,
+  author   = {Lee, Wai-Kong and Achar, Ramachandra and Nakhla, Michel S.},
+  journal  = {IEEE Transactions on Very Large Scale Integration (VLSI) Systems},
+  title    = {Dynamic GPU Parallel Sparse LU Factorization for Fast Circuit Simulation},
+  year     = {2018},
+  issn     = {1557-9999},
+  month    = {Nov},
+  number   = {11},
+  pages    = {2518-2529},
+  volume   = {26},
+  abstract = {Lower-upper (LU) factorization is widely used in many scientific computations. It is one of the most critical modules in circuit simulators, such as the Simulation Program With Integrated Circuit Emphasis. To exploit the emerging graphics process unit (GPU) computing platforms, several GPU-based sparse LU solvers have been recently proposed. In this paper, efficient algorithms are presented to enhance the ability of GPU-based LU solvers to achieve higher parallelism as well as to exploit the dynamic parallelism feature in the state-of-the-art GPUs. Also, rigorous performance comparisons of the proposed algorithms with GLU as well as KLU, for both the single-precision and double-precision cases, are presented.},
+  doi      = {10.1109/TVLSI.2018.2858014},
+  file     = {:Dynamic_GPU_Parallel_Sparse_LU_Factorization_for_Fast_Circuit_Simulation.pdf:PDF},
+}
+
+@InProceedings{9105410,
+  author    = {Mahajan, Yogesh and Obla, Shashank and Namboothiripad, Mini K. and Datar, Mandar J. and Sharma, Niraj N. and Patkar, Sachin B.},
+  booktitle = {2020 33rd International Conference on VLSI Design and 2020 19th International Conference on Embedded Systems (VLSID)},
+  title     = {FPGA-Based Acceleration of LU decomposition for Analog and RF Circuit Simulation},
+  year      = {2020},
+  month     = {Jan},
+  pages     = {131-136},
+  abstract  = {It is well known that solving a sparse system of linear equations is the workhorse critical step in analog and RF circuit simulation. The LU factorization of sparse system matrix is a key operation in order to solve a system of linear equations. Extracting parallelism to factorize a sparse matrix requires knowledge of pattern of non-zeros in the matrix. Exploiting the fact that sparsity patterns of matrices involved in circuit simulations do not change across iterations, the schedule of computing steps of LU factorization can be statically determined and analyzed for parallelism. This approach has been well investigated by [1] and [2] in recent years. Our work improvises this well-researched approach and exposes more parallelism, thereby yielding improved results (by factor up to 2). The accelerated design is prototyped using custom high-level-synthesis tool specific to LU decomposition problem. The case of RF Circuits is treated slightly differently. Such circuits have a number of nonlinear components. Periodic steady state response can be determined efficiently using Harmonic Balance method even when amplitudes are not small. Acceleration of this method has been a subject of vigorous interest in recent years [4], [7]. The system matrix appearing in this method is a sparse set of tiles whose solution can benefit from the techniques mentioned above. The sparsity pattern is inherited from the circuit connections. This paper describes FPGA-and manycore-based acceleration of automated Harmonic Balance (HB) simulator which simulates a circuit with a netlist similar to SPICE. Our 100MHz custom digital design on the FPGA of ZedBoard (XC7Z020) yields a speed up of up to 4.39 over the on-chip dual Core ARM Cortex-A9, 666 MHz processor. And on Intel's Xeon Phi Knights Landing (KNL) manycore chip, we obtain a speed up of up to 8.96 over a 4-core Intel i7 processor running at 3GHz clock frequency.},
+  doi       = {10.1109/VLSID49098.2020.00040},
+  file      = {:FPGA-Based_Acceleration_of_LU_decomposition_for_Analog_and_RF_Circuit_Simulation.pdf:PDF},
+  issn      = {2380-6923},
+}
+
+@Comment{jabref-meta: databaseType:bibtex;}
