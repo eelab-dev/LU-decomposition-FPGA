@@ -1,3 +1,5 @@
+// 2D array creation using new
+
 #include <iostream>
 using namespace std;
 

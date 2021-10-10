@@ -1,4 +1,6 @@
+#include <chrono>
 #include <iostream>
+#include <random>
 using namespace std;
 
 class Matrix
@@ -10,7 +12,7 @@ public:
     Matrix(int w, int h) : m_width(w), array(new float[w * h]) {}
     ~Matrix() { delete[] array; }
     float at(int y, int x) const { return array[index(y, x)]; }
-    void set(int t, int y, int x) { array[index(y, x)] = t; }
+    void set(float t, int y, int x) { array[index(y, x)] = t; }
     int getwidth() { return m_width; }
     void display()
     {
@@ -30,35 +32,37 @@ void LUdecomposition(Matrix a, Matrix l, Matrix u);
 
 int main(void)
 {
-    int n, i, j, temp;
-    cout << "Enter size of square matrix : " << endl;
-    cin >> n;
+    int n = 100;
+    int seed = 2021;
+
+    std::random_device rd;
+    std::mt19937 gen(seed);
+    std::uniform_int_distribution<unsigned> distrib(1, 10);
+
+    // cout << "Enter size of square matrix : " << endl;
+    // cin >> n;
 
     Matrix a(n, n);
     Matrix l(n, n);
     Matrix u(n, n);
 
-    // a.set(5, 1, 1);
-    // cout << a.at(0, 0) << " " << a.at(1, 1);
-
-    cout << "Enter matrix values: " << endl;
-    for (i = 0; i < n; i++)
-        for (j = 0; j < n; j++)
-        {
-            printf("a[%d][%d]=", i, j);
-            cin >> temp;
-            a.set(temp, i, j);
-        }
-
-    LUdecomposition(a, l, u);
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < n; j++)
+            a.set(distrib(gen), i, j);
 
     cout << "A" << endl;
     a.display();
-    cout << "L" << endl;
-    l.display();
-    cout << "U" << endl;
-    u.display();
 
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+    LUdecomposition(a, l, u);
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+    cout << "L" << endl;
+    // l.display();
+    cout << "U" << endl;
+    // u.display();
+
+    std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "[ns]" << std::endl;
     return 0;
 }
 

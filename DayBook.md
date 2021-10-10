@@ -15,7 +15,7 @@ Typically, all memory needs were determined before program execution by defining
 
 In C, we usually use ==malloc== to allocate memory. However, in C++, ==new== and ==delete== are used.
 
-```C++
+```cpp
 int *a;
 a = new int[10];
 ```
@@ -23,12 +23,12 @@ a = new int[10];
 ## Dynamic 2D array
 Although dynamic array is not allowed, C++11 allows the below initialization if the row length is a compile time constant.
 
-```C++
+```cpp
 auto arr2d = new int [nrows][CONSTANT];
 ```
 
 If not, we can use the code below, which creates an array of pointers to arrays to allow 2D syntax like contiguous 2D arrays.
-```C++
+```cpp
 int** a = new int*[rowCount];
 for(int i = 0; i < rowCount; ++i)
     a[i] = new int[colCount];
@@ -40,7 +40,7 @@ Although this method gives us the desired indexing syntax, it is doubly ineffici
 
 The better solution is to allocate your whole matrix as a single dynamic array, then use (slightly) clever indexing math of your own to access cells.
 
-```C++
+```cpp
 class Matrix
 {
     int *array;
@@ -68,4 +68,25 @@ protected:
 ```
 
 # 10/10/2021
-- LU Decomposition
+## Time in C++
+The chrono library, a flexible collection of types that track time with varying degrees of precision.
+
+```cpp
+#include <chrono>
+
+std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count() << "[ns]" << std::endl;
+```
+Class std::chrono::steady_clock represents a monotonic clock. The time points of this clock cannot decrease as physical time moves forward and the time between ticks of this clock is constant. This clock is not related to wall clock time (for example, it can be time since last reboot), and is **most suitable for measuring intervals**.
+
+## Random Number
+
+
+## oneAPI
+Setup oneAPI in VSCode according to the [official document](https://devcloud.intel.com/oneapi/get_started/hpcToolkitSamples/).
+
+
+# 11/10/2021
