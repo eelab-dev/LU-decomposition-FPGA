@@ -32,7 +32,7 @@ void LUdecomposition(Matrix a, Matrix l, Matrix u);
 
 int main(void)
 {
-    int n = 100;
+    int n = 10;
     int seed = 2021;
 
     std::random_device rd;

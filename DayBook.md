@@ -83,10 +83,113 @@ std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::nan
 Class std::chrono::steady_clock represents a monotonic clock. The time points of this clock cannot decrease as physical time moves forward and the time between ticks of this clock is constant. This clock is not related to wall clock time (for example, it can be time since last reboot), and is **most suitable for measuring intervals**.
 
 ## Random Number
+- Mersenne Twister 19937 generator
+A Mersenne Twister pseudo-random generator of 32-bit numbers with a state size of 19937 bits.
 
+```cpp
+#include <iostream>
+#include <random>
+int main()
+{
+    int seed = 2021;
+
+    std::random_device rd;
+    std::mt19937 gen(seed);
+    std::uniform_int_distribution<unsigned> distrib(1, 10);
+
+    std::cout << distrib(gen);
+
+    return 0;
+}
+```
 
 ## oneAPI
 Setup oneAPI in VSCode according to the [official document](https://devcloud.intel.com/oneapi/get_started/hpcToolkitSamples/).
 
 
 # 11/10/2021
+## Subsystem for Windows -- WSL2
+- Install wsl2 - ubuntu 20.04 LTS according to the [official document](https://docs.microsoft.com/en-gb/windows/wsl/install-manual#step-4---download-the-linux-kernel-update-package).
+```bash
+sudo apt install build-essential cmake zlib1g
+```
+
+- [CUDA installation in ubuntu](https://docs.nvidia.com/cuda/wsl-user-guide/index.html#wsl2-system-requirements).
+
+### Install Clang in wsl2 according to the [official document](https://clang.llvm.org/get_started.html).
+
+- XShell connect for wsl2
+
+```bash
+sudo apt update
+sudo apt upgrade
+sudo apt autoremove --purge openssh-server -y && sudo apt install openssh-server -y
+sudo vim /etc/ssh/sshd_config
+# change port to 2222
+sudo service ssh --full-restart
+```
+Then use Xshell to connect the Subsystem.
+
+# 12/10/2021
+If you want to move WSL2 Linux distro(Ubuntu) from C: drive D: below are the steps.
+
+**Export Ubuntu**
+```bash
+mkdir D:\backup
+wsl --export Ubuntu D:\backup\ubuntu.tar
+```
+
+**Unregister the same distribution to remove it from the C: drive:**
+```bash
+wsl --unregister Ubuntu
+```
+
+**Import Ubuntu**
+```bash
+mkdir D:\wsl
+wsl --import Ubuntu D:\wsl\ D:\backup\ubuntu.tar
+```
+
+**By default Ubuntu will use root as the default user, to switch back to previous user. Go to the Ubuntu App Folder run command to set default user.**
+```bash
+cd %userprofile%\AppData\Local\Microsoft\WindowsApps
+ubuntu.exe config --default-user <username>
+```
+
+## Modify the method of [install clang in Ubuntu](#install-clang-in-wsl2-according-to-the-official-document)
+The installation of clang from source code would cause some strange problem. It almost takes me about 100Gb space.
+In fact, ubuntu distribution provides the easy way to install clang through apt. The detail step can be found [here](https://apt.llvm.org/).
+```bash
+sudo add-apt-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main"
+sudo apt update
+# LLVM
+sudo apt-get install libllvm-13-ocaml-dev libllvm13 llvm-13 llvm-13-dev llvm-13-doc llvm-13-examples llvm-13-runtime
+# Clang and co, the package python-clang-13 may be unavailable
+sudo apt-get install clang-13 clang-tools-13 clang-13-doc libclang-common-13-dev libclang-13-dev libclang1-13 clang-format-13 python-clang-13 clangd-13
+# libfuzzer
+sudo apt-get install libfuzzer-13-dev
+# lldb
+sudo apt-get install lldb-13
+# lld (linker)
+sudo apt-get install lld-13
+# libc++
+sudo apt-get install libc++-13-dev libc++abi-13-dev
+# OpenMP
+sudo apt-get install libomp-13-dev
+# libclc
+sudo apt-get install libclc-13-dev
+# libunwind
+sudo apt-get install libunwind-13-dev
+```
+
+# 13/10/2021
+## Basic use of clang
+- Compile C
+The compilation of C language is performed by command *clang-13*.
+
+- Compile C++
+The compilation of C language is performed by command *clang++-13*.
+
+
+# 14/10/2021
+Today, I move the project to wsl and setup clang in Ubuntu.
