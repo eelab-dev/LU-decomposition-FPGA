@@ -193,3 +193,119 @@ The compilation of C language is performed by command *clang++-13*.
 
 # 14/10/2021
 Today, I move the project to wsl and setup clang in Ubuntu.
+
+## Vector
+The vector template class is similar to the string class in that it is a dynamic array.You
+can set the size of a vector object during runtime, and you can append new data to the
+end or insert new data in the middle. Basically, it’s an alternative to using new to create a
+dynamic array.Actually, the vector class does use new and delete to manage memory,
+but it does so automatically.
+```cpp
+#include <vector>
+...
+using namespace std;
+vector<int> vi; // create a zero-size array of int
+int n;
+cin >> n;
+vector<double> vd(n); // create an array of n doubles
+```
+
+## Array
+The vector class has more capabilities than the built-in array type, but this comes at a
+cost of slightly less efficiency. If all you need is a fixed-size array, it could be advantageous
+to use the built-in type. However, that has its own costs of lessened convenience and
+safety.
+```cpp
+#include <array>
+...
+using namespace std;
+array<int, 5> ai; // create array object of 5 ints
+array<double, 4> ad = {1.2, 2.1, 3.43. 4.3};
+```
+
+# 18/10/2021
+
+## LU decomposition
+In numerical analysis and linear algebra, lower–upper (LU) decomposition or factorization factors a matrix as the product of a lower triangular matrix and an upper triangular matrix. The product sometimes includes a permutation matrix as well. LU decomposition can be viewed as the matrix form of Gaussian elimination. Computers usually solve square systems of linear equations using LU decomposition, and it is also a key step when inverting a matrix or computing the determinant of a matrix.
+
+The basic procedure is shown in the figure below. We can calculate the coefficients according to the order of colour.
+![lu](Resources/lu.png)
+
+The prerequisite of LU decomposition can be seen [here](http://arxiv.org/pdf/math/0506382v1.pdf).
+
+- Create a 2D array
+```cpp
+vector<vector<double>> matrix(SIZE, vector<double>(SIZE));
+```
+
+- Pass a 2D array to function
+```cpp
+void LUdecomposition(vector<vector<double>> &a, vector<vector<double>> &l, vector<vector<double>> &u);
+```
+
+# 19/10/2021
+- Read and write the basic LU decomposition code in C++ and time it, seen in [here](C/vector2D2.cpp).
+This method is also called Doolittle decomposition.
+
+
+# 20/10/2021
+Explore some other methods to realize LU decomposition.
+- **Crout matrix decomposition**
+The Crout matrix decomposition algorithm differs slightly from the Doolittle method. Doolittle's method returns a unit lower triangular matrix and an upper triangular matrix, while the Crout method returns a lower triangular matrix and a unit upper triangular matrix.
+
+    The code can be seen [here](C/vector2D.cpp).
+
+- **Tridiagonal matrix algorithm**
+In numerical linear algebra, the tridiagonal matrix algorithm, also known as the Thomas algorithm (named after Llewellyn Thomas), is a simplified form of Gaussian elimination that can be used to solve tridiagonal systems of equations. A tridiagonal system for n unknowns may be written as
+
+    $a_{i}x_{i-1}+b_{i}x_{i}+c_{i}x_{i+1}=d_{i},$
+    where $a_1 = 0$ and $c_{n}=0$.
+
+    $
+    \begin{bmatrix}
+    b_{1} & c_{1} &        &        & 0       \\
+    a_{2} & b_{2} & c_{2}  &        &         \\
+          & a_{3} & b_{3}  & \ddots &         \\
+          &       & \ddots & \ddots & c_{n-1} \\
+    0     &       &        & a_{n}  & b_{n}
+    \end{bmatrix}
+    \begin{bmatrix}
+        x_{1}  \\
+        x_{2}  \\
+        x_{3}  \\
+        \vdots \\
+        x_{n}
+    \end{bmatrix}=
+    \begin{bmatrix}
+        d_{1}  \\
+        d_{2}  \\
+        d_{3}  \\
+        \vdots \\
+        d_{n}
+    \end{bmatrix}
+    $
+
+    By Gaussian elimination, we only need to eliminate one elements per step. The procedure is shown below.
+    $
+    \begin{cases}
+        \beta_1=b_1,\quad y_1=d_1;\\
+        l_i=\frac{a_i}{\beta_{i-1}},\quad \beta_i=b_i-l_ic_{i-1},\quad y_i=d_i-l_iy_{i-1}\qquad (i=2,3,\dots,n)
+    \end{cases}
+    $
+    Then, we can obtain the following result.
+    $\begin{bmatrix}
+        \beta_{1} & c_{1}     &           &        & 0         & y_1     \\
+                  & \beta_{2} & c_{2}     &        &           & y_2     \\
+                  &           & \beta_{3} & \ddots &           & \vdots  \\
+                  &           &           & \ddots & c_{n-1}   & y_{n-1} \\
+        0         &           &           &        & \beta_{n} & y_n
+    \end{bmatrix}
+    $
+
+# 21/20/2021
+- **Pivot element**
+The pivot or pivot element is the element of a matrix, or an array, which is selected first by an algorithm (e.g. Gaussian elimination, simplex algorithm, etc.), to do certain calculations. In the case of matrix algorithms, a pivot entry is usually required to be at least distinct from zero, and often distant from it; in this case finding this element is called pivoting. Pivoting may be followed by an interchange of rows or columns to bring the pivot to a fixed position and allow the algorithm to proceed successfully, and possibly to reduce round-off error. It is often used for verifying row echelon form.
+
+    Pivoting might be thought of as swapping or sorting rows or columns in a matrix, and thus it can be represented as multiplication by permutation matrices. However, algorithms rarely move the matrix elements because this would cost too much time; instead, they just keep track of the permutations.
+
+    Overall, pivoting adds more operations to the computational cost of an algorithm. These additional operations are sometimes necessary for the algorithm to work at all. Other times these additional operations are worthwhile because they add numerical stability to the final result.
