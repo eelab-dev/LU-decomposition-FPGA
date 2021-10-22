@@ -48,7 +48,13 @@
         "sstream": "cpp",
         "stdexcept": "cpp",
         "streambuf": "cpp",
-        "typeinfo": "cpp"
+        "typeinfo": "cpp",
+        "dense": "cpp",
+        "complex": "cpp",
+        "cstring": "cpp",
+        "map": "cpp",
+        "set": "cpp",
+        "thread": "cpp"
     },
     "editor.formatOnSave": true,
     "code-runner.runInTerminal": true,

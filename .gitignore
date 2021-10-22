@@ -388,3 +388,8 @@ TSWLatexianTemp*
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/c,c++,visualstudiocode,latex
+
+
+C/*
+!C/*/
+!C/*.*

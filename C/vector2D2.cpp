@@ -6,7 +6,7 @@
 #include <vector>
 
 using namespace std;
-const int SIZE = 4;
+const int SIZE = 1000;
 void LUdecomposition(vector<vector<double>> &a, vector<vector<double>> &l, vector<vector<double>> &u);
 void display(vector<vector<double>> &vect, string name = "a");
 
@@ -30,9 +30,9 @@ int main()
     LUdecomposition(matrix, l, u);
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
-    display(matrix);
-    display(l, "l");
-    display(u, "u");
+    // display(matrix);
+    // display(l, "l");
+    // display(u, "u");
 
     cout << "Time difference = " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "[ns]" << endl;
 

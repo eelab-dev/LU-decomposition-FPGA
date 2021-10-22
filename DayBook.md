@@ -251,12 +251,14 @@ This method is also called Doolittle decomposition.
 # 20/10/2021
 Explore some other methods to realize LU decomposition.
 - **Crout matrix decomposition**
-The Crout matrix decomposition algorithm differs slightly from the Doolittle method. Doolittle's method returns a unit lower triangular matrix and an upper triangular matrix, while the Crout method returns a lower triangular matrix and a unit upper triangular matrix.
+
+    The Crout matrix decomposition algorithm differs slightly from the Doolittle method. Doolittle's method returns a unit lower triangular matrix and an upper triangular matrix, while the Crout method returns a lower triangular matrix and a unit upper triangular matrix.
 
     The code can be seen [here](C/vector2D.cpp).
 
 - **Tridiagonal matrix algorithm**
-In numerical linear algebra, the tridiagonal matrix algorithm, also known as the Thomas algorithm (named after Llewellyn Thomas), is a simplified form of Gaussian elimination that can be used to solve tridiagonal systems of equations. A tridiagonal system for n unknowns may be written as
+
+  In numerical linear algebra, the tridiagonal matrix algorithm, also known as the Thomas algorithm (named after Llewellyn Thomas), is a simplified form of Gaussian elimination that can be used to solve tridiagonal systems of equations. A tridiagonal system for n unknowns may be written as
 
     $a_{i}x_{i-1}+b_{i}x_{i}+c_{i}x_{i+1}=d_{i},$
     where $a_1 = 0$ and $c_{n}=0$.
@@ -304,8 +306,52 @@ In numerical linear algebra, the tridiagonal matrix algorithm, also known as the
 
 # 21/20/2021
 - **Pivot element**
-The pivot or pivot element is the element of a matrix, or an array, which is selected first by an algorithm (e.g. Gaussian elimination, simplex algorithm, etc.), to do certain calculations. In the case of matrix algorithms, a pivot entry is usually required to be at least distinct from zero, and often distant from it; in this case finding this element is called pivoting. Pivoting may be followed by an interchange of rows or columns to bring the pivot to a fixed position and allow the algorithm to proceed successfully, and possibly to reduce round-off error. It is often used for verifying row echelon form.
+
+    The pivot or pivot element is the element of a matrix, or an array, which is selected first by an algorithm (e.g. Gaussian elimination, simplex algorithm, etc.), to do certain calculations. In the case of matrix algorithms, a pivot entry is usually required to be at least distinct from zero, and often distant from it; in this case finding this element is called pivoting. Pivoting may be followed by an interchange of rows or columns to bring the pivot to a fixed position and allow the algorithm to proceed successfully, and possibly to reduce round-off error. It is often used for verifying row echelon form.
 
     Pivoting might be thought of as swapping or sorting rows or columns in a matrix, and thus it can be represented as multiplication by permutation matrices. However, algorithms rarely move the matrix elements because this would cost too much time; instead, they just keep track of the permutations.
 
     Overall, pivoting adds more operations to the computational cost of an algorithm. These additional operations are sometimes necessary for the algorithm to work at all. Other times these additional operations are worthwhile because they add numerical stability to the final result.
+
+- In the case of Gaussian elimination, the algorithm requires that pivot elements not be zero. Interchanging rows or columns in the case of a zero pivot element is necessary.
+- In Gaussian elimination, it is generally desirable to choose a pivot element with large absolute value. This improves the numerical stability.
+
+**Implement LU decomposition with partial pivoting**
+The strategy we use for swapping rows in step k is to find the largest element in column k below (and including) the diagonal — the so-called pivot element — and swap its row with row k. This process is referred to as partial (row) pivoting. Partial column pivoting and complete (row and column) pivoting are also possible, but not very popular.
+
+During coding, I think it is not suitable to swap the rows as it will cost much memory to store and move the array. Therefore, I use the pointers to point to the certain row.
+```cpp
+vector<double> *pivot[SIZE];
+```
+
+To sort the first column of the 2D array, I define the following template.
+```cpp
+template <typename T>
+vector<size_t> sort_indexes(const vector<T> &v)
+{
+
+    // initialize original index locations
+    vector<size_t> idx(v.size());
+    iota(idx.begin(), idx.end(), 0);
+
+    // sort indexes based on comparing values in v
+    // using std::stable_sort instead of std::sort
+    // to avoid unnecessary index re-orderings
+    // when v contains elements of equal values
+    stable_sort(idx.begin(), idx.end(),
+                [&v](size_t i1, size_t i2)
+                { return v[i1] > v[i2]; });
+
+    return idx;
+}
+```
+
+The complete code can be seen [here](C/lupivot.cpp).
+
+
+# 22/20/2021
+## Eigen Library
+*Eigen* is a C++ template library for linear algebra: matrices, vectors, numerical solvers, and related algorithms.
+
+You can download Eigen from [here](https://gitlab.com/libeigen/eigen.git).
+
