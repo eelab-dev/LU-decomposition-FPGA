@@ -54,7 +54,11 @@
         "cstring": "cpp",
         "map": "cpp",
         "set": "cpp",
-        "thread": "cpp"
+        "thread": "cpp",
+        "bitset": "cpp",
+        "condition_variable": "cpp",
+        "regex": "cpp",
+        "shared_mutex": "cpp"
     },
     "editor.formatOnSave": true,
     "code-runner.runInTerminal": true,

@@ -1,28 +1,32 @@
-// Unit Lower matrix
-
 #include <chrono>
+#include <ctime>
 #include <iomanip>
 #include <iostream>
 #include <random>
 #include <string>
 #include <vector>
 
-using namespace std;
-const int SIZE = 10;
-void LUdecomposition(vector<vector<double>> &a, vector<vector<double>> &l, vector<vector<double>> &u);
-void display(vector<vector<double>> &vect, string name = "a");
+void LUdecomposition(std::vector<std::vector<double>> &a, std::vector<std::vector<double>> &l, std::vector<std::vector<double>> &u);
+void display(std::vector<std::vector<double>> &vect, std::string name = "a");
 
-int main()
+int main(int argc, char *argv[])
 {
-    int seed = 2021;
+    int seed = std::time(0);
+    // int seed=2021;
+    int SIZE = 10;
+
+    if (argc > 2)
+        if (std::string{"--size"}.compare(argv[1]) == 0 || std::string{"-t"}.compare(argv[1]) == 0)
+            SIZE = std::stoi(argv[2]);
+    std::cout << "argc:" << argc << " size:" << SIZE << std::endl;
 
     std::random_device rd;
     std::mt19937 gen(seed);
     std::uniform_int_distribution<unsigned> distrib(1, 10);
 
-    vector<vector<double>> matrix(SIZE, vector<double>(SIZE)),
-        l(SIZE, vector<double>(SIZE)),
-        u(SIZE, vector<double>(SIZE));
+    std::vector<std::vector<double>> matrix(SIZE, std::vector<double>(SIZE)),
+        l(SIZE, std::vector<double>(SIZE)),
+        u(SIZE, std::vector<double>(SIZE));
 
     for (int i{}; i < SIZE; i++)
         for (int j{}; j < SIZE; j++)
@@ -36,26 +40,26 @@ int main()
     // display(l, "l");
     // display(u, "u");
 
-    cout << "Time difference = " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "[ns]" << endl;
+    std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "[ns]" << std::endl;
 
     return 0;
 }
 
-void display(vector<vector<double>> &vect, string name)
+void display(std::vector<std::vector<double>> &vect, std::string name)
 {
-    cout << name << "=" << endl;
+    std::cout << name << "=" << std::endl;
     for (int i{}; i < vect.size(); i++)
     {
         for (int j{}; j < vect.size(); j++)
         {
-            cout << setprecision(2) << fixed << setw(8) << left << vect[i][j];
+            std::cout << std::setprecision(2) << std::fixed << std::setw(8) << std::left << vect[i][j];
         }
-        cout << endl;
+        std::cout << std::endl;
     }
-    cout << endl;
+    std::cout << std::endl;
 }
 
-void LUdecomposition(vector<vector<double>> &a, vector<vector<double>> &l, vector<vector<double>> &u)
+void LUdecomposition(std::vector<std::vector<double>> &a, std::vector<std::vector<double>> &l, std::vector<std::vector<double>> &u)
 {
     // Decomposing matrix into Upper and Lower
     // triangular matrix

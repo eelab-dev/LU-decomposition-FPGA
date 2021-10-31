@@ -9,7 +9,7 @@ using Eigen::PartialPivLU;
 using Eigen::UpLoType;
 using namespace std;
 
-const int SIZE = 1000;
+const int SIZE = 4;
 
 int main()
 {
@@ -31,11 +31,13 @@ int main()
     // MatrixXd perm = lu.permutationP().transpose();
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
-    // cout << P << endl;
-    // cout << "Upper=" << endl
-    //      << U << endl;
-    // cout << "Lower=" << endl
-    //      << L << endl;
+    cout << P << endl;
+    cout << "Upper=" << endl
+         << U << endl;
+    cout << "Lower=" << endl
+         << L << endl;
+    cout << "Reconstruct=" << endl
+         << L * U << endl;
     // cout << "Perm=" << endl << perm << endl;
 
     cout << "Time difference = " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "[ns]" << endl;

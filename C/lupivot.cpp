@@ -6,7 +6,7 @@
 #include <vector>
 
 using namespace std;
-const int SIZE = 1000;
+const int SIZE = 10;
 void LUdecomposition(vector<vector<double>> &a, vector<vector<double>> &l, vector<vector<double>> &u);
 void LUPivot(vector<double> **a, vector<vector<double>> &l, vector<vector<double>> &u);
 void display(vector<vector<double>> &vect, string name = "a");
@@ -58,10 +58,10 @@ int main()
     LUPivot(pivot, l, u);
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
-    // display(matrix, "Original");
-    // display2(pivot);
-    // display(l, "l");
-    // display(u, "u");
+    display(matrix, "Original");
+    display2(pivot);
+    display(l, "l");
+    display(u, "u");
 
     cout << "Time difference = " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "[ns]" << endl;
 

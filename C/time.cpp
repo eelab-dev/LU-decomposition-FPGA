@@ -1,4 +1,5 @@
 #include <chrono>
+#include <ctime>
 #include <iostream>
 
 using namespace std;
@@ -11,6 +12,8 @@ int main()
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[μs]" << std::endl;
     std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "[ns]" << std::endl;
-    cout << x;
+    cout << x << endl;
+    long t = std::time(0);
+    cout << t;
     return 0;
 }

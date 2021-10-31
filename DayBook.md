@@ -160,6 +160,7 @@ ubuntu.exe config --default-user <username>
 The installation of clang from source code would cause some strange problem. It almost takes me about 100Gb space.
 In fact, ubuntu distribution provides the easy way to install clang through apt. The detail step can be found [here](https://apt.llvm.org/).
 ```bash
+wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
 sudo add-apt-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main"
 sudo apt update
 # LLVM
@@ -180,6 +181,10 @@ sudo apt-get install libomp-13-dev
 sudo apt-get install libclc-13-dev
 # libunwind
 sudo apt-get install libunwind-13-dev
+
+
+
+sudo apt-get install libllvm-13-ocaml-dev libllvm13 llvm-13 llvm-13-dev llvm-13-doc llvm-13-examples llvm-13-runtime clang-13 clang-tools-13 clang-13-doc libclang-common-13-dev libclang-13-dev libclang1-13 clang-format-13 clangd-13 libfuzzer-13-dev lldb-13 lld-13 libc++-13-dev libc++abi-13-dev libomp-13-dev libclc-13-dev libunwind-13-dev
 ```
 
 # 13/10/2021
@@ -355,3 +360,145 @@ The complete code can be seen [here](C/lupivot.cpp).
 
 You can download Eigen from [here](https://gitlab.com/libeigen/eigen.git).
 
+
+# 25/20/2021
+- Meeting
+    Blas library, SIMD, Godbolt, addressSanitzer
+
+
+# 26/20/2021
+## Call program in C++
+The **popen()** function shall execute the command specified by the string command. It shall create a pipe between the calling program and the executed command, and shall return a pointer to a stream that can be used to either read from or write to the pipe.
+
+FILE *popen(const char *command, const char *mode);
+
+
+```cpp
+#include <string>
+#include <iostream>
+#include <array>
+
+int main()
+{
+    std::string command("ls");
+
+    std::array<char, 128> buffer;
+    std::string result;
+
+    std::cout << "Opening reading pipe" << std::endl;
+    FILE* pipe = popen(command.c_str(), "r");
+    if (!pipe)
+    {
+        std::cerr << "Couldn't start command." << std::endl;
+        return 0;
+    }
+    while (fgets(buffer.data(), 128, pipe) != NULL) {
+        std::cout << "Reading..." << std::endl;
+        result += buffer.data();
+    }
+    auto returnCode = pclose(pipe);
+
+    std::cout << result << std::endl;
+    std::cout << returnCode << std::endl;
+
+    return 0;
+}
+```
+
+To open the popen multiple times, just assign *pipe=popen(command.c_str(),"r")*.
+
+
+# 27/20/2021
+## regex in C++
+A regular expression or regex is an expression containing a sequence of characters that define a particular search pattern that can be used in string searching algorithms, find or find/replace algorithms, etc. Regexes are also used for input validation. From C++11 onwards, C++ provides regex support by means of the standard library via the <regex> header.
+
+- regex_match()
+
+    Returns whether the target sequence matches the regular expression rgx. The target sequence is either s or the character sequence between first and last, depending on the version used.
+See [here](C/regex.cpp) as an example.
+
+- regex_search()
+
+    Returns whether some sub-sequence in the target sequence (the subject) matches the regular expression rgx (the pattern). The target sequence is either s or the character sequence between first and last, depending on the version used.
+
+```cpp
+#include <iostream>
+#include <regex>
+#include<string.h>
+using namespace std;
+
+int main()
+{
+    //string to be searched
+    string mystr = "She sells_sea shells in the sea shore";
+
+    // regex expression for pattern to be searched
+    regex regexp("s[a-z_]+");
+
+    // flag type for determining the matching behavior (in this case on string objects)
+     smatch m;
+
+    // regex_search that searches pattern regexp in the string mystr
+    regex_search(mystr, m, regexp);
+
+    cout<<"String that matches the pattern:"<<endl;
+    for (auto x : m)
+        cout << x << " ";
+    return 0;
+}
+```
+
+- Iterative search
+
+    The function *regex_serach()* stops after the first match is found. In order to find all the matches, we need to iterate the string.
+    ```cpp
+    string::const_iterator searchStart(str.cbegin());
+    ```
+    See [here](C/regex2.cpp) as an example.
+
+### Implementation - Read stdout from popen and calculate average running time
+Now we have obtain the stdout from popen, we can just use the regex to find the digits in the stdout. As it is of string type, we use function *stoi()* to change it to int type.
+Some similar functions are also available, which convert string to different types of data: *stoi(),stol(),stoll(),stof(),stod()*
+
+Here I use [vector2D2.cpp](C/vector2D2.cpp) as an example to calculate its average running time in nanoseconds. The code can be seen [here](C/average.cpp).
+
+## Command line arguments in C++
+```cpp
+int main(int argc, char *argv[]) { /* ... */ }
+```
+- **argc (ARGument Count)** is int and stores number of command-line arguments passed by the user including the name of the program. So if we pass a value to a program, value of argc would be 2 (one for argument and one for program name)
+- The value of argc should be non negative.
+- **argv(ARGument Vector)** is array of character pointers listing all the arguments.
+- If argc is greater than zero,the array elements from argv[0] to argv[argc-1] will contain pointers to strings.
+- **argv[0]** is the name of the program , After that till argv[argc-1] every element is command -line arguments.
+
+See [here](C/command.cpp) and [here](C/command2.cpp) as examples.
+
+When pharsing the command arguments, we should pay attention to the string literal. We should not directly compare string literal like *"abc"==str*, else it would generate the warning *warning: result of comparison against a string literal is unspecified (use an explicit string comparison function instead) [-Wstring-compare]*.
+
+To convert string literal to basic string, we can use the following expression.
+```cpp
+std::string{"--size"};
+\\ Then we can compare two strings like this
+if (std::string{"--size"}.compare(argv[1]) == 0 || std::string{"-t"}.compare(argv[1]) == 0)
+    size = std::stoi(argv[2]);
+```
+
+
+# 28/10/2021
+## Average Time
+- [Unit Upper Matrix](C/vector2D_cmd.cpp)
+
+| Size  |     1      |     2      |     3      |     4      |     5      |     6      |     7      |     8      |     9      |     10     | Average/ns |
+| :---: | :--------: | :--------: | :--------: | :--------: | :--------: | :--------: | :--------: | :--------: | :--------: | :--------: | :--------: |
+|  10   |    7500    |    7400    |    7500    |    7600    |    7600    |    7700    |    7600    |    7700    |    7500    |    7500    |    7560    |
+|  100  |  5354600   |  5635400   |  6103100   |  5618200   |  5535400   |  5595800   |  5493700   |  5529800   |  5481500   |  5521000   |  5586850   |
+| 1000  | 6296450000 | 5933703900 | 5817111600 | 6171353100 | 6404558300 | 6327489400 | 6148815500 | 5859176300 | 6250348000 | 5936436600 | 6114544270 |
+
+- [Unit Lower Matrix](C/vector2D2_cmd.cpp)
+
+## Improve pivoting method
+
+
+
+# 29/10/2021
