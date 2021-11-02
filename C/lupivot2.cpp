@@ -6,7 +6,7 @@
 #include <vector>
 
 using namespace std;
-const int SIZE = 5;
+const int SIZE = 1000;
 void LUdecomposition(vector<vector<double>> &a, vector<vector<double>> &l, vector<vector<double>> &u);
 void LUPivot(vector<double> **a, vector<vector<double>> &l, vector<vector<double>> &u);
 void display(vector<vector<double>> &vect, string name = "a");
@@ -18,13 +18,14 @@ vector<size_t> sort_indexes(const vector<T> &v)
 
     // initialize original index locations
     vector<size_t> idx(v.size());
-    iota(idx.begin(), idx.end(), 0);
+    iota(idx.begin(), idx.end(), 0); // sequentially increasing from 0
 
     // sort indexes based on comparing values in v
     // using std::stable_sort instead of std::sort
     // to avoid unnecessary index re-orderings
     // when v contains elements of equal values
-    stable_sort(idx.begin(), idx.end(), [&v](size_t i1, size_t i2)
+    stable_sort(idx.begin(), idx.end(),
+                [&v](size_t i1, size_t i2)
                 { return v[i1][0] > v[i2][0]; });
 
     return idx;
@@ -53,15 +54,20 @@ int main()
     for (int i : sort_indexes(matrix))
         pivot[j++] = &matrix[i];
 
-    // std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     LUPivot(pivot, l, u);
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
-    display(matrix, "Original");
-    display2(pivot);
-    display(l, "l");
-    display(u, "u");
+    // display(matrix, "Original");
+    // display2(pivot);
+    // display(l, "l");
+    // display(u, "u");
+    cout << "Time difference = " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "[ns]" << endl;
 
+    begin = std::chrono::steady_clock::now();
+    LUdecomposition(matrix, l, u);
+    end = std::chrono::steady_clock::now();
+    // display(l, "l2");
+    // display(u, "u2");
     cout << "Time difference = " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "[ns]" << endl;
 
     return 0;
@@ -86,7 +92,10 @@ void LUdecomposition(vector<vector<double>> &a, vector<vector<double>> &l, vecto
     // Decomposing matrix into Upper and Lower
     // triangular matrix
     int n = a.size();
-    for (int i = 0; i < n; i++)
+    int i = 0;
+    std::vector<size_t> sorted = sort_indexes(a);
+
+    for (int sort_i : sorted)
     {
         // Upper Triangular
         for (int k = i; k < n; k++)
@@ -97,7 +106,7 @@ void LUdecomposition(vector<vector<double>> &a, vector<vector<double>> &l, vecto
                 sum += (l[i][j] * u[j][k]);
 
             // Evaluating U(i, k)
-            u[i][k] = a[i][k] - sum;
+            u[i][k] = a[sort_i][k] - sum;
         }
 
         // Lower Triangular
@@ -113,9 +122,10 @@ void LUdecomposition(vector<vector<double>> &a, vector<vector<double>> &l, vecto
                     sum += (l[k][j] * u[j][i]);
 
                 // Evaluating L(k, i)
-                l[k][i] = (a[k][i] - sum) / u[i][i];
+                l[k][i] = (a[sorted[k]][i] - sum) / u[i][i];
             }
         }
+        i++;
     }
 }
 

@@ -497,8 +497,31 @@ if (std::string{"--size"}.compare(argv[1]) == 0 || std::string{"-t"}.compare(arg
 
 - [Unit Lower Matrix](C/vector2D2_cmd.cpp)
 
-## Improve pivoting method
+| Size  |     1      |     2      |     3      |     4      |     5      |     6      |     7      |     8      |     9      |     10     | Average/ns |
+| :---: | :--------: | :--------: | :--------: | :--------: | :--------: | :--------: | :--------: | :--------: | :--------: | :--------: | :--------: |
+|  10   |    4600    |    4600    |    4700    |    4500    |    4500    |    4500    |    4500    |    4500    |    4400    |    4400    |    4520    |
+|  100  |  2519500   |  2524500   |  2644500   |  2611600   |  2612100   |  2640300   |  2678100   |  2624900   |  2692200   |  2630800   |  2617850   |
+| 1000  | 3113208100 | 2988923000 | 3269425400 | 3286484600 | 3148100500 | 2992652400 | 2955939200 | 2924984400 | 3067201200 | 2982538000 | 3072945680 |
 
+We can see that generating the unit lower matrix takes only half of the time used to generating unit upper matrix.
+
+## Plotting size vs. time
+![sizevstime](Resources/unitlower.jpg)
+![sizevstimelog](Resources/unitlowerlog.jpg)
+
+|    Size    |    10    |    50    |   100    |   200    |   300    |   400    |   500    |   600    |   700    |   800    |   900    |   1000   |
+| :--------: | :------: | :------: | :------: | :------: | :------: | :------: | :------: | :------: | :------: | :------: | :------: | :------: |
+|   Max/ns   | 5.50E+03 | 3.45E+05 | 2.77E+06 | 2.20E+07 | 9.23E+07 | 1.87E+08 | 3.81E+08 | 6.30E+08 | 1.02E+09 | 1.59E+09 | 2.31E+09 | 3.15E+09 |
+|   Min/ns   | 4.20E+03 | 3.25E+05 | 2.61E+06 | 2.02E+07 | 7.02E+07 | 1.70E+08 | 3.37E+08 | 5.87E+08 | 9.46E+08 | 1.43E+09 | 2.06E+09 | 2.88E+09 |
+| Average/ns | 4.51E+03 | 3.31E+05 | 2.65E+06 | 2.11E+07 | 7.65E+07 | 1.75E+08 | 3.49E+08 | 6.00E+08 | 9.72E+08 | 1.49E+09 | 2.15E+09 | 2.99E+09 |
+|    Std     | 3.67E+02 | 7.14E+03 | 4.86E+04 | 6.65E+05 | 6.52E+06 | 5.48E+06 | 1.37E+07 | 1.53E+07 | 2.83E+07 | 4.97E+07 | 7.00E+07 | 9.32E+07 |
+
+The raw data can be seen [here](C/data_vector2D2_cmd.csv)
+
+## Improve pivoting method
+Referring to the picture, as we can see we
 
 
 # 29/10/2021
+## Modify sorting method
+Before, I use the lambda function *[&v](size_t i1, size_t i2){ return v[i1] > v[i2]; }* to sort the 2D vector *v*. It is really a waste of resource as when pivoting, we only need to sort the elements in the first column

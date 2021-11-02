@@ -9,7 +9,7 @@ const int TIME = 10; // Sample time
 
 int main()
 {
-    std::string filename("vector2D_cmd");
+    std::string filename("vector2D2_cmd");
     std::string command;
 
     std::array<char, 128> buffer;
@@ -18,7 +18,7 @@ int main()
 
     FILE *pipe;
     std::ofstream data;
-    data.open("data.csv");
+    data.open("data_" + filename + ".csv");
     data << "Size,1,2,3,4,5,6,7,8,9,10,Average/ns\n";
 
     // regex expression for pattern to be searched
@@ -32,8 +32,8 @@ int main()
 
     std::array<unsigned long long, TIME> time;
 
-    for (size = 10; size <= 1000; size *= 10)
-    // for (int size : {10, 100})
+    // for (size = 10; size <= 1000; size *= 10)
+    for (int size : {10, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000})
     {
         data << size << ",";
         for (int i = 0; i < TIME; i++)

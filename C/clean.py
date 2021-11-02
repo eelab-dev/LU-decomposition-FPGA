@@ -7,4 +7,4 @@ for files in [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f
     temp = os.path.splitext(files)
     if not temp[1]:
         os.remove(temp[0])
-        print(f"Delete {temp[0]}")
+        print(f"Delete '{temp[0]}'")
