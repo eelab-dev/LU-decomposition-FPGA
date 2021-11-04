@@ -4,7 +4,7 @@
 
 int main()
 {
-    std::string command("ls -al");
+    std::string command("python3 plot.py");
 
     std::array<char, 128> buffer;
     std::string result;

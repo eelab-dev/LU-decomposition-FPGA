@@ -6,7 +6,7 @@
 #include <vector>
 
 using namespace std;
-const int SIZE = 5;
+const int SIZE = 3;
 void LUdecomposition(vector<vector<double>> &a, vector<vector<double>> &l, vector<vector<double>> &u);
 void LUPivot(vector<double> **a, vector<vector<double>> &l, vector<vector<double>> &u);
 void display(vector<vector<double>> &vect, string name = "a");
@@ -42,9 +42,11 @@ int main()
         l(SIZE, vector<double>(SIZE)),
         u(SIZE, vector<double>(SIZE));
 
+    double data[] = {1, 2, 3, 4, 5, 6, 7, 8, 0};
     for (int i{}; i < SIZE; i++)
         for (int j{}; j < SIZE; j++)
-            matrix[i][j] = distrib(gen);
+            // matrix[i][j] = distrib(gen);
+            matrix[i][j] = data[3 * i + j];
 
     vector<double> *pivot[SIZE];
 

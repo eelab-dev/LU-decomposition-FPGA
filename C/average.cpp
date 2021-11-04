@@ -9,7 +9,7 @@ const int TIME = 10; // Sample time
 
 int main()
 {
-    std::string filename("vector2D2_cmd");
+    std::string filename("lupivot_cmd_O2_20");
     std::string command;
 
     std::array<char, 128> buffer;
@@ -70,5 +70,21 @@ int main()
     }
 
     data.close();
+
+    command = "python3 plot.py -f data_" + filename + ".csv";
+    pipe = popen(command.c_str(), "r");
+    if (!pipe)
+    {
+        std::cerr << "Couldn't start command." << std::endl;
+        return 0;
+    }
+    while (fgets(buffer.data(), 128, pipe) != NULL)
+    {
+        // std::cout << "Reading..." << std::endl;
+        result += buffer.data();
+    }
+    returnCode = pclose(pipe);
+    std::cout << result << std::endl;
+
     return 0;
 }
