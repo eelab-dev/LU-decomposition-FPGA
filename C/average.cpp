@@ -9,7 +9,7 @@ const int TIME = 10; // Sample time
 
 int main()
 {
-    std::string filename("lupivot_cmd_O2_20");
+    std::string filename("lupivot_cmd_O3");
     std::string command;
 
     std::array<char, 128> buffer;
@@ -27,13 +27,12 @@ int main()
     // flag type for determining the matching behavior (in this case on string objects)
     std::smatch sm;
 
-    int sizerange[] = {10, 100};
     unsigned long long sumtime = 0;
 
     std::array<unsigned long long, TIME> time;
 
     // for (size = 10; size <= 1000; size *= 10)
-    for (int size : {10, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000})
+    for (int size : {10, 50, 100, 200, 300, 400, 500, 750, 1000, 1500, 2000})
     {
         data << size << ",";
         for (int i = 0; i < TIME; i++)
@@ -71,7 +70,7 @@ int main()
 
     data.close();
 
-    command = "python3 plot.py -f data_" + filename + ".csv";
+    command = "python3 tomktable.py -f data_" + filename + ".csv";
     pipe = popen(command.c_str(), "r");
     if (!pipe)
     {

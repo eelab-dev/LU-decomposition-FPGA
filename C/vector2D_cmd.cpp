@@ -1,15 +1,11 @@
 // Unit upper matrix
 
+#include "lu.h"
 #include <chrono>
 #include <ctime>
-#include <iomanip>
-#include <iostream>
 #include <random>
-#include <string>
-#include <vector>
 
-void LUdecomposition(std::vector<std::vector<double>> &a, std::vector<std::vector<double>> &l, std::vector<std::vector<double>> &u);
-void display(std::vector<std::vector<double>> &vect, std::string name = "a");
+void LUupper(std::vector<std::vector<double>> &a, std::vector<std::vector<double>> &l, std::vector<std::vector<double>> &u);
 
 int main(int argc, char *argv[])
 {
@@ -35,7 +31,7 @@ int main(int argc, char *argv[])
             matrix[i][j] = distrib(gen);
 
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-    LUdecomposition(matrix, l, u);
+    LUupper(matrix, l, u);
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
     // display(matrix);
@@ -47,21 +43,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-void display(std::vector<std::vector<double>> &vect, std::string name)
-{
-    std::cout << name << "=" << std::endl;
-    for (int i{}; i < vect.size(); i++)
-    {
-        for (int j{}; j < vect.size(); j++)
-        {
-            std::cout << std::setprecision(2) << std::fixed << std::setw(8) << std::left << vect[i][j];
-        }
-        std::cout << std::endl;
-    }
-    std::cout << std::endl;
-}
-
-void LUdecomposition(std::vector<std::vector<double>> &a, std::vector<std::vector<double>> &l, std::vector<std::vector<double>> &u)
+void LUupper(std::vector<std::vector<double>> &a, std::vector<std::vector<double>> &l, std::vector<std::vector<double>> &u)
 {
     int i = 0, j = 0, k = 0, n = a.size();
     for (i = 0; i < n; i++)

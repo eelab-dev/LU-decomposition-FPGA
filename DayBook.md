@@ -648,3 +648,33 @@ Refer [here](#applying-pivoting-with-optimiaztion)
 
 
 We can see that the standard version of C++ has limited impact on the running speed.
+
+# 05 - 07/11/2021
+Prepare for the first presentation
+
+# 09/11/2021
+Cleaning up the code.
+
+- Create the header [file](C/lu.h) for all the files.
+    Defined some functions
+```cpp
+// Normal LU decomposition without pivoting
+void LUdecomposition(std::vector<std::vector<double>> &a, std::vector<std::vector<double>> &l, std::vector<std::vector<double>> &u)
+
+
+// LU decomposition with partial pivoting
+void LUPivot(std::vector<std::vector<double>> &a, std::vector<std::vector<double>> &l, std::vector<std::vector<double>> &u)
+
+
+// Index sort the first column of a 2D matrix
+template <typename T>
+std::vector<size_t> sort_indexes(const std::vector<std::vector<T>> &v)
+
+```
+
+- Fix a problem with previous code.
+
+    In the file [lupivot_cmd](C/lupivot_cmd.cpp), when generating the random matrix, I constantly used the fixed seed, which may bring out much coincidence when measuring the average time. To fix it, I choose to randomly generating the seed as I have done before, by useing the command
+    ```cpp
+    int seed = std::time(0);
+    ```
