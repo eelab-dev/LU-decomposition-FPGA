@@ -678,3 +678,26 @@ std::vector<size_t> sort_indexes(const std::vector<std::vector<T>> &v)
     ```cpp
     int seed = std::time(0);
     ```
+
+    When I use the random seed, the average running time increases by about 20%.
+
+# 10/11/2021
+## Change the pipe output method.
+Set the output of the program that is called inside the master program to the text file using the output redirection.
+- ">": overwrite the file.
+- ">>": Append write to the previous file.
+
+After changing the output method, the average time drop down again to what I have measured [here](#applying-pivoting-with-optimiaztion) before changing the seed. This is mainly because the program does not need to read the stdout from pipe anymore.
+
+## Looking for some library
+- [SuiteSpare](https://github.com/DrTimothyAldenDavis/SuiteSparse)
+- [Lapacke](https://github.com/Reference-LAPACK/lapack)
+- [Eigen3](https://gitlab.com/libeigen/eigen.git)
+
+```bash
+sudo apt install libsuitesparse-dev libmpfr-dev libmpfrc++-dev libsuperlu-dev
+```
+
+## Try to create a class for matrix
+- Create a class called *Matrix* in [here](C/luclass.cpp).
+- Overload the output stream for easy output.

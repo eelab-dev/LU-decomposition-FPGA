@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
     if (argc > 2)
         if (std::string{"--size"}.compare(argv[1]) == 0 || std::string{"-t"}.compare(argv[1]) == 0)
             SIZE = std::stoi(argv[2]);
-    std::cout << "argc:" << argc << " size:" << SIZE << std::endl;
+    std::cout << "argc:" << argc << ",size:" << SIZE << ",";
 
     std::random_device rd;
     std::mt19937 gen(seed);
@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
     // display(matrix, "Original");
     // display(l, "l");
     // display(u, "u");
-    std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "[ns]" << std::endl;
+    std::cout << "Time difference: " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "[ns]" << std::endl;
 
     return 0;
 }

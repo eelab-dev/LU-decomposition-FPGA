@@ -2,6 +2,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
 import os
+import re
 from argparse import ArgumentParser
 
 parser = ArgumentParser()
@@ -18,16 +19,16 @@ print("File to be analysed:", arg.filename)
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 for filename in arg.filename.split(','):
     with open(filename, "r") as f:
-        f.readline()
         datas = f.readlines()
 
     length = len(datas)
     size = np.zeros(length)
-    data = np.zeros((length, len(datas[0].split(',')) - 2))
+    data = np.zeros(length)
     for i, rows in zip(range(length), datas):
-        rows = rows.split(',')
-        size[i] = rows[0]
-        data[i, ] = rows[1:-1]
+        _, size[i], data[i] = re.findall(r'\d+', rows)
+
+    size = np.unique(size)
+    data.resize((len(size), int(len(data) / len(size))))
 
     dmin = np.min(data, axis=1)
     dmax = np.max(data, axis=1)
