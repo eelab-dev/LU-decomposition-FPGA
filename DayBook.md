@@ -701,3 +701,8 @@ sudo apt install libsuitesparse-dev libmpfr-dev libmpfrc++-dev libsuperlu-dev
 ## Try to create a class for matrix
 - Create a class called *Matrix* in [here](C/luclass.cpp).
 - Overload the output stream for easy output.
+
+
+# 11/11/2021
+## Looking for method to deploy sparse matrix
+Found an example [here](https://github.com/uestla/Sparse-Matrix)

@@ -43,10 +43,10 @@ public:
         matrix.resize(size, std::vector<double>(size));
     }
 
-    void randfill(int seed = std::time(0))
+    void randfill(int lower = 1, int upper = 10, int seed = std::time(0))
     {
         std::mt19937 gen(seed);
-        std::uniform_int_distribution<unsigned> distrib(1, 10);
+        std::uniform_int_distribution<unsigned> distrib(lower, upper);
         for (int i{}; i < size; i++)
             for (int j{}; j < size; j++)
                 matrix[i][j] = distrib(gen);
