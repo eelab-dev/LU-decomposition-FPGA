@@ -706,3 +706,23 @@ sudo apt install libsuitesparse-dev libmpfr-dev libmpfrc++-dev libsuperlu-dev
 # 11/11/2021
 ## Looking for method to deploy sparse matrix
 Found an example [here](https://github.com/uestla/Sparse-Matrix)
+
+- [HLS](https://www.xilinx.com/support/documentation-navigation/design-hubs/dh0090-vitis-hls-hub.html)
+- [Datatype](https://www.xilinx.com/html_docs/xilinx2020_2/vitis_doc/vitis_hls_coding_styles.html#iyg1582649282811)
+- [Circuit Matrix](https://sparse.tamu.edu/Freescale/)
+
+## Clean up the code again
+- Create a **data** folder to store all the experiment data.
+- Create a folder **LU** to store the header file for LU decomposition.
+- Create folder **try** and **archive** to store some cpp files which are used to try some features of cpp.
+
+## Improve the measure method
+Instead of compiling the source code to program, I choose to measure the time directly in program by calling the function. Therefore, I need to clear the vector when I change the size of the matrix. Using the code below:
+```cpp
+matrix.clear();
+l.clear();
+u.clear();
+matrix.resize(size, std::vector<double>(size));
+l.resize(size, std::vector<double>(size));
+u.resize(size, std::vector<double>(size));
+```
