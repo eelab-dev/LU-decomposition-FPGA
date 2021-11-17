@@ -60,7 +60,9 @@
         "regex": "cpp",
         "shared_mutex": "cpp",
         "codecvt": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "list": "cpp",
+        "hash_map": "cpp"
     },
     "editor.formatOnSave": true,
     "code-runner.runInTerminal": true,

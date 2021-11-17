@@ -726,3 +726,129 @@ matrix.resize(size, std::vector<double>(size));
 l.resize(size, std::vector<double>(size));
 u.resize(size, std::vector<double>(size));
 ```
+
+# 13/11/2021
+## Vitis HLS
+- Learn the basic use of **HLS**
+## vitis_hls Command
+To use vitis_hls command, we should first open the *Vitis HLS 2021.2 Command Prompt* from the start window.
+- add_files
+
+    Adds design source files to the current project.
+    ```tcl
+    add_files [OPTIONS] <src_files>
+    ```
+- cosim_design
+
+    Executes post-synthesis co-simulation of the synthesized RTL with the original C/C++-based test
+bench.
+    ```tcl
+    cosim_design [OPTIONS]
+    ```
+    **Options**
+    - -O: Enables optimized compilation of the C/C++ test bench and RTL wrapper. This increases
+compilation time, but results in better runtime performance.
+    - -argv <string>: The <string> is passed onto the main C/C++ function.
+
+- csim_design
+
+    Compiles and runs pre-synthesis C/C++ simulation using the provided C/C++ test bench.
+    ```tcl
+    csim_design [OPTIONS]
+    ```
+    **Options**
+    - -O: Enables optimized compilation of the C/C++ test bench. This increases compilation time,
+but results in better runtime performance.
+    - -argv <string>: Specifies the argument list for the behavioral test bench. The <string> is passed onto the main() C/C++ function of the test bench.
+
+- csynth_design
+
+    Synthesizes the Vitis HLS project for the active solution.
+
+    The command can be executed only in the context of an active solution. The elaborated design in the database is scheduled and mapped onto RTL, based on any constraints that are set.
+    ```tcl
+    csynth_design [OPTIONS]
+    ```
+
+    **Options**
+    -
+
+
+## Vitis HLS Coding Styles
+### Unsupported C/C++ Constructs
+While Vitis HLS supports a wide range of the C/C++ languages, some constructs are not synthesizable, or can result in errors further down the design flow. This section discusses areas in which coding changes must be made for the function to be synthesized and implemented in a device.
+
+To be synthesized:
+- The function must contain the entire functionality of the design.
+- None of the functionality can be performed by system calls to the operating system.
+- The C/C++ constructs must be of a fixed or bounded size.
+- The implementation of those constructs must be unambiguous.
+
+### System Calls
+System calls cannot be synthesized because they are actions that relate to performing some task upon the operating system in which the C/C++ program is running.
+
+Vitis HLS ignores commonly-used system calls that display only data and that have no impact on the execution of the algorithm, such as printf() and fprintf(stdout,). In general, calls to the system cannot be synthesized and should be removed from the function before synthesis. Other examples of such calls are getc(), time(), sleep(), all of which make calls to the operating system.
+
+### Dynamic Memory Usage
+Any system calls that manage memory allocation within the system, for example, malloc(), alloc(), and free(), are using resources that exist in the memory of the operating system and are created and released during runtime. To be able to synthesize a hardware implementation the design must be fully self-contained, specifying all required resources.
+
+Memory allocation system calls must be removed from the design code before synthesis. Because dynamic memory operations are used to define the functionality of the design, they must be transformed into equivalent bounded representations.
+
+### Pointer Limitations
+- General Pointer Casting
+    Vitis HLS does not support general pointer casting, but supports pointer casting between native C/C++ types.
+- Pointer Arrays
+    Vitis HLS supports pointer arrays for synthesis, provided that each pointer points to a scalar or an array of scalars. Arrays of pointers cannot point to additional pointers.
+- Function Pointers
+    Function pointers are not supported.
+
+### Standard Template Libraries
+Many of the C++ Standard Template Libraries (STLs) contain function recursion and use dynamic memory allocation. For this reason, the STLs cannot be synthesized by Vitis HLS. The solution for STLs is to create a local function with identical functionality that does not feature recursion, dynamic memory allocation, or the dynamic creation and destruction of objects.
+
+---
+## Data Types
+
+## C++ Classes and Templates
+C++ classes are fully supported for synthesis with Vitis HLS. The top-level for synthesis must be a function. A class cannot be the top-level for synthesis. To synthesize a class member function, instantiate the class itself into function. Do not simply instantiate the top-level class into the testbench.
+
+# 14/11/2021
+## Inverse matrix and LU decomposition
+Actually, the inverse matrix can also be calculated from LU decomposition, and MATLAB also calculates the inverse matrix by LU decomposition. See [here](https://uk.mathworks.com/help/matlab/ref/inv.html)
+![Matlab inv](Resources/Screenshot%202021-11-16%20221807.png)
+
+To calculate the inverse matrix using LU decomposition, we can follow the procedure below.
+
+$$
+A=LU\Rightarrow A^{-1}=\left( LU \right) ^{-1}=U^{-1}L^{-1}
+$$
+
+Therefore, we can first obtain the lower matrix *L* and upper matrix *U* first. Then find the inverse matrix of the two matrices respectively, $L_{inv}$ and $U_{inv}$. In this substitution,we let the right-hand vector to be all ones. That is to say:
+
+$$
+\begin{aligned}
+&l_{11}y_1&&=1\\
+&l_{21}y_1+l_{22}y_2&&=1\\
+&\phantom{l_{31}}\vdots\phantom{y+l_{32}}\vdots\phantom{y+l}\ddots&&\phantom{=}\vdots \\
+&l_{n1}y_1+l_{n2}y_2+\dots+l_{nn}y_n&&=1
+\end{aligned}
+$$
+
+Then apply [forward substitution](https://en.wikipedia.org/wiki/Triangular_matrix#Forward_and_back_substitution) for *L* and back substitution for *U* to get the inverse matrix for them.
+
+Forward substitution:$\hspace{2cm}
+L_{inv\left( i,j \right)}=\left\{ \begin{aligned}
+	&1&&,i=j\\
+	&0&&,i<j\\
+	&-L_{inv\left( i,j \right)}\sum_{k=j}^{i-1}{\left( L_{i,k}L_{inv\left( k,j \right)} \right) } &&,i>j\\
+\end{aligned} \right.
+$
+
+Backward substitution:$\hspace{1.9cm}
+U_{inv\left( i,j \right)}=\left\{ \begin{aligned}
+	&U_{i,j}^{-1}&&,i=j\\
+	&0&&,i<j\\
+	&-U_{inv\left( i,j \right)}\sum_{k=i+1}^{j}{\left( U_{i,k}U_{inv\left( k,j \right)} \right) } &&,i>j\\
+\end{aligned} \right.
+$
+
+Then multiply them together, we can get the inverse matrix.

@@ -181,22 +181,3 @@ void display(std::vector<std::vector<double>> &vect, std::string name = "a")
     }
     std::cout << std::endl;
 }
-
-int main()
-{
-    int SIZE = 4;
-    std::vector<std::vector<double>> l(SIZE, std::vector<double>(SIZE)), u(SIZE, std::vector<double>(SIZE));
-    Matrix matrix(SIZE);
-    matrix.randfill();
-    matrix.set(3.14, 1, 2);
-    std::cout << "a=\n"
-              << matrix;
-
-    matrix.LUdecomposition(l, u);
-    display(l, "l");
-    display(u, "u");
-    matrix.LUPivot(l, u);
-    display(l, "l");
-    display(u, "u");
-    return 0;
-}
