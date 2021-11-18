@@ -29,5 +29,6 @@ int main()
     cout << J << endl;
     cout << F << endl;
 
+    cout << typeid(F(1, 0)).name() << endl;
     return 0;
 }

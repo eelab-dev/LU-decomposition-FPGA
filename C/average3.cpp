@@ -1,3 +1,5 @@
+// Description: Test the performace of LU decomposition without pivoting
+
 #include "LU/lu.h"
 #include <chrono>
 #include <fstream>
@@ -7,7 +9,7 @@ const int TIME = 10; // Sample time
 
 int main(int argc, char *argv[])
 {
-    std::string filename("data_temp.csv");
+    std::string filename("data_temp.csv"); // Output data file
     int seed = std::time(0);
     // int seed=2021;
     std::chrono::steady_clock::time_point begin;
