@@ -22,6 +22,7 @@
   abstract  = {Sparse solver has become the bottleneck of SPICE simulators. There has been few work on GPU-based sparse solver because of the high data-dependency. The strong data-dependency determines that parallel sparse LU factorization runs efficiently on shared-memory computing devices. But the number of CPU cores sharing the same memory is often limited. The state of the art Graphic Processing Units (GPU) naturally have numerous cores sharing the device memory, and provide a possible solution to the problem. In this paper, we propose a GPU-based sparse LU solver for circuit simulation. We optimize the work partitioning, the number of active thread groups, and the memory access pattern, based on GPU architecture. On matrices whose factorization involves many floating-point operations, our GPU-based sparse LU factorization achieves 7.90× speedup over 1-core CPU and 1.49× speedup over 8-core CPU. We also analyze the scalability of parallel sparse LU factorization and investigate the specifications on CPUs and GPUs that most influence the performance.},
   file      = {:Sparse_LU_factorization_for_parallel_circuit_simulation_on_GPU.pdf:PDF},
   issn      = {0738-100X},
+  url       = {https://ieeexplore.ieee.org/document/6241646},
 }
 
 @Article{6774937,
@@ -86,18 +87,21 @@
   title  = {KLU--A high performance sparse linear solver for circuit simulation problems},
   year   = {2005},
   file   = {:KLU.pdf:PDF},
+  url    = {https://ufdc.ufl.edu/UFE0011721/00001/citation},
 }
 
-@Article{gilbert1988sparse,
-  author    = {Gilbert, John R and Peierls, Tim},
-  journal   = {SIAM journal on scientific and statistical computing},
-  title     = {Sparse partial pivoting in time proportional to arithmetic operations},
-  year      = {1988},
-  number    = {5},
-  pages     = {862--874},
-  volume    = {9},
-  file      = {:Sparse Partial Pivoting in Time Proportional to Arithmetic Operations.pdf:PDF},
-  publisher = {SIAM},
+@Article{doi:10.1137/0909058,
+  author  = {Gilbert, John R. and Peierls, Tim},
+  journal = {SIAM Journal on Scientific and Statistical Computing},
+  title   = {Sparse Partial Pivoting in Time Proportional to Arithmetic Operations},
+  year    = {1988},
+  number  = {5},
+  pages   = {862-874},
+  volume  = {9},
+  doi     = {10.1137/0909058},
+  eprint  = {https://doi.org/10.1137/0909058},
+  file    = {:Sparse Partial Pivoting in Time Proportional to Arithmetic Operations.pdf:PDF},
+  url     = {https://doi.org/10.1137/0909058},
 }
 
 @Article{5710875,
@@ -149,6 +153,44 @@
   numpages   = {17},
   publisher  = {Association for Computing Machinery},
   url        = {https://doi.org/10.1145/1824801.1824814},
+}
+
+@Article{DBLP:journals/corr/abs-1805-08288,
+  author     = {Johannes de Fine Licht and Maciej Besta and Simon Meierhans and Torsten Hoefler},
+  journal    = {CoRR},
+  title      = {Transformations of High-Level Synthesis Codes for High-Performance Computing},
+  year       = {2018},
+  volume     = {abs/1805.08288},
+  bibsource  = {dblp computer science bibliography, https://dblp.org},
+  biburl     = {https://dblp.org/rec/journals/corr/abs-1805-08288.bib},
+  eprint     = {1805.08288},
+  eprinttype = {arXiv},
+  file       = {:Transformations of High-Level Synthesis Codes for High-Performance Computing.pdf:PDF},
+  timestamp  = {Wed, 16 Jun 2021 11:47:25 +0200},
+  url        = {http://arxiv.org/abs/1805.08288},
+}
+
+@Book{10.5555/2685817,
+  author    = {Crockett, Louise H. and Elliot, Ross A. and Enderwitz, Martin A. and Stewart, Robert W.},
+  publisher = {Strathclyde Academic Media},
+  title     = {The Zynq Book: Embedded Processing with the Arm Cortex-A9 on the Xilinx Zynq-7000 All Programmable Soc},
+  year      = {2014},
+  address   = {Glasgow, GBR},
+  isbn      = {099297870X},
+  abstract  = {This book is about the Zynq-7000 All Programmable System on Chip, the family of devices from Xilinx that combines an application-grade ARM Cortex-A9 processor with traditional FPGA logic fabric. Catering for both new and experienced readers, it covers fundamental issues in an accessible way, starting with a clear overview of the device architecture, and an introduction to the design tools and processes for developing a Zynq SoC. Later chapters progress to more advanced topics such as embedded systems development, IP block design and operating systems. Maintaining a 'real-world' perspective, the book also compares Zynq with other device alternatives, and considers end-user applications. The Zynq Book is accompanied by a set of practical tutorials hosted on a companion website. These tutorials will guide the reader through first steps with Zynq, following on to a complete, audio-based embedded systems design.},
+  file      = {:D\:/74133/OneDrive - University of Edinburgh/Senior/Project/Vitis/The_Zynq_Book_ebook_chinese.pdf:PDF},
+  url       = {http://www.zynqbook.com/},
+}
+
+@Book{doi:10.1137/1.9780898718881,
+  author    = {Davis, Timothy A.},
+  publisher = {Society for Industrial and Applied Mathematics},
+  title     = {Direct Methods for Sparse Linear Systems},
+  year      = {2006},
+  doi       = {10.1137/1.9780898718881},
+  eprint    = {https://epubs.siam.org/doi/pdf/10.1137/1.9780898718881},
+  file      = {:Direct Methods for Sparse Linear Systems by Timothy A. Davis.pdf:PDF},
+  url       = {https://epubs.siam.org/doi/abs/10.1137/1.9780898718881},
 }
 
 @Comment{jabref-meta: databaseType:bibtex;}

@@ -1,6 +1,6 @@
 // Unit Lower matrix
 
-#include "lu.h"
+#include "LU/lu.h"
 #include <chrono>
 #include <ctime>
 #include <random>
