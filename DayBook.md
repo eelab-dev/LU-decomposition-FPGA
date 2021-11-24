@@ -1067,7 +1067,69 @@ The UNROLL pragma allows the loop to be fully or partially unrolled. Fully unrol
 
     After downloading the common images, the
 
+## Install Vitis in Ubuntu
+Stuck at "Generating installed device list" at the final processing. In order to solve this, I follow the instruction [here](https://support.xilinx.com/s/article/63794?language=en_US), installing the following packages at restart the installation.
+```bash
+sudo apt install python3-pip libtinfo5 libncurses5 libstdc++6:i386 libgtk2.0-0:i386 dpkg-dev:i386 opencl-headers
+```
+
 # 21/11/2021
 ## KLU
-KLU stands for Clark Kent LU, since it is based on Gilbert-Peierls' algorithm, a non-supernodal algorithm, which is the predecessor to SuperLU, a supernodal algorithm. KLU is a sparse high performance linear solver that employs hybrid ordering mechanisms and elegant factorization and solve algorithms. It achieves high quality ll-in rate and beats many existing solvers in run time, when used for matrices arising in circuit simulation.
+KLU stands for Clark Kent LU, since it is based on Gilbert-Peierls' algorithm, a non-supernodal algorithm, which is the predecessor to SuperLU, a supernodal algorithm. KLU is a sparse high performance linear solver that employs hybrid ordering mechanisms and elegant factorization and solve algorithms. It achieves high quality fill-in rate and beats many existing solvers in run time, when used for matrices arising in circuit simulation.
 
+## SparseLU
+Dense matrices are typically represented by a two dimensional array.The zeros of a sparse matrix should not be stored if we want to save memory. This fact makes a two dimensional array unsuitable for representing sparse matrices. Sparse matrices are represented with a different kind of data structure. They can be represented in two different data structures: **column compressed form** or **row compressed form**.
+
+- A column compressed form consists of three vectors Ap, Ai and Ax. Ap consists of column pointers. It is of length $n+1$. The start of column k of the input matrix is given by Ap[k]. *Ai* consists of row indices of the elements. This is a zero based data structure with row indices in the interval [0,n). *Ax* consists of the actual numerical values of the elements.
+
+    Thus the elements of a column k of the matrix are held in Ax [Ap [k]...Ap [k+1]). The corresponding row indices are held in Ai [Ap [k]...Ap[k+1]).
+
+- A row compressed format stores a row pointer vector Ap, a column indices vector Ai and a value vector Ax. For example, the matrix
+$$
+\left[ \begin{matrix}
+	5&		0&		0\\
+	4&		2&		0\\
+	3&		1&		8\\
+\end{matrix} \right]
+$$
+when represented in column compressed format will be:
+```
+Ap: 0 3 5 6
+Ai: 0 1 2 1 2 2
+Ax: 5 4 3 2 1 8
+```
+and for row compressed format, it will be
+```
+Ap: 0 1 3 6
+Ai: 0 0 1 0 1 2
+Ax: 5 4 2 3 1 8
+```
+
+## Gilbert-Peierls' Algorithm
+
+### Symbolic Analysis
+
+
+# 22/11/2021
+## Try Vitis
+
+
+
+# 23/11/2021
+## SuiteSpare
+### Complie & Install KLU
+
+    Go to the root directory of SuiteSpare and run
+    ```bash
+    make
+    make install INSTALL=<PATH>
+    ```
+
+### Basic use of KLU
+- KLU Common object
+
+    The klu common object (*klu_l_common* for the *SuiteSparse_long* version) contains user-definable parameters and statistics returned from KLU functions. This object appears in every KLU function as the last parameter.
+
+- KLU Symbolic object
+
+    KLU performs its sparse LU factorization in two steps. The first is purely symbolic, and does not depend on the numerical values. This analysis returns a *klu_symbolic* object (*klu_l_symbolic* in the SuiteSparse long version). The Symbolic object contains a pre-ordering which combines the block triangular form with the fill-reducing ordering, and an estimate of the number of nonzeros in the factors of each block. Its size is thus modest, only proportional to n, the dimension of A. It can be reused multiple times for the factorization of a sequence of matrices with identical nonzero pattern. Note: a nonzero in this sense is an entry present in the data structure of A; such entries may in fact be numerically zero.

@@ -62,7 +62,8 @@
         "codecvt": "cpp",
         "filesystem": "cpp",
         "list": "cpp",
-        "hash_map": "cpp"
+        "hash_map": "cpp",
+        "cholmod.h": "c"
     },
     "editor.formatOnSave": true,
     "code-runner.runInTerminal": true,
