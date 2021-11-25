@@ -1049,12 +1049,75 @@ result = a + b;
 ## pragma HLS unroll
 You can unroll loops to create multiple independent operations rather than a single collection of operations. The UNROLL pragma transforms loops by creating multiples copies of the loop body in the RTL design, which allows some or all loop iterations to occur in parallel.
 
-Loops in the C/C++ functions are kept rolled by default. When loops are rolled, synthesis creates the logic for one iteration of the loop, and the RTL design executes this logic for each iteration of the loop in sequence. A loop is executed for the number of iterations specified by the loop induction variable. The number of iterations might also be impacted by logic inside the loop body (for example, break conditions or modifications to a loop exit variable). Using the UNROLL pragma you can unroll loops to increase data access and throughput.
+Loops in the C/C++ functions are kept rolled by default. When loops are rolled, synthesis creates the logic for one iteration of the loop, and the RTL design executes this logic for each iteration of the loop in sequence. A loop is executed for the number of iterations specified by the loop induction variable. The number of iterations might also be impacted by logic inside the loop body (for example, *break* conditions or modifications to a loop exit variable). Using the UNROLL pragma you can unroll loops to increase data access and throughput.
 
 The UNROLL pragma allows the loop to be fully or partially unrolled. Fully unrolling the loop creates a copy of the loop body in the RTL for each loop iteration, so the entire loop can be run concurrently. Partially unrolling a loop lets you specify a factor N, to create N copies of the loop body and reduce the loop iterations accordingly.
 
+To unroll a loop completely, the loop bounds must be known at compile time. This is not required for partial unrolling.
+
+Loop unrolling by a factor of 2 effectively transforms the code to look like the following code where the break construct is used to ensure the functionality remains the same, and the loop exits at the appropriate point.
+```cpp
+for(int i = 0; i < X; i++) {
+    pragma HLS unroll factor=2
+    a[i] = b[i] + c[i];
+}
+```
+$$
+\Downarrow
+$$
+```cpp
+for(int i = 0; i < X; i += 2) {
+    a[i] = b[i] + c[i];
+    if (i+1 >= X) break;
+    a[i+1] = b[i+1] + c[i+1];
+}
+```
+### Syntax
+```cpp
+#pragma HLS unroll factor=<N> region skip_exit_check
+```
+- factor=\<N>: Specifies a non-zero integer indicating that partial unrolling is requested. The loop body is repeated the specified number of times, and the iteration information is adjusted accordingly. If factor= is not specified, the loop is fully unrolled.
+- skip_exit_check: Optional keyword that applies only if partial unrolling is specified with factor=. The elimination of the exit check is dependent on whether the loop iteration count is known or unknown:
+    - Fixed bounds\
+        No exit condition check is performed if the iteration count is a multiple of the factor. If the iteration count is not an integer multiple of the factor, the tool:
+      - Prevents unrolling.
+      - Issues a warning that the exit check must be performed to proceed.
+  - Variable bounds\
+        The exit condition check is removed. You must ensure that:
+        - The variable bounds is an integer multiple of the factor.
+        - No exit check is in fact required.
+
 # 20/11/2021
-## Vitis
+## Install Vitis in Ubuntu
+- Installation
+    ```bash
+    sudo ./Xilinx_Unified_2021.2_1021_0703_Lin64.bin
+    ```
+
+    **Problem**\
+    Stuck at "Generating installed device list" at the final processing. In order to solve this, I follow the instruction [here](https://support.xilinx.com/s/article/63794?language=en_US), installing the following packages at restart the installation.
+    ```bash
+    sudo apt install python3-pip libtinfo5 libncurses5 libstdc++6:i386 libgtk2.0-0:i386 dpkg-dev:i386 opencl-headers
+    ```
+    ---
+    **Updated Solution**\
+    After finishing installation, I find that Xilinx will provide a setup bash file `installLibs.sh` for Vitis. That bash file would install some necessary library packages for Vitis. I copied that in case that I would reinstall it some day.
+    ```bash
+    ### AIE Tools prerequisite libraries
+    apt-get update | tee -a $logFile
+    apt-get install -y libc6-dev-i386 net-tools | tee -a $logFile
+    apt-get install -y graphviz | tee -a $logFile
+    apt-get install -y make | tee -a $logFile
+    ### Vitis Tools prerequisite libraries
+    apt-get install -y unzip | tee -a $logFile
+    apt-get install -y g++ | tee -a $logFile
+    apt-get install -y libtinfo5 | tee -a $logFile
+    apt-get install -y xvfb | tee -a $logFile
+    apt-get install -y git | tee -a $logFile
+    apt-get install -y libncursesw5 | tee -a $logFile
+    apt-get install -y libc6-dev-i386 | tee -a $logFile
+    ```
+
 - Download XRT for Embedded Platforms
 
     Can be found [here](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/embedded-platforms.html)
@@ -1065,13 +1128,18 @@ The UNROLL pragma allows the loop to be fully or partially unrolled. Fully unrol
 
     The ‘common image’ packages contain a prebuilt Linux kernel and root file system.
 
-    After downloading the common images, the
+    After downloading the common images, unzip the file and run the bash file `sdk.sh` inside it.
+    ```bash
+    sudo ./sdk.sh
+    ```
+    ---
+    **Updated Solution**
+    Download the xrt library from [here](https://www.xilinx.com/products/boards-and-kits/alveo/u200.html#gettingStarted) and install all of them with
+    ```bash
+    sudo dpkg -i ./*.deb
+    ```
 
-## Install Vitis in Ubuntu
-Stuck at "Generating installed device list" at the final processing. In order to solve this, I follow the instruction [here](https://support.xilinx.com/s/article/63794?language=en_US), installing the following packages at restart the installation.
-```bash
-sudo apt install python3-pip libtinfo5 libncurses5 libstdc++6:i386 libgtk2.0-0:i386 dpkg-dev:i386 opencl-headers
-```
+- [Vitis Documentation](https://docs.xilinx.com/r/en-US/ug1393-vitis-application-acceleration/Getting-Started-with-Vitis)
 
 # 21/11/2021
 ## KLU
@@ -1112,24 +1180,254 @@ Ax: 5 4 2 3 1 8
 
 # 22/11/2021
 ## Try Vitis
+- [Vitis Tutorial](https://github.com/Xilinx/Vitis-Tutorials/tree/2021.2/Getting_Started/Vitis)
+### Building and Running on a Data-Center Platform (U200)
+- Setting up the environment\
+```bash
 
+```
+
+### Targeting Software Emulation
+- To build for software emulation, enter the following commands:
+```bash
+cd <Path to the cloned repo>/Getting_Started/Vitis/example/u200/sw_emu
+
+g++ -Wall -g -std=c++11 ../../src/host.cpp -o app.exe -I${XILINX_XRT}/include/ -L${XILINX_XRT}/lib/ -lOpenCL -lpthread -lrt -lstdc++
+emconfigutil --platform xilinx_u200_gen3x16_xdma_1_202110_1 --nd 1
+v++ -c -t sw_emu --config ../../src/u200.cfg -k vadd -I../../src ../../src/vadd.cpp -o vadd.xo
+v++ -l -t sw_emu --config ../../src/u200.cfg ./vadd.xo -o vadd.xclbin
+```
+
+- Building for software emulation is quick and shouldn’t take more than a minute or two. After the build process completes, you can launch the software emulation run as follows:
+```bash
+export XCL_EMULATION_MODE=sw_emu
+./app.exe
+```
+
+### Targeting Hardware Emulation
+- To build for hardware emulation, enter the following commands:
+```bash
+cd ../hw_emu
+
+g++ -Wall -g -std=c++11 ../../src/host.cpp -o app.exe -I${XILINX_XRT}/include/ -L${XILINX_XRT}/lib/ -lOpenCL -lpthread -lrt -lstdc++
+emconfigutil --platform xilinx_u200_gen3x16_xdma_1_202110_1 --nd 1
+v++ -c -t hw_emu --config ../../src/u200.cfg -k vadd -I../../src ../../src/vadd.cpp -o vadd.xo
+v++ -l -t hw_emu --config ../../src/u200.cfg ./vadd.xo -o vadd.xclbin
+```
+
+- Building for hardware emulation takes about 5 or 6 minutes. After the build process completes, you can launch the hardware emulation run as follows.
+```bash
+export XCL_EMULATION_MODE=hw_emu
+./app.exe
+```
+
+### Targeting Hardware
+- To build for the hardware, enter the following commands:
+```bash
+cd ../hw
+
+g++ -Wall -g -std=c++11 ../../src/host.cpp -o app.exe -I${XILINX_XRT}/include/ -L${XILINX_XRT}/lib/ -lOpenCL -lpthread -lrt -lstdc++
+v++ -c -t hw --config ../../src/u200.cfg -k vadd -I../../src ../../src/vadd.cpp -o vadd.xo
+v++ -l -t hw --config ../../src/u200.cfg ./vadd.xo -o vadd.xclbin
+```
+
+### Opening the Run Summary with Vitis Analyzer
+- Run the following command from the run directory containing the results you want to analyze:
+```bash
+vitis_analyzer ./xrt.run_summary
+```
 
 
 # 23/11/2021
 ## SuiteSpare
 ### Complie & Install KLU
+Go to the root directory of SuiteSpare and run
+```bash
+make
+make install INSTALL=<PATH>
+```
 
-    Go to the root directory of SuiteSpare and run
-    ```bash
-    make
-    make install INSTALL=<PATH>
-    ```
+Or if we only want to install part of it, go to the specific directory and install it. For example, if we want to only install KLU:
+```bash
+cd KLU
+make
+make install INSTALL=<PATH>
+```
+As KLU has the dependencies: **AMD**, **COLAMD**, **BTF**, and **SuiteSparse_config** we also need to `make install` them.
 
 ### Basic use of KLU
-- KLU Common object
-
+- **KLU Common object**\
     The klu common object (*klu_l_common* for the *SuiteSparse_long* version) contains user-definable parameters and statistics returned from KLU functions. This object appears in every KLU function as the last parameter.
 
-- KLU Symbolic object
+- **KLU Symbolic object**\
+    KLU performs its sparse LU factorization in two steps. The first is purely symbolic, and does not depend on the numerical values. This analysis returns a *klu_symbolic* object (*klu_l_symbolic* in the SuiteSparse long version). The Symbolic object contains a pre-ordering which combines the block triangular form with the fill-reducing ordering, and an estimate of the number of nonzeros in the factors of each block. Its size is thus modest, only proportional to **n**, the dimension of **A**. It can be reused multiple times for the factorization of a sequence of matrices with identical nonzero pattern.
 
-    KLU performs its sparse LU factorization in two steps. The first is purely symbolic, and does not depend on the numerical values. This analysis returns a *klu_symbolic* object (*klu_l_symbolic* in the SuiteSparse long version). The Symbolic object contains a pre-ordering which combines the block triangular form with the fill-reducing ordering, and an estimate of the number of nonzeros in the factors of each block. Its size is thus modest, only proportional to n, the dimension of A. It can be reused multiple times for the factorization of a sequence of matrices with identical nonzero pattern. Note: a nonzero in this sense is an entry present in the data structure of A; such entries may in fact be numerically zero.
+    Note: a *nonzero* in this sense is an entry present in the data structure of **A**; such entries may in fact be numerically zero.
+
+- **KLU Numeric object**\
+    The Numeric object contains the numeric sparse LU actorization, including the final pivot permutations. To solve a linear system, both the **Symbolic** and **Numeric** objects are required.
+
+- **klu defaults: set default parameters**\
+    This function sets the default parameters for KLU and clears the statistics. It may be used for either the real or complex cases. A value of 0 is returned if an error occurs, 1 otherwise. This function must be called before any other KLU function can be called.
+    ```c
+    #include "klu.h"
+    int ok;
+    klu_common Common;
+    ok = klu_defaults (&Common);
+    ```
+
+- **klu analyze: order and analyze a matrix**\
+    The following usage returns a *Symbolic* object that contains the fill-reducing ordering needed to factorize the matrix **A**. A **NULL** pointer is returned if a failure occurs. The error status for this function, and all others, is returned in *Common.status*. These functions may be used for both real and complex cases. The **AMD** ordering is used if *Common.ordering = 0*, **COLAMD** is used if it is 1, the natural ordering is used if it is 2, and the user-provided *Common.user_ordering* is used if it is 3.
+    ```c
+    #include "klu.h"
+    int n, Ap [n+1], Ai [nz];
+    klu_symbolic *Symbolic;
+    klu_common Common;
+    Symbolic = klu_analyze (n, Ap, Ai, &Common);
+    ```
+
+- **klu analyze given: order and analyze a matrix**\
+    In this routine, the fill-reducing ordering is rovided by the user (Common.ordering is ignored).Instead, the row permutation **P** and column ermutation **Q** are used. These are integer arrays of size n. If NULL, a natural ordering is used (so to provide just a column ordering, pass **Q** as non-**NULL** and **P** as **NULL**). A **NULL** pointer is returned if an error occurs. These functions may be used for both real and complex cases.
+
+- **klu_factor: numerical factorization**\
+    The *klu_factor* function factorizes a matrix, using a sparse left-looking method with threshold partial pivoting. The inputs **Ap** and **Ai** must be unchanged from the previous call to *klu_analyze* that created the Symbolic object. A **NULL** pointer is returned if an error occurs.
+    ```c
+    #include "klu.h"
+    int Ap [n+1], Ai [nz];
+    double Ax [nz], Az [2*nz];
+    klu_symbolic *Symbolic;
+    klu_numeric *Numeric;
+    klu_common Common;
+    Numeric = klu_factor (Ap, Ai, Ax, Symbolic, &Common); /* real */
+    Numeric = klu_z_factor (Ap, Ai, Az, Symbolic, &Common); /* complex */
+    ```
+
+- **klu solve: solve a linear system**\
+    Solves the linear system **Ax = b**, using the Symbolic and Numeric objects. The right-hand side B is overwritten with the solution on output. The array **B** is stored in column major order, with a leading dimension of **ldim**, and **nrhs** columns. Thus, the real entry bij is stored in *B[i+j*ldim]*, where *ldim >= n* must hold. A complex entry $b_{ij}$ is stored in *B[2*(i+j*ldim)]* and *B[2*(i+j*ldim)+1]* (for the real and imaginary parts, respectively). Returns 1 if successful, 0 if an error occurs.
+    ```c
+    #include "klu.h"
+    int ldim, nrhs, ok;
+    double B [ldim*nrhs], Bz [2*ldim*nrhs];
+    klu_symbolic *Symbolic;
+    klu_numeric *Numeric;
+    klu_common Common;
+    ok = klu_solve (Symbolic, Numeric, ldim, nrhs, B, &Common); /* real */
+    ok = klu_z_solve (Symbolic, Numeric, ldim, nrhs, Bz, &Common); /* complex */
+    ```
+
+- **klu extract: extract the LU factorization**\
+    This function extracts the LU factorization into a set of data structures suitable for passing back to MATLAB, with matrices in conventional compressed-column form. The *klu_sort* function should be called first if the row indices should be returned sorted. The factorization is returned in caller-provided arrays; if any of them are NULL, that part of the factorization is not extracted (this is not an error). Returns 1 if successful, 0 otherwise.
+
+    The sizes of **Li**, **Lx**, and **Lz** are **Numeric->lnz**, **Ui**, **Ux**, and **Uz** are of size **Numeric->unz**, and **Fi**, **Fx**, and **Fz** are of size **Numeric->nzoff**.
+
+    This function is not required to solve a linear system with KLU. KLU does not itself make use of the extracted LU factorization returned by this function.
+    ```cpp
+    #include "klu.h"
+    int ok, Lp [n+1], Li [lnz], Up [n+1], Ui [unz], Fp [n+1], Fi [nzoff], P [n], Q [n], R [n] ;
+    double Lx [lnz], Lz [lnz], Ux [unz], Uz [unz], Fx [nzoff], Fz [nzoff], Rs [n] ;
+    klu_symbolic *Symbolic ;
+    klu_numeric *Numeric ;
+    klu_common Common ;
+    ok = klu_extract (Numeric, Symbolic,
+    Lp, Li, Lx, Up, Ui, Ux, Fp, Fi, Fx, P, Q, Rs, R, &Common) ; /* real */
+    ok = klu_z_extract (Numeric, Symbolic,
+    Lp, Li, Lx, Lz, Up, Ui, Ux, Uz, Fp, Fi, Fx, Fz, P, Q, Rs, R, &Common) ; /* complex */
+    ```
+
+## Some examples of KLU
+- Solve equation\
+    See code [here](C/KLU/klu_simple.c).
+
+    Run `make klu_simple` to complie.
+
+- Import sparse matrix and solve\
+    See code [here](C/KLU/klu_solve.c)
+
+    Run `make klu_solve` to complie.
+
+- Extract LU decomposition\
+    See code [here](C/KLU/klu_extract.cpp)
+
+    Run `make klu_extract` to compile.
+
+# 24/11/2021
+## [MatrixMarket](https://math.nist.gov/MatrixMarket/)
+
+    [1]R. Boisvert, R. Pozo, and K. Remington, “The Matrix Market Exchange Formats: Initial Design,” Mar. 1997,Available: https://www.researchgate.net/publication/2630533_The_Matrix_Market_Exchange_Formats_Initial_Design
+
+
+### Matrix Market Exchange Formats
+- **Coordinate Format**\
+A file format suitable for representing general sparse matrices. Only nonzero entries are provided, and the coordinates of each nonzero entry is given explicitly. This is illustrated in the example below.
+
+- **Array Format**\
+A file format suitable for representing general dense matrices. All entries are provided in a pre-defined (column-oriented) order.
+
+MM coordinate format is suitable for representing sparse matrices. Only nonzero entries need be encoded, and the coordinates of each are given explicitly. This is illustrated in the following example of a real 5x5 general sparse matrix.
+
+$$
+\left[ \begin{matrix}
+	1&		0&		0&		0&		0\\
+	0&		10.5&		0&		0&		0\\
+	0&		0&		0.015&		0&		0\\
+	0&		250.5&		0&		-280&		33.32\\
+	0&		0&		0&		0&		12\\
+\end{matrix} \right]
+$$
+
+
+In MM coordinate format this could be represented as follows.
+%%MatrixMarket matrix coordinate real general
+```c
+%=================================================================================
+%
+% This ASCII file represents a sparse MxN matrix with L
+% nonzeros in the following Matrix Market format:
+%
+% +----------------------------------------------+
+% |%%MatrixMarket matrix coordinate real general | <--- header line
+% |%                                             | <--+
+% |% comments                                    |    |-- 0 or more comment lines
+% |%                                             | <--+
+% |    M  N  L                                   | <--- rows, columns, entries
+% |    I1  J1  A(I1, J1)                         | <--+
+% |    I2  J2  A(I2, J2)                         |    |
+% |    I3  J3  A(I3, J3)                         |    |-- L lines
+% |        . . .                                 |    |
+% |    IL JL  A(IL, JL)                          | <--+
+% +----------------------------------------------+
+%
+% Indices are 1-based, i.e. A(1,1) is the first element.
+%
+%=================================================================================
+    5     5   8
+    1     1   1.000e+00
+    2     2   1.050e+01
+    3     3   1.500e-02
+    1     4   6.000e+00
+    4     2   2.505e+02
+    4     4  -2.800e+02
+    4     5   3.332e+01
+    5     5   1.200e+01
+```
+
+### ANSI C library for Matrix Market I/O
+Reading a Matrix Market file can be broken into three basic steps:
+
+1. use `mm_read_banner()` to process the 1st line of file and identify the matrix type
+2. use a type-specific function, such as `mm_read_mtx_crd_size()` to skip the optional comments and process the matrix size information
+3. use a variant of `scanf()` to read the numerical data, one matrix entry per line
+
+Saving a matrix from an internal data structure to a Matrix Market file is a similar process:
+
+1. use `mm_write_banner()` to create the 1st line of the Matrix Market file
+2. (optional) add '%' delimited comments
+3. use a type-specific function, such as `mm_write_mtx_crd_size()` to record the matrix size information
+4. use a variant of `printf()` to write the numerical data, one matrix entry per line
+
+**Library**:
+- [mmio.h](Matrix_Sample/mmio.h)
+- [mmio.c](Matrix_Sample/mmio.c)
+
+### MatrixMarket I/O Functions for Matlab
+Matrix Market provides Matlab® M-files for three basic Matrix Market file I/O functions: [mminfo](Matrix_Sample/mminfo.m), [mmread](Matrix_Sample/mmread.m), and [mmwrite](Matrix_Sample/mmwrite.m).

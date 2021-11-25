@@ -63,7 +63,9 @@
         "filesystem": "cpp",
         "list": "cpp",
         "hash_map": "cpp",
-        "cholmod.h": "c"
+        "cholmod.h": "c",
+        "cfenv": "cpp",
+        "cinttypes": "cpp"
     },
     "editor.formatOnSave": true,
     "code-runner.runInTerminal": true,

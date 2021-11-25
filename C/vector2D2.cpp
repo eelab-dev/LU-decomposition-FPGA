@@ -5,7 +5,6 @@
 #include <ctime>
 #include <random>
 
-using namespace std;
 const int SIZE = 10;
 
 int main()
@@ -16,9 +15,9 @@ int main()
     std::mt19937 gen(seed);
     std::uniform_int_distribution<unsigned> distrib(1, 10);
 
-    vector<vector<double>> matrix(SIZE, vector<double>(SIZE)),
-        l(SIZE, vector<double>(SIZE)),
-        u(SIZE, vector<double>(SIZE));
+    std::vector<std::vector<double>> matrix(SIZE, std::vector<double>(SIZE)),
+        l(SIZE, std::vector<double>(SIZE)),
+        u(SIZE, std::vector<double>(SIZE));
 
     for (int i{}; i < SIZE; i++)
         for (int j{}; j < SIZE; j++)
@@ -32,7 +31,7 @@ int main()
     // display(l, "l");
     // display(u, "u");
 
-    cout << "Time difference = " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "[ns]" << endl;
+    std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "[ns]" << std::endl;
 
     return 0;
 }
