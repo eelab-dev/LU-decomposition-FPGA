@@ -1184,7 +1184,10 @@ Ax: 5 4 2 3 1 8
 ### Building and Running on a Data-Center Platform (U200)
 - Setting up the environment\
 ```bash
-
+source /tools/Xilinx/Vitis/2021.2/settings64.sh
+source /opt/xilinx/xrt/setup.sh
+export PLATFORM_REPO_PATHS=/opt/xilinx/platforms/xilinx_u200_gen3x16_xdma_1_202110_1
+export VITIS_LIBS=/home/ethan/Vitis_Libraries
 ```
 
 ### Targeting Software Emulation

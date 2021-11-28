@@ -1,0 +1,210 @@
+% Copyright (c) 2015 Mihail Atanassov
+% Edited by Stewart Smith 2015
+%
+% Permission is hereby granted, free of charge, to any person obtaining a copy
+% of this software and associated documentation files (the "Software"), to deal
+% in the Software without restriction, including without limitation the rights
+% to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+% copies of the Software, and to permit persons to whom the Software is
+% furnished to do so, subject to the following conditions:
+%
+% The above copyright notice and this permission notice shall be included in
+% all copies or substantial portions of the Software.
+%
+% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+% IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+% FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+% AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+% LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+% THE SOFTWARE.
+
+% Final
+\documentclass[a4paper, 10pt, titlepage, openright, oneside]{report}
+% Draft
+%\documentclass[a4paper, 10pt, titlepage, openright, twoside, draft]{report}
+
+\usepackage[utf8]{inputenc}      % standard
+\usepackage{csquotes}            % suppress babel warning
+\usepackage[UKenglish]{babel}    % standard for english support
+\usepackage[UKenglish]{isodate}  % For a proper date format
+\cleanlookdateon                 % Remove ordinal day reference
+\usepackage[T1]{fontenc}         % font encoding
+%\usepackage{graphicx}            % for including prebuilt graphics
+%\usepackage[final]{listingsutf8} % for code listings
+\usepackage{ifdraft}             % differentiate more easily b/w draft and final
+\usepackage{setspace}            % for onehalfspacing (part of uni spec)
+\usepackage{hyperref}            % fancy links in the pdf
+%\usepackage{amsmath}             % better math environment
+%\usepackage{pgfplots}            % for the plots in results
+%\usepackage{tikz}                % needed by pgfplots
+\usepackage [
+              backend=biber,
+              style=numeric,
+              sorting=none,
+              date=long,
+              urldate=long,
+              minbibnames=3,
+              maxbibnames=6,
+              firstinits=true
+            ] {biblatex}         % bibliography support
+\bibliography{98_bib}            % the bib file
+\usepackage[toc,nonumberlist]{glossaries}     % glossary support
+\usepackage{fancyhdr}            % uni spec header/footer
+%\usepackage{microtype}           % pdf microtype improvements
+\usepackage[]{caption}           % for adjusting the caption spacing
+\usepackage{subcaption}          % for creating a figure with two subfigures
+%\pgfplotsset{compat=1.8}
+
+\usepackage{pdfpages}   %to add existing pdf pages into the document
+\usepackage{blindtext}  %used to generate random text.
+
+% Set up a few extra font families for teletype rendering.
+\DeclareFontFamily{T1}{lmtt}{}
+\DeclareFontShape{T1}{lmtt}{m}{n}{<-> ec-lmtl10}{}
+\DeclareFontShape{T1}{lmtt}{m}{\itdefault}{<-> ec-lmtlo10}{}
+\DeclareFontShape{T1}{lmtt}{\bfdefault}{n}{<-> ec-lmtk10}{}
+\DeclareFontShape{T1}{lmtt}{\bfdefault}{\itdefault}{<-> ec-lmtko10}{}
+
+% Set a 2.54cm left and right hand margin on all pages
+\setlength{\oddsidemargin}{0cm}
+\setlength{\evensidemargin}{0cm}
+\setlength{\textwidth}{15.96cm}
+
+% Move the page number to the top right (odd) / left (even)
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\makeatletter
+\let\ps@plain\ps@fancy
+\makeatother
+% \fancyhead[LE,RO]{\thepage}
+\rhead{\thepage}
+\pagestyle{fancy}
+
+% Put the ``BigCorp Confidential'' string in the footer
+% Remove if not doing a company Confidential project
+% If the draft document option is set, put a big notice instead
+%\ifdraft{\cfoot{DRAFT}}{\cfoot{
+ %   \textsc{BigCorp}\textsuperscript{\textregistered} \textsc{Confidential}}}
+
+% Adjust caption spacing for figures & tables because they will be below the
+% content
+\captionsetup{belowskip=12pt,aboveskip=0pt}
+\captionsetup{singlelinecheck=false}
+\captionsetup{labelfont=bf}
+
+%%%=== BIBLIOGRAPHY SETUP ===%%%
+%%== Global Options ==%%
+% Colon and space after the author of an online resource
+\renewcommand*{\labelnamepunct}{\addcolon\addspace}
+\renewcommand*{\newunitpunct}{\addcomma\addspace}
+\DeclareNameAlias{default}{family-given}
+%%== Online References ==%%
+\DeclareFieldFormat[online, report, book]{title}{`#1'}
+\DeclareFieldFormat[online, report]{url}{\url{#1}}
+\DeclareFieldFormat[online, report]{urldate}{accessed #1}
+\renewbibmacro*{url+urldate}{%
+  \printfield{url}%
+  \iffieldundef{urlyear}
+  {}
+  {\setunit*{,\addspace}%
+   \cleanlookdateon%
+   \printurldate}}%}%
+%%== Report References ==%%
+% not implemented yet
+%%== Book References ==%%
+\renewbibmacro*{publisher+location+date}{%
+  \iflistundef{publisher}%
+    {}%
+    {\printtext[parens]{%
+      \printlist{publisher}%
+      \setunit*{\addcomma\space}%
+      \usebibmacro{date}%
+    }}%
+    \newunit%
+}
+
+% command for inline comments
+\newcommand{\comment}[1]{}
+
+
+\newcommand*{\glscode}{\texttt}
+\newglossary[nml]{nom}{nmn}{ncl}{List of Symbols}
+\makeglossaries             % create the glossary (this must be in the preamble)
+\renewcommand*\glscode{\textbf}
+\newcommand*\code{\texttt}
+% Glossary style for the list of symbols.
+\newlength{\acronymlabelwidth}
+\setlength{\acronymlabelwidth}{0.25\textwidth}
+\newglossarystyle{listwithwidth}{%
+  \renewenvironment{theglossary}%
+    {\begin{description}}{\end{description}}%
+  \renewcommand*{\glossaryheader}{}%
+  \renewcommand*{\glsgroupheading}[1]{}%
+  \renewcommand*{\glossaryentryfield}[5]{%
+    \item[\parbox{\acronymlabelwidth}{\glsentryitem{##1}\glstarget{##1}{##2}}]
+       ##3\glspostdescription\space}%
+  \renewcommand*{\glossarysubentryfield}[6]{%
+    \glssubentryitem{##2}%
+    \glstarget{##2}{\strut}##4\glspostdescription\space ##6.}%
+  \renewcommand*{\glsgroupskip}{\indexspace}%
+}
+
+\begin{document}
+
+  %%== Arrangement of files taken directly from page 41 of EE4 handbook ==%%
+
+  %%== Attach front cover here ==%%
+
+
+  \pagenumbering{Alph}  % Work around a LaTeX warning about duplicate page
+                        % references in the title page
+
+  % left and right margins - 6cm; top - 7cm; bottom - 17.5cm
+  \input{00_title_page}
+
+  \begin{onehalfspacing} % 1.5 line spacing (see pg.42 of the EE4 manual)
+
+    \pagenumbering{roman} % Roman numbering before the main body of text
+
+    \input{01_mission_statement}
+
+    \input{02_abstract}
+
+    \input{03_doo} %Declaration of Originality
+
+    \input{04_soa} %Statement of Achievement
+
+    \tableofcontents %Table of contents
+
+    %\clearpage
+    \include{99_glossary}       % Keep the glossary in a separate file to reduce
+                                %   clutter
+    \glsaddall[types={nom}]
+    % The list of symbols should go here (if needed)
+    \printglossary[type=nom,style=listwithwidth]
+
+    \cleardoublepage    % May need to clear that page if the list of symbols
+                        % exists
+
+    \label{glossary}
+    \printglossary
+
+    \cleardoublepage
+
+    \pagenumbering{arabic} %arabic numbering from the main text onward
+
+    \input{05_main} % Main text, this will contain individual chapters
+
+    \input{06_acknowledgements} % Acknowledgements
+
+    \input{07_references} % References
+
+    \input{08_appendices} % Appendices
+
+    %§\input{09_trademarks_and_copyright} % If doing an industry project
+
+  \end{onehalfspacing}
+  %%== Attach back cover here ==%%
+
+\end{document}

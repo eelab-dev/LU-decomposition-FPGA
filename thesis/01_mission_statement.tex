@@ -1,0 +1,82 @@
+% Copyright (c) 2015 Mihail Atanassov
+% Edited by Stewart Smith 2015
+%
+% Permission is hereby granted, free of charge, to any person obtaining a copy
+% of this software and associated documentation files (the "Software"), to deal
+% in the Software without restriction, including without limitation the rights
+% to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+% copies of the Software, and to permit persons to whom the Software is
+% furnished to do so, subject to the following conditions:
+%
+% The above copyright notice and this permission notice shall be included in
+% all copies or substantial portions of the Software.
+%
+% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+% IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+% FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+% AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+% LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+% THE SOFTWARE.
+
+%%== MISSION STATEMENT ==%%
+
+% Uncomment the following lines if you're adding your own mission statement from a PDF, change the number of pages in the options for \includepdf.
+
+%\addcontentsline{toc}{chapter}{Mission Statement}
+
+%\includepdf[pagecommand={\thispagestyle{headings}}, pages=1-2]{mission_statement.pdf}
+
+
+%if you're adding your own file comment out or delete all the lines below.
+\chapter*{Mission Statement}\label{mission_statement}
+\addcontentsline{toc}{chapter}{Mission Statement}
+
+\section*{Project Definition}
+\addcontentsline{toc}{section}{Project Definition}
+  
+  \section*{Main Tasks}
+  \addcontentsline{toc}{section}{Main Tasks}
+  
+  \section*{Background Knowledge}
+  \addcontentsline{toc}{section}{Background Knowledge}
+
+  \section*{Acceptance Criteria}
+  \addcontentsline{toc}{section}{Acceptance Criteria}
+
+
+  \pagebreak
+\vspace{36pt}
+ \newcommand*\justify{%
+   \fontdimen2\font=0.4em% interword space
+   \fontdimen3\font=0.2em% interword stretch
+   \fontdimen4\font=0.1em% interword shrink
+   \fontdimen7\font=0.1em% extra space
+  \hyphenchar\font=`\-% allowing hyphenation
+  }
+
+% Add the following to create a stand-alone mission statement for the start of
+% the project.
+%   \begin{sloppypar}
+%     \texttt{\justify
+%       The supervisor and student are satisfied that this project is
+%       suitable for performance and assessment in accordance with the
+%       guidelines of the course documentation.}
+%
+%     \vspace{2em}
+%     \texttt{Signed\hspace{\fill}}
+%
+%     \vspace{1em}
+%     \texttt{Student:\hspace{\fill}\makebox[0.5\linewidth]{\dotfill}}
+%
+%     \vspace{1em}
+%     \texttt{Industrial
+%       Supervisor:\hspace{\fill}\makebox[0.5\linewidth]{\dotfill}}
+%
+%     \vspace{1em}
+%     \texttt{University
+%       Supervisor:\hspace{\fill}\makebox[0.5\linewidth]{\dotfill}}
+%
+%     \vspace{1em}
+%     \texttt{Date:\hspace{\fill}\makebox[0.35\linewidth]{\dotfill}}
+%   \end{sloppypar}
