@@ -20,12 +20,21 @@
 % THE SOFTWARE.
 
 %%== APPENDICES ==%%
-\appendix
+\pagenumbering{Alph}
+\begin{appendices}
 
 % Reset all acronyms for the appendices
 \glsresetall
 
+\bookmarksetupnext{level=-1}
+\addappheadtotoc
+\makeatletter
+\addtocontents{toc}{\let\protect\l@chapter\protect\l@section}
+\makeatother
+
 \input{appendices/00_app1.tex}
 
 \input{appendices/01_app2.tex}
+
+\end{appendices}
 

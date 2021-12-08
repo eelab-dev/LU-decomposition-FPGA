@@ -1434,3 +1434,75 @@ Saving a matrix from an internal data structure to a Matrix Market file is a sim
 
 ### MatrixMarket I/O Functions for Matlab
 Matrix Market provides Matlab® M-files for three basic Matrix Market file I/O functions: [mminfo](Matrix_Sample/mminfo.m), [mmread](Matrix_Sample/mmread.m), and [mmwrite](Matrix_Sample/mmwrite.m).
+
+
+# 04/12/2021
+## Update HLS file
+To return LU result, the struct is needed
+```cpp
+typedef struct{
+	float l[SIZE][SIZE];
+	float u[SIZE][SIZE];
+} matrix_lu;
+```
+
+For `size=10`, the result is shown below. The time required is 910ns.
+![size=10](Resources/hls%20size%2010.png)
+
+For `size=20`, the result is shown below. The time required is 2810ns.
+![size=20](Resources/hls%20size%2020.png)
+
+For `size=30`, the result is shown below. The time required is 5710ns.
+![size=30](Resources/hls%20size%2030.png)
+
+For `size=40`, the result is shown below. The time required is 9610ns.
+![size=40](Resources/hls%20size%2040.png)
+
+For `size=50`, the result is shown below. The time required is 14510ns and the compilation time becomes much longer than before.
+![size=50](Resources/hls%20size%2050.png)
+
+### Array Partition
+```tcl
+#pragma HLS ARRAY_PARTITION variable=lu.l factor=5 type=block
+#pragma HLS ARRAY_PARTITION variable=lu.u factor=5 type=block
+```
+This command partitions the two elements of size 10 of the return structure variable `lu` into 5 subarrays with block partitions.
+
+For `size=10`, the result is shown below. The time required is 510ns.
+![size=10](Resources/hls%20partition%2010.png)
+
+If we change the partition type to cyclic, the estimated time does not change. However, it will use more resources than block method.
+![size=10](Resources/hls%20partition%2010%20cyclic.png)
+
+Now we switch back to block method and change the factor to 10. The result is shown below. We can see that the time required decrease and the resources usage increases a little bit.
+![size=10](Resources/hls%20partition%2010%20factor%2010.png)
+
+Change the factor back to 5 and let the input array `a` be partitioned as well, we can get the following result. The time needed remains unchanged but more resources are required.
+![size=10](Resources/hls%20partition%2010%20include%20a.png)
+
+Delete partitioned `a` and add `dim=2` to the command, which partitions dimension two of the two-dimensional array. The result is shown below. We can see that although the time required remains, it requires less resources.
+![size=10](Resources/hls%20partition%2010%20dim%202.png)
+
+For `dim=1`, the results are the same as without the *dim* argument.
+
+For `size=20, factor=5, dim=2`, the result is shown below. The time required is 1210ns.
+![size=20](Resources/hls%20partition%2020.png)
+
+For `size=30, factor=5, dim=2`, the result is shown below. The time required is 2110ns.
+![size=30](Resources/hls%20partition%2030.png)
+
+For `size=40, factor=5, dim=2`, the result is shown below. The time required is 3210ns.
+![size=40](Resources/hls%20partition%2040.png)
+
+For `size=50, factor=5, dim=2`, the result is shown below. The time required is 4510ns.
+![size=50](Resources/hls%20partition%2050.png)
+
+### Comparison
+![Partition compare](Resources/partition.svg)
+
+# 08/12/2021
+## [Thesis](thesis/ee4thesis.pdf)
+Start the thesis from the [latex template](thesis/).
+
+
+
