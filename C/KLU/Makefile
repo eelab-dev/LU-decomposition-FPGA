@@ -20,9 +20,21 @@ klu_demo: kludemo.c Makefile
 	- ./kludemo < ../../Matrix_Sample/w156.mtx
 	- ./kludemo < ../../Matrix_Sample/ctina.mtx
 
-klu_extract: klu_extract.cpp Makefile
-	$(CXX) $(INCL) $(STD) klu_extract.cpp -o klu_extract $(CLIB)
-	./klu_extract
+klu_demo2: kluldemo.c Makefile
+	$(CC) $(INCL) kluldemo.c -o kluldemo $(CLIB)
+	- ./kluldemo < ../../Matrix_Sample/test.mtx
+
+# klu_extract: klu_extract.cpp Makefile
+# 	$(CXX) $(INCL) $(STD) klu_extract.cpp -o klu_extract $(CLIB)
+# 	./klu_extract < ../../Matrix_Sample/test.mtx
+
+klu_extract: klu_extract.c Makefile
+	$(CC) $(INCL) klu_extract.c -o klu_extract $(CLIB)
+	./klu_extract < ../../Matrix_Sample/test.mtx
 
 klu_solve: klu_solve.c Makefile
 	$(CC) $(INCL) klu_solve.c -o klu_solve $(CLIB)
+
+btf: btf.c Makefile
+	$(CC) $(INCL) btf.c -o btf $(CLIB)
+	./btf < ../../Matrix_Sample/test.mtx

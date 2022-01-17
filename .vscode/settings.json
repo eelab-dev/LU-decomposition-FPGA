@@ -1,5 +1,6 @@
 {
     "files.associations": {
+        "*.cmake": "makefile",
         "*.py": "python",
         "iostream": "cpp",
         "chrono": "cpp",
@@ -65,7 +66,9 @@
         "hash_map": "cpp",
         "cholmod.h": "c",
         "cfenv": "cpp",
-        "cinttypes": "cpp"
+        "cinttypes": "cpp",
+        "stdio.h": "c",
+        "mutex": "cpp"
     },
     "editor.formatOnSave": true,
     "code-runner.runInTerminal": true,

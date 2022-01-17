@@ -3,7 +3,7 @@
 #include <hls_vector.h>
 #include "ap_int.h"
 
-const int SIZE = 50;
+const int SIZE = 30;
 
 typedef ap_uint<10> sizet;
 typedef hls::vector<hls::vector<float,SIZE>,SIZE> mat;
@@ -21,8 +21,8 @@ matrix_lu LUdecomposition(float a[SIZE][SIZE])//, float l[SIZE][SIZE], float u[S
 	int n = SIZE;
 	matrix_lu lu;
 
-#pragma HLS ARRAY_PARTITION variable=lu.l factor=5 type=block dim=2
-#pragma HLS ARRAY_PARTITION variable=lu.u factor=5 type=block dim=2
+#pragma HLS ARRAY_PARTITION variable=lu.l factor=10 type=block dim=2
+#pragma HLS ARRAY_PARTITION variable=lu.u factor=10 type=block dim=2
 
     for (sizet i = 0; i < n; i++)
     {
