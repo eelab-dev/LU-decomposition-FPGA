@@ -5,17 +5,8 @@
 
 const int N = 10;
 
-void sparselu(int squareSize, int *Ap, int *Ai, double *Ax, int *Lp, int *Li, double *Lx, int *Up, int *Ui, double *Ux)
+void sparselu(int squareSize, int *Ap, int *Ai, double *Ax, int *Lp, int *Li, double *Lx, int *Up, int *Ui, double *Ux, int lnz, int unz)
 {
-	int lnz = 1, unz = 0;
-
-	for (int i = 0; i < squareSize; i++)
-	{
-		Lp[i] = i;
-		Li[i] = i;
-		Lx[i] = 1;
-	}
-
 	for (int i = 0; i < squareSize; i++)
 	{
 		double b[N] = {0}, x[N] = {0};
@@ -34,44 +25,66 @@ void sparselu(int squareSize, int *Ap, int *Ai, double *Ax, int *Lp, int *Li, do
 		for (int j = 0; j < squareSize; j++)
 		{
 			double sum = 0;
+
 			for (int k = 0; k <= j; k++)
 			{
-
 				for (int t = Lp[k]; t < Lp[k + 1]; t++)
+				{
 					if (Li[t] == j)
-						sum += Lx[Li[t]] * x[k];
+						sum += Lx[t] * x[k];
+					else if (Li[t] > j)
+						break;
+				}
 			}
 			x[j] = b[j] - sum;
 		}
 
-		for (int j = 0; j <= i; j++)
+		for (int j = Up[i]; j < Up[i + 1]; j++)
 		{
-			if (std::abs(x[j]) < 1e-6)
+			if ((x[Ui[j]] < 1e-6) && (x[Ui[j]] > -1e6))
 				continue;
 			else
-			{
-				Ui[unz] = j;
-				Ux[unz++] = x[j];
-			}
+				Ux[j] = x[Ui[j]];
 		}
-		Up[i + 1] = unz;
 
-		for (int j = i + 1; j < squareSize; j++)
+		for (int j = Lp[i] + 1; j < Lp[i + 1]; j++)
 		{
-			if (std::abs(x[j]) < 1e-6)
+			if ((x[Li[j]] < 1e-6) && (x[Li[j]] > -1e6))
 				continue;
 			else
 			{
-				Li[lnz] = j;
-				Lx[lnz++] = x[j] / Ux[Up[i + 1] - 1];
+				Lx[j] = x[Li[j]] / Ux[Up[i + 1] - 1];
 			}
 		}
-		Lp[i + 1] = lnz;
-		if (i < squareSize - 1)
+	}
+}
+
+void analyse(int *Ap, int *Ai, int *Up, int *Ui, int *Lp, int *Li, double *Lx, int *lnz, int *unz, int n)
+{
+	for (int i = 0, count = 0; i < n; i++)
+	{
+		for (int j = Ap[i]; j < Ap[i + 1]; j++)
 		{
-			Li[lnz] = i + 1;
-			Lx[lnz++] = 1;
+			if (Ai[j] < i)
+			{
+				Ui[*unz] = Ai[count];
+				(*unz)++;
+			}
+			else if (Ai[j] == i)
+			{
+				Li[*lnz] = i;
+				Lx[(*lnz)++] = 1;
+				Ui[(*unz)++] = i;
+			}
+			else
+			{
+				Li[*lnz] = Ai[count];
+				(*lnz)++;
+			}
+			count++;
 		}
+		Lp[i + 1] = *lnz;
+		Up[i + 1] = *unz;
 	}
 }
 
@@ -93,36 +106,16 @@ int main(int argc, char *argv[])
 	Lx = (double *)_mm_malloc(data_size * sizeof(double), 32);
 	Ux = (double *)_mm_malloc(data_size * sizeof(double), 32);
 	std::cout << "Malloc Finished\n";
-	int lnz = 0, unz = 0, count = 0;
-	for (int i = 0; i < n; i++)
-	{
-		for (int j = Ap[i]; j < Ap[i + 1]; j++)
-		{
-			if (Ai[j] < i)
-			{
-				Ui[unz] = Ai[count];
-				unz++;
-			}
-			else if (Ai[j] == i)
-			{
-				Li[lnz] = i;
-				Lx[lnz++] = 1;
-				Ui[unz++] = i;
-			}
-			else
-			{
-				Li[lnz] = Ai[count];
-				lnz++;
-			}
-			count++;
-		}
-		Lp[i + 1] = lnz;
-		Up[i + 1] = unz;
-	}
 
-	// std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-	// sparselu(n, Ap, Ai, Ax, Lp, Li, Lx, Up, Ui, Ux);
-	// std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+	std::cout << data_size << std::endl;
+
+	int lnz = 0, unz = 0;
+
+	analyse(Ap, Ai, Up, Ui, Lp, Li, Lx, &lnz, &unz, n);
+
+	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+	sparselu(n, Ap, Ai, Ax, Lp, Li, Lx, Up, Ui, Ux, lnz, unz);
+	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
 	for (int i = 0; i < n + 1; i++)
 		printf("Lp[%d]=%d\tLi[%d]=%d\tLx[%d]=%lf\tUp[%d]=%d\tUi[%d]=%d\tUx[%d]=%lf\n", i, Lp[i], i, Li[i], i, Lx[i], i, Up[i], i, Ui[i], i, Ux[i]);
@@ -131,6 +124,6 @@ int main(int argc, char *argv[])
 	for (int i = n + 1; i < unz; i++)
 		printf("Ui[%d]=%d\tUx[%d]=%lf\n", i, Ui[i], i, Ux[i]);
 
-	// std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "[ns]" << std::endl;
+	std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "[ns]" << std::endl;
 	return 0;
 }

@@ -247,3 +247,45 @@ $$
 	0&		U_{22}\\
 \end{matrix} \right]
 $$
+
+
+# 15/01/2021
+## Improve Gilbert-Peierls' algorithm
+As the elements in the **L** and **U** is fixed, we can preallocate the indexes using the function below.
+
+See [here](C/sparse2.cpp) for more detail.
+```cpp
+void analyse(int *Ap, int *Ai, int *Up, int *Ui, int *Lp, int *Li, double *Lx, int *lnz, int *unz, int n)
+{
+	for (int i = 0, count = 0; i < n; i++)
+	{
+		for (int j = Ap[i]; j < Ap[i + 1]; j++)
+		{
+			if (Ai[j] < i)
+			{
+				Ui[*unz] = Ai[count];
+				(*unz)++;
+			}
+			else if (Ai[j] == i)
+			{
+				Li[*lnz] = i;
+				Lx[(*lnz)++] = 1;
+				Ui[(*unz)++] = i;
+			}
+			else
+			{
+				Li[*lnz] = Ai[count];
+				(*lnz)++;
+			}
+			count++;
+		}
+		Lp[i + 1] = *lnz;
+		Up[i + 1] = *unz;
+	}
+}
+```
+
+## Implement in Vitis
+[Host code](C/vitis/sparse/host.cpp).
+
+[Kernel code](C/vitis/sparse/sparse.cpp).

@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.sparse import csc_matrix
+from scipy.linalg import lu
 
 indptr = np.array([0, 2, 4, 6, 7, 8])
 indices = np.array([0, 3, 1, 2, 2, 3, 3, 4])
@@ -24,3 +25,5 @@ print(data)
 A = csc_matrix(data)
 print(repr(A.indptr), repr(A.indices), repr(A.data), sep='\n')
 print(repr(data.flatten()))
+P, L, U = lu(data)
+print(P, L, U, sep='\n')
