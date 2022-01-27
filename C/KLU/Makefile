@@ -22,7 +22,7 @@ klu_demo: kludemo.c Makefile
 
 klu_demo2: kluldemo.c Makefile
 	$(CC) $(INCL) kluldemo.c -o kluldemo $(CLIB)
-	- ./kluldemo < ../../Matrix_Sample/test.mtx
+	- ./kluldemo < ../../Matrix_Sample/test4.mtx
 
 # klu_extract: klu_extract.cpp Makefile
 # 	$(CXX) $(INCL) $(STD) klu_extract.cpp -o klu_extract $(CLIB)

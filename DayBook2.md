@@ -289,3 +289,68 @@ void analyse(int *Ap, int *Ai, int *Up, int *Ui, int *Lp, int *Li, double *Lx, i
 [Host code](C/vitis/sparse/host.cpp).
 
 [Kernel code](C/vitis/sparse/sparse.cpp).
+
+
+
+# 21/01/2022
+## Benchmark
+**[File here](C/sparse3.c)**
+
+First, we use a small  5x5 sparse [matrix](Matrix_Sample/test.mtx) with 12 nonzeros to test.
+Run for ten times and it takes about **0.9us** to decompose on average.
+
+Then, we use a 10x10 sparse [matrix](Matrix_Sample/test4.mtx) with 24 to test.
+Run for ten times and it takes about **2.9us** to decompose on average.
+
+Then, we try a little large matrix [HB/bcspwr01](https://sparse.tamu.edu/HB/bcspwr01). It is a 39x39 matrix with 131 nonzeros.
+Run for ten times and it takes about **61.5us** to decompose on average. It is much longer that the 5x5 sparse matrix.
+
+![bcspwr01](https://suitesparse-collection-website.herokuapp.com/files/HB/bcspwr01.png)
+
+**[With KLU](C/KLU/kluldemo.c)**
+
+KLU itself is more stable. For the 5x5 sparse matrix, it takes about **2.3us** to decompose on average.
+
+For the 10x10 sparse matrix, it takes about **2.9us** to decompose on average.
+
+For the *HB/bcspwr01* matrix, it takes about **3us**. Only 0.3us longer that the size of 5.
+
+
+# 22/01/2022
+## Emulation on FPGA
+The reason that *the simulation exited unexpectedly* previously is that the memory migration error.
+As the kernel requires 10 arguments in total, shown below, not only the first four arguments are initialized, part of the other parameters are also initialized, which also are needed to transfer to the kernel.
+```c
+void sparselu(int squareSize, int *AP, int *AI, double *AX, int *LP, int *LI, double *LX, int *UP, int *UI, double *UX)
+```
+
+Therefore, the memory migration should be written as:
+```cpp
+OCL_CHECK(err, err = q.enqueueMigrateMemObjects({buffer_output1, buffer_output2, buffer_output3, buffer_output4, buffer_output5, buffer_output6}, CL_MIGRATE_MEM_OBJECT_HOST));
+```
+
+## Emulation Result
+![Kernel](Resources/emulation10.png)
+![Kernel](Resources/emulation10kerneldata.png)
+![Kernel](Resources/emulation10hls.png)
+
+# 25/01/2022
+## Improved - Reachability
+The main reason that what I have written is much slower is that it does not know the data index in a row. Therefore, when implementing the Gilbert-Peierls, especially when solving
+$$
+x=L\backslash A(:,k)
+$$
+Much of the time is spent on searching for data when may exist in a certain row.
+
+Therefore, to solve this problem, we need to have a knowledge about how the data is distributed.
+
+![Reach](Resources/klureach.png)
+
+For example, if we have a matrix like this
+
+![Matrix](Resources/klumatrix.jpg)
+
+We can derive its reachability
+
+![Reach Diagram](Resources/klureachdiagram.png)
+

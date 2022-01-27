@@ -5,7 +5,7 @@
 #include <ctime>
 #include <random>
 
-const int SIZE = 10;
+const int SIZE = 39;
 
 int main()
 {

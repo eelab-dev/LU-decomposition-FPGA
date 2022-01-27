@@ -16,7 +16,7 @@
             "externalConsole": false,
             "MIMode": "gdb",
             //   "miDebuggerPath":"/usr/bin/lldb-13",
-            "preLaunchTask": "clang++ build active file"
+            // "preLaunchTask": "clang++ build active file"
         }
     ]
 }

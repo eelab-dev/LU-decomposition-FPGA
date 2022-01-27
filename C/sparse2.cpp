@@ -11,17 +11,9 @@ void sparselu(int squareSize, int *Ap, int *Ai, double *Ax, int *Lp, int *Li, do
 	{
 		double b[N] = {0}, x[N] = {0};
 
-		if (Ap[i] != Ap[i + 1])
-		{
-			for (int j = Ap[i]; j < Ap[i + 1]; j++)
-				b[Ai[j]] = Ax[j];
-		}
-		else
-		{
-			// Lp[i] = 0;
-			Up[i] = 0;
-			continue;
-		}
+		for (int j = Ap[i]; j < Ap[i + 1]; j++)
+			b[Ai[j]] = Ax[j];
+
 		for (int j = 0; j < squareSize; j++)
 		{
 			double sum = 0;
@@ -33,7 +25,7 @@ void sparselu(int squareSize, int *Ap, int *Ai, double *Ax, int *Lp, int *Li, do
 					if (Li[t] == j)
 						sum += Lx[t] * x[k];
 					else if (Li[t] > j)
-						break;
+						t = Lp[k + 1];
 				}
 			}
 			x[j] = b[j] - sum;
@@ -41,20 +33,18 @@ void sparselu(int squareSize, int *Ap, int *Ai, double *Ax, int *Lp, int *Li, do
 
 		for (int j = Up[i]; j < Up[i + 1]; j++)
 		{
-			if ((x[Ui[j]] < 1e-6) && (x[Ui[j]] > -1e6))
-				continue;
-			else
+			if ((x[Ui[j]] > 1e-6) || (x[Ui[j]] < -1e6))
 				Ux[j] = x[Ui[j]];
+			else
+				Ux[j] = 0;
 		}
 
 		for (int j = Lp[i] + 1; j < Lp[i + 1]; j++)
 		{
-			if ((x[Li[j]] < 1e-6) && (x[Li[j]] > -1e6))
-				continue;
-			else
-			{
+			if ((x[Li[j]] > 1e-6) || (x[Li[j]] < -1e6))
 				Lx[j] = x[Li[j]] / Ux[Up[i + 1] - 1];
-			}
+			else
+				Ux[j] = 0;
 		}
 	}
 }

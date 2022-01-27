@@ -1,5 +1,3 @@
-% Encoding: UTF-8
-
 @InProceedings{5377665,
   author    = {Kapre, Nachiket and DeHon, André},
   booktitle = {2009 International Conference on Field-Programmable Technology},
@@ -9,6 +7,7 @@
   pages     = {190-198},
   abstract  = {Fine-grained dataflow processing of sparse matrix-solve computation (Ax¿ = b¿) in the SPICE circuit simulator can provide an order of magnitude performance improvement on modern FPGAs. Matrix solve is the dominant component of the simulator especially for large circuits and is invoked repeatedly during the simulation, once for every iteration. We process sparse-matrix computation generated from the SPICE-oriented KLU solver in dataflow fashion across multiple spatial floating-point operators coupled to high-bandwidth on-chip memories and interconnected by a low-latency network. Using this approach, we are able to show speedups of 1.2-64× (geometric mean of 8.8×) for a range of circuits and benchmark matrices when comparing double-precision implementations on a 250 MHz Xilinx Virtex-5 FPGA (65 nm) and an Intel Core i7 965 processor (45 nm).},
   file      = {:Parallelizing_sparse_Matrix_Solve_for_SPICE_circuit_simulation_using_FPGAs.pdf:PDF},
+  groups    = {FPGA},
 }
 
 @InProceedings{6241646,
@@ -20,6 +19,7 @@
   url       = {https://ieeexplore.ieee.org/document/6241646},
   abstract  = {Sparse solver has become the bottleneck of SPICE simulators. There has been few work on GPU-based sparse solver because of the high data-dependency. The strong data-dependency determines that parallel sparse LU factorization runs efficiently on shared-memory computing devices. But the number of CPU cores sharing the same memory is often limited. The state of the art Graphic Processing Units (GPU) naturally have numerous cores sharing the device memory, and provide a possible solution to the problem. In this paper, we propose a GPU-based sparse LU solver for circuit simulation. We optimize the work partitioning, the number of active thread groups, and the memory access pattern, based on GPU architecture. On matrices whose factorization involves many floating-point operations, our GPU-based sparse LU factorization achieves 7.90× speedup over 1-core CPU and 1.49× speedup over 8-core CPU. We also analyze the scalability of parallel sparse LU factorization and investigate the specifications on CPUs and GPUs that most influence the performance.},
   file      = {:Sparse_LU_factorization_for_parallel_circuit_simulation_on_GPU.pdf:PDF},
+  groups    = {GPU},
   issn      = {0738-100X},
 }
 
@@ -35,6 +35,7 @@
   volume       = {26},
   abstract     = {The sparse matrix solver by LU factorization is a serious bottleneck in Simulation Program with Integrated Circuit Emphasis (SPICE)-based circuit simulators. The state-of-the-art Graphics Processing Units (GPU) have numerous cores sharing the same memory, provide attractive memory bandwidth and compute capability, and support massive thread-level parallelism, so GPUs can potentially accelerate the sparse solver in circuit simulators. In this paper, an efficient GPU-based sparse solver for circuit problems is proposed. We develop a hybrid parallel LU factorization approach combining task-level and data-level parallelism on GPUs. Work partitioning, number of active thread groups, and memory access patterns are optimized based on the GPU architecture. Experiments show that the proposed LU factorization approach on NVIDIA GTX580 attains an average speedup of 7.02× (geometric mean) compared with sequential PARDISO, and 1.55× compared with 16-threaded PARDISO. We also investigate bottlenecks of the proposed approach by a parametric performance model. The performance of the sparse LU factorization on GPUs is constrained by the global memory bandwidth, so the performance can be further improved by future GPUs with larger memory bandwidth.},
   file         = {:GPU-Accelerated_Sparse_LU_Factorization_for_Circuit_Simulation_with_Performance_Modeling.pdf:PDF},
+  groups       = {GPU},
 }
 
 @InProceedings{6164974,
@@ -46,6 +47,7 @@
   pages     = {359-364},
   abstract  = {Sparse matrix solver has become the bottleneck in SPICE simulator. It is difficult to parallelize the solver because of the high data-dependency during the numerical LU factorization. This paper proposes a parallel LU factorization (with partial pivoting) algorithm on shared-memory computers with multi-core CPUs, to accelerate circuit simulation. Since not every matrix is suitable for parallel algorithm, a predictive method is proposed to decide whether a matrix should use parallel or sequential algorithm. The experimental results on 35 circuit matrices reveal that the developed algorithm achieves speedups of 2.11×~8.38× (on geometric-average), compared with KLU, with 1~8 threads, on the matrices which are suitable for parallel algorithm. Our solver can be downloaded from http://nicslu.weebly.com.},
   file      = {:An_adaptive_LU_factorization_algorithm_for_parallel_circuit_simulation.pdf:PDF},
+  groups    = {Algorithm},
   issn      = {2153-697X},
 }
 
@@ -61,6 +63,7 @@
   volume       = {26},
   abstract     = {Lower-upper (LU) factorization is widely used in many scientific computations. It is one of the most critical modules in circuit simulators, such as the Simulation Program With Integrated Circuit Emphasis. To exploit the emerging graphics process unit (GPU) computing platforms, several GPU-based sparse LU solvers have been recently proposed. In this paper, efficient algorithms are presented to enhance the ability of GPU-based LU solvers to achieve higher parallelism as well as to exploit the dynamic parallelism feature in the state-of-the-art GPUs. Also, rigorous performance comparisons of the proposed algorithms with GLU as well as KLU, for both the single-precision and double-precision cases, are presented.},
   file         = {:Dynamic_GPU_Parallel_Sparse_LU_Factorization_for_Fast_Circuit_Simulation.pdf:PDF},
+  groups       = {GPU},
 }
 
 @InProceedings{9105410,
@@ -72,6 +75,7 @@
   pages     = {131-136},
   abstract  = {It is well known that solving a sparse system of linear equations is the workhorse critical step in analog and RF circuit simulation. The LU factorization of sparse system matrix is a key operation in order to solve a system of linear equations. Extracting parallelism to factorize a sparse matrix requires knowledge of pattern of non-zeros in the matrix. Exploiting the fact that sparsity patterns of matrices involved in circuit simulations do not change across iterations, the schedule of computing steps of LU factorization can be statically determined and analyzed for parallelism. This approach has been well investigated by [1] and [2] in recent years. Our work improvises this well-researched approach and exposes more parallelism, thereby yielding improved results (by factor up to 2). The accelerated design is prototyped using custom high-level-synthesis tool specific to LU decomposition problem. The case of RF Circuits is treated slightly differently. Such circuits have a number of nonlinear components. Periodic steady state response can be determined efficiently using Harmonic Balance method even when amplitudes are not small. Acceleration of this method has been a subject of vigorous interest in recent years [4], [7]. The system matrix appearing in this method is a sparse set of tiles whose solution can benefit from the techniques mentioned above. The sparsity pattern is inherited from the circuit connections. This paper describes FPGA-and manycore-based acceleration of automated Harmonic Balance (HB) simulator which simulates a circuit with a netlist similar to SPICE. Our 100MHz custom digital design on the FPGA of ZedBoard (XC7Z020) yields a speed up of up to 4.39 over the on-chip dual Core ARM Cortex-A9, 666 MHz processor. And on Intel's Xeon Phi Knights Landing (KNL) manycore chip, we obtain a speed up of up to 8.96 over a 4-core Intel i7 processor running at 3GHz clock frequency.},
   file      = {:FPGA-Based_Acceleration_of_LU_decomposition_for_Analog_and_RF_Circuit_Simulation.pdf:PDF},
+  groups    = {FPGA},
   issn      = {2380-6923},
 }
 
@@ -82,6 +86,7 @@
   title       = {{KLU--A high performance sparse linear solver for circuit simulation problems}},
   url         = {https://ufdc.ufl.edu/UFE0011721/00001/citation},
   file        = {:KLU--A high performance sparse linear solver for circuit simulation problems.pdf:PDF},
+  groups      = {Algorithm},
 }
 
 @Article{doi:10.1137/0909058,
@@ -96,6 +101,7 @@
   url          = {https://doi.org/10.1137/0909058},
   volume       = {9},
   file         = {:Sparse Partial Pivoting in Time Proportional to Arithmetic Operations.pdf:PDF},
+  groups       = {Algorithm},
 }
 
 @Article{5710875,
@@ -110,6 +116,7 @@
   volume       = {61},
   abstract     = {Decomposition of a matrix into lower and upper triangular matrices (LU decomposition) is a vital part of many scientific and engineering applications, and the block LU decomposition algorithm is an approach well suited to parallel hardware implementation. This paper presents an approach to speed up implementation of the block LU decomposition algorithm using FPGA hardware. Unlike most previous approaches reported in the literature, the approach does not assume the matrix can be stored entirely on chip. The memory accesses are studied for various FPGA configurations, and a schedule of operations for scaling well is shown. The design has been synthesized for FPGA targets and can be easily retargeted. The design outperforms previous hardware implementations, as well as tuned software implementations including the ATLAS and MKL libraries on workstations.},
   file         = {:FPGA-Based_High-Performance_and_Scalable_Block_LU_Decomposition_Architecture.pdf:PDF},
+  groups       = {FPGA},
 }
 
 @Article{10.1145/1824801.1824814,
@@ -125,6 +132,7 @@
   abstract     = {KLU is a software package for solving sparse unsymmetric linear systems of equations that arise in circuit simulation applications. It relies on a permutation to Block Triangular Form (BTF), several methods for finding a fill-reducing ordering (variants of approximate minimum degree and nested dissection), and Gilbert/Peierls’ sparse left-looking LU factorization algorithm to factorize each block. The package is written in C and includes a MATLAB interface. Performance results comparing KLU with SuperLU, Sparse 1.3, and UMFPACK on circuit simulation matrices are presented. KLU is the default sparse direct solver in the XyceTMcircuit simulation package developed by Sandia National Laboratories.},
   articleno    = {36},
   file         = {:KLU, A Direct Sparse Solver for Circuit Simulation Problems.pdf:PDF},
+  groups       = {Algorithm},
   issue_date   = {September 2010},
   keywords     = {LU factorization, circuit simulation, sparse matrices},
   location     = {New York, NY, USA},
@@ -143,6 +151,7 @@
   bibsource    = {dblp computer science bibliography, https://dblp.org},
   biburl       = {https://dblp.org/rec/journals/corr/abs-1805-08288.bib},
   file         = {:Transformations of High-Level Synthesis Codes for High-Performance Computing.pdf:PDF},
+  groups       = {Algorithm},
   timestamp    = {Wed, 16 Jun 2021 11:47:25 +0200},
 }
 
@@ -156,6 +165,7 @@
   url       = {http://www.zynqbook.com/},
   abstract  = {This book is about the Zynq-7000 All Programmable System on Chip, the family of devices from Xilinx that combines an application-grade ARM Cortex-A9 processor with traditional FPGA logic fabric. Catering for both new and experienced readers, it covers fundamental issues in an accessible way, starting with a clear overview of the device architecture, and an introduction to the design tools and processes for developing a Zynq SoC. Later chapters progress to more advanced topics such as embedded systems development, IP block design and operating systems. Maintaining a 'real-world' perspective, the book also compares Zynq with other device alternatives, and considers end-user applications. The Zynq Book is accompanied by a set of practical tutorials hosted on a companion website. These tutorials will guide the reader through first steps with Zynq, following on to a complete, audio-based embedded systems design.},
   file      = {:D\:/74133/OneDrive - University of Edinburgh/Senior/Project/Vitis/The_Zynq_Book_ebook_chinese.pdf:PDF},
+  groups    = {FPGA},
 }
 
 @Book{doi:10.1137/1.9780898718881,
@@ -167,6 +177,7 @@
   publisher = {Society for Industrial and Applied Mathematics},
   url       = {https://epubs.siam.org/doi/abs/10.1137/1.9780898718881},
   file      = {:Direct Methods for Sparse Linear Systems by Timothy A. Davis.pdf:PDF},
+  groups    = {Algorithm},
 }
 
 @Article{doi:10.1137/S0895479895291765,
@@ -181,6 +192,7 @@
   url          = {https://doi.org/10.1137/S0895479895291765},
   volume       = {20},
   file         = {:A Supernodal Approach to Sparse Partial Pivoting.pdf:PDF},
+  groups       = {Algorithm},
 }
 
 @Article{article,
@@ -189,6 +201,7 @@
   title  = {{The Matrix Market Exchange Formats: Initial Design}},
   url    = {https://www.researchgate.net/publication/2630533_The_Matrix_Market_Exchange_Formats_Initial_Design},
   file   = {:The Matrix Market Exchange Formats - Initial Design.pdf:PDF},
+  groups = {Algorithm},
 }
 
 @Article{2018arXiv180503648K,
@@ -204,6 +217,7 @@
   adsnote      = {Provided by the SAO/NASA Astrophysics Data System},
   adsurl       = {https://ui.adsabs.harvard.edu/abs/2018arXiv180503648K},
   file         = {:D\:/74133/OneDrive - University of Edinburgh/Senior/Project/Vitis/Parallel Programming for FPGAs.pdf:PDF},
+  groups       = {FPGA},
   keywords     = {Computer Science - Hardware Architecture},
 }
 
@@ -219,6 +233,7 @@
   abstract   = {AMD is a set of routines that implements the approximate minimum degree ordering algorithm to permute sparse matrices prior to numerical factorization. There are versions written in both C and Fortran 77. A MATLAB interface is included.},
   address    = {New York, NY, USA},
   file       = {:AMD, an approximate minimum degree ordering algorithm.pdf:PDF},
+  groups     = {Algorithm},
   issue_date = {September 2004},
   journal    = {ACM Trans. Math. Softw.},
   keywords   = {sparse matrices, Linear equations, minimum degree, ordering methods},
@@ -228,6 +243,101 @@
   year       = {2004},
 }
 
+@Article{6747987,
+  author  = {Nechma, Tarek and Zwolinski, Mark},
+  title   = {Parallel Sparse Matrix Solution for Circuit Simulation on FPGAs},
+  doi     = {10.1109/TC.2014.2308202},
+  number  = {4},
+  pages   = {1090-1103},
+  volume  = {64},
+  file    = {:Parallel_Sparse_Matrix_Solution_for_Circuit_Simulation_on_FPGAs.pdf:PDF},
+  groups  = {FPGA},
+  journal = {IEEE Transactions on Computers},
+  year    = {2015},
+}
+
+@Article{DBLP:journals/corr/abs-1907-05309,
+  author     = {Matthias Bollh{\"{o}}fer and Olaf Schenk and Radim Janal{\'{\i}}k and Steve Hamm and Kiran Gullapalli},
+  title      = {State-of-The-Art Sparse Direct Solvers},
+  eprint     = {1907.05309},
+  eprinttype = {arXiv},
+  url        = {http://arxiv.org/abs/1907.05309},
+  volume     = {abs/1907.05309},
+  bibsource  = {dblp computer science bibliography, https://dblp.org},
+  biburl     = {https://dblp.org/rec/journals/corr/abs-1907-05309.bib},
+  file       = {:State-of-The-Art Sparse Direct Solvers.pdf:PDF},
+  groups     = {Algorithm},
+  journal    = {CoRR},
+  timestamp  = {Sat, 23 Jan 2021 01:20:44 +0100},
+  year       = {2019},
+}
+
+@Article{https://doi.org/10.1002/cpe.748,
+  author   = {Wang, Xiaofang and Ziavras, Sotirios G.},
+  title    = {Parallel LU factorization of sparse matrices on FPGA-based configurable computing engines},
+  doi      = {https://doi.org/10.1002/cpe.748},
+  eprint   = {https://onlinelibrary.wiley.com/doi/pdf/10.1002/cpe.748},
+  number   = {4},
+  pages    = {319-343},
+  url      = {https://onlinelibrary.wiley.com/doi/abs/10.1002/cpe.748},
+  volume   = {16},
+  abstract = {Abstract Configurable computing, where hardware resources are configured appropriately to match specific hardware designs, has recently demonstrated its ability to significantly improve performance for a wide range of computation-intensive applications. With steady advances in silicon technology, as predicted by Moore's Law, Field-Programmable Gate Array (FPGA) technologies have enabled the implementation of System-on-a-Programmable-Chip (SOPC or SOC) computing platforms, which, in turn, have given a significant boost to the field of configurable computing. It is possible to implement various specialized parallel machines in a single silicon chip. In this paper, we describe our design and implementation of a parallel machine on an SOPC development board, using multiple instances of a soft IP configurable processor; we use this machine for LU factorization. LU factorization is widely used in engineering and science to solve efficiently large systems of linear equations. Our implementation facilitates the efficient solution of linear equations at a cost much lower than that of supercomputers and networks of workstations. The intricacies of our FPGA-based design are presented along with tradeoff choices made for the purpose of illustration. Performance results prove the viability of our approach. Copyright © 2004 John Wiley \& Sons, Ltd.},
+  file     = {:Parallel LU factorization of sparse matrices on FPGA‐based configurable.pdf:PDF},
+  groups   = {FPGA},
+  journal  = {Concurrency and Computation: Practice and Experience},
+  keywords = {FPGA, LU factorization, matrix inversion, parallel processing, hardware design, SOPC/SOC},
+  year     = {2004},
+}
+
+@PhdThesis{soton347886,
+  author   = {Tarek Nechma},
+  title    = {Parallel sparse matrix solution for direct circuit simulation on a multiple FPGA system},
+  url      = {https://eprints.soton.ac.uk/347886/},
+  abstract = {SPICE, from the University of California, at Berkeley, is the de facto world standard for circuit simulation. SPICE is used to model the behaviour of electronic circuits prior to manufacturing to decrease defects and hence reduce costs. However, accurate SPICE simulations of today's sub micron circuits can often take days or weeks on conventional processors. In a nutshell, a SPICE simulation is an iterative process that consists of two phases per iteration, namely, model evaluation followed by a matrix solution. The model evaluation phase has been found to be easily parallelisable unlike the subsequent phase, which involves the solution of highly sparse and asymmetric matrices. In this thesis, we present an FPGA implementation of a sparse matrix solver hardware, geared towards matrices that arise in SPICE circuit simulations. As such, we demonstrate how we extract parallelism at different granularities to accelerate the solution process. Our approach combines static pivoting with symbolic analysis to compute an accurate task flow-graph which efficiently exploits parallelism at multiple granularities and sustains high floating-point data rates. We also present a quantitative comparison between the performance of our hardware prototype and state-of-the-art software package running on a general purpose PC equipped with a 2.67 GHz six-core 12 thread Intel Core Xeon X5650 microprocessor and 6 GB memory. We report average speedups of 9.65x, 11.83x, 17.21x against UMFPACK, KLU, and Kundert Sparse matrix packages respectively. We also detail our approach to adapt our sparse LU hardware prototype from a single-FPGA architecture to a multi-FPGA system to achieve higher acceleration ratios up to 38x for certain circuit matrices.},
+  file     = {:Parallel Sparse Matrix Solution for Direct Circuit Simulation on a Multiple.pdf:PDF},
+  groups   = {FPGA},
+  month    = {December},
+  school   = {University of Southampton},
+  year     = {2012},
+}
+
+@InProceedings{Wu2011,
+  author    = {Wu, Wei and Shan, Yi and Chen, Xiaoming and Wang, Yu and Yang, Huazhong},
+  booktitle = {Reconfigurable Computing: Architectures, Tools and Applications},
+  date      = {2011},
+  title     = {FPGA Accelerated Parallel Sparse Matrix Factorization for Circuit Simulations},
+  editor    = {Koch, Andreas and Krishnamurthy, Ram and McAllister, John and Woods, Roger and El-Ghazawi, Tarek},
+  isbn      = {978-3-642-19475-7},
+  location  = {Berlin, Heidelberg},
+  pages     = {302--315},
+  publisher = {Springer Berlin Heidelberg},
+  abstract  = {Sparse matrix factorization is a critical step for the circuit simulation problem, since it is time consuming and computed repeatedly in the flow of circuit simulation. To accelerate the factorization of sparse matrices, a parallel CPU+FPGA based architecture is proposed in this paper. While the pre-processing of the matrix is implemented on CPU, the parallelism of numeric factorization is explored by processing several columns of the sparse matrix simultaneously on a set of processing elements (PE) in FPGA. To cater for the requirements of circuit simulation, we also modified the Gilbert/Peierls (G/P) algorithm and considered the scalability of our architecture. Experimental results on circuit matrices from the University of Florida Sparse Matrix Collection show that our architecture achieves speedup of 0.5x-5.36x compared with the CPU KLU results.},
+  file      = {:FPGA Accelerated Parallel Sparse Matrix Factorization for Circuit Simulations.pdf:PDF},
+  groups    = {FPGA},
+}
+
+@Article{Tarjan1972,
+  author       = {Tarjan, Robert},
+  date         = {1972},
+  journaltitle = {SIAM Journal on Computing},
+  title        = {Depth-First Search and Linear Graph Algorithms},
+  doi          = {10.1137/0201010},
+  eprint       = {https://doi.org/10.1137/0201010},
+  number       = {2},
+  pages        = {146-160},
+  url          = {https://doi.org/10.1137/0201010},
+  volume       = {1},
+  file         = {:Depth-first search and linear graph algorithms.pdf:PDF},
+  groups       = {Algorithm},
+}
+
 @Comment{jabref-meta: databaseType:biblatex;}
 
 @Comment{jabref-meta: fileDirectoryLatex-74133-YCZhang:D:\\74133\\OneDrive - University of Edinburgh\\Senior\\Project\\thesis;}
+
+@Comment{jabref-meta: grouping:
+0 AllEntriesGroup:;
+1 StaticGroup:FPGA\;0\;1\;0x0000ffff\;\;\;;
+1 StaticGroup:Algorithm\;0\;1\;0xffff00ff\;\;\;;
+1 StaticGroup:GPU\;0\;0\;0xff0000ff\;\;\;;
+}
