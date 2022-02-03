@@ -7,6 +7,6 @@ INCL=-I../KLU/include
 
 STD=-std=c++17 -stdlib=libc++
 
-sparse3: sparse3.c Makefile
-	$(CC) $(INCL) sparse3.c -o sparse3 $(CLIB) -O2
-	- ./sparse3 < ../Matrix_Sample/test4.mtx
+sparse3: sparse3.cpp Makefile
+	$(CXX) $(INCL) $(STD) sparse3.cpp -o sparse3 $(CLIB) -O2
+	- ./sparse3 < ../Matrix_Sample/test2.mtx

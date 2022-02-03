@@ -354,3 +354,83 @@ We can derive its reachability
 
 ![Reach Diagram](Resources/klureachdiagram.png)
 
+# 28/01/2022
+## Improved timing method
+Using `<chrono>` timing method in C++ instead of `<time.h>`
+is C, Benchmark the code.
+
+For the [HB/ash85](https://sparse.tamu.edu/HB/ash85) matrix, which is 85x85 with 523 entries, it will take my code about 30us to finish.
+
+![HB/ash85](https://suitesparse-collection-website.herokuapp.com/files/HB/ash85.png)
+
+For KLU, it will take about 3.2us to finish.
+
+This result is better than the timing result is `C`.
+
+# 29/01/2022
+## Unroll loop in Kernel
+Loop Unrolling
+The compiler can also unroll a loop, either partially or completely to perform multiple loop
+iterations in parallel. This is done using the pragma HLS unroll. Unrolling a loop can lead to a very
+fast design, with significant parallelism. However, because all the operations of the loop
+iterations are executed in parallel, a large amount of programmable logic resource are required to
+implement the hardware. As a result, the compiler can face challenges dealing with such a large
+number of resources and can face capacity problems that slow down the kernel compilation
+process. It is a good guideline to unroll loops that have a small loop body, or a small number of
+iterations.
+
+```c
+vadd: for(int i = 0; i < 20; i++) {
+#pragma HLS UNROLL
+c[i] = a[i] + b[i];
+}
+```
+
+In the preceding example, you can see `pragma HLS UNROLL` has been inserted into the body of
+the loop to instruct the compiler to unroll the loop completely. All 20 iterations of the loop are
+executed in parallel if that is permitted by any data dependency.
+
+Completely unrolling a loop can consume significant device resources, while partially unrolling the
+loop provides some performance improvement while using fewer hardware resources.
+
+**My code**
+
+In my code, I apply the `unroll` pragma during the data reading from the global memory as well as the writing to memory process.
+
+In addition, I also apply `unroll` for the last two steps of the Gilbert-Peierls' algorithm, i.e.
+```cpp
+L=I; // I=identity matrix
+for k=1:N
+b = A(:,k); // kth column of A
+x = L \ b; // \ is Lx=b solve
+U(1:k) = x(1:k); 	<--
+L(k+1:N) = x(k+1:N) / U(k,k); <--
+end;
+// return L and U as result
+```
+
+With unroll, we can see that the kernel time decreases from 71us to 50us.
+
+![With Unroll](Resources/emulation10%20unroll.png)
+
+# 02/02/2022
+## Further deep in KLU
+To implement KLU factorization in FPGA, I find that the function
+```c
+static void factor2
+(
+    /* inputs, not modified */
+    Int Ap [ ],         /* size n+1, column pointers */
+    Int Ai [ ],         /* size nz, row indices */
+    Entry Ax [ ],
+    KLU_symbolic *Symbolic,
+
+    /* inputs, modified on output: */
+    KLU_numeric *Numeric,
+    KLU_common *Common
+)
+```
+
+mainly performs the factorization process in KLU.
+
+This function mainly takes 6 parameters, where the first three is the input matrix, `KLU_symbolic *Symbolic` is the result from symbolic analysis, `KLU_numeric *Numeric` is the factorization result, and ` KLU_numeric *Numeric` stores the control parameters of the factorization.

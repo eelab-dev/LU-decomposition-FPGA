@@ -1,7 +1,5 @@
-#include <math.h>
-#include <stdio.h>
 #include "klu.h"
-#include <time.h>
+#include <chrono>
 #include "cholmod.h"
 
 int main(void)
@@ -25,25 +23,32 @@ int main(void)
         klu_defaults(&Common);
 
         int runtime = 10;
-        clock_t begin, end, total = 0;
+        std::chrono::steady_clock::time_point begin, end;
+        long total = 0;
+
+        int *Ap, *Ai;
+        double *Ax;
 
         for (int i = 0; i < runtime; i++)
         {
+            Ap = (int *)(A->p);
+            Ai = (int *)(A->i);
+            Ax = (double *)(A->x);
             klu_numeric *Numeric;
             klu_symbolic *Symbolic;
-            Symbolic = klu_analyze(A->nrow, A->p, A->i, &Common);
+            Symbolic = klu_analyze(A->nrow, Ap, Ai, &Common);
 
-            begin = clock();
-            Numeric = klu_factor(A->p, A->i, A->x, Symbolic, &Common);
-            end = clock();
+            begin = std::chrono::steady_clock::now();
+            Numeric = klu_factor(Ap, Ai, Ax, Symbolic, &Common);
+            end = std::chrono::steady_clock::now();
 
-            total += end - begin;
-            printf("%ld\n", total);
+            total += std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+
             klu_free_symbolic(&Symbolic, &Common);
             klu_free_numeric(&Numeric, &Common);
         }
 
-        printf("Time:%lfus\n", total / (double)runtime);
+        printf("Time:%lfns\n", total / (double)runtime);
         // double *b;
         // b = klu_malloc(A->nrow, sizeof(double), &Common);
         // for (int i = 0; i < A->nrow; i++)
