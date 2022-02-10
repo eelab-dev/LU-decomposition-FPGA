@@ -68,7 +68,8 @@
         "cfenv": "cpp",
         "cinttypes": "cpp",
         "stdio.h": "c",
-        "mutex": "cpp"
+        "mutex": "cpp",
+        "klu_internal.h": "c"
     },
     "editor.formatOnSave": true,
     "code-runner.runInTerminal": true,

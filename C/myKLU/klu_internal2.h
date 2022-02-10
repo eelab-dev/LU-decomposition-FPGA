@@ -4,7 +4,7 @@
 
 /* For internal use in KLU routines only, not for user programs */
 
-#ifndef _KLU_INTERNAL_H_
+#ifndef _KLU_INTERNAL_H
 #define _KLU_INTERNAL_H
 
 // #include "klu.h"
@@ -194,7 +194,7 @@ typedef double Unit;
 #define KLU_mult_size_t klu_mult_size_t
 
 #define KLU_symbolic klu_symbolic
-#define KLU_numeric klu_numeric
+#define KLU_numeric klu_numeric2
 #define KLU_common klu_common
 
 #define BYTES(type, n) (sizeof(type) * (n))
@@ -208,110 +208,110 @@ typedef double Unit;
 #define KLU_INVALID (-3)
 #define KLU_TOO_LARGE (-4) /* integer overflow has occured */
 
-typedef struct klu_common_struct
-{
+// typedef struct klu_common_struct2
+// {
 
-    /* ---------------------------------------------------------------------- */
-    /* parameters */
-    /* ---------------------------------------------------------------------- */
+//     /* ---------------------------------------------------------------------- */
+//     /* parameters */
+//     /* ---------------------------------------------------------------------- */
 
-    double tol;         /* pivot tolerance for diagonal preference */
-    double memgrow;     /* realloc memory growth size for LU factors */
-    double initmem_amd; /* init. memory size with AMD: c*nnz(L) + n */
-    double initmem;     /* init. memory size: c*nnz(A) + n */
-    double maxwork;     /* maxwork for BTF, <= 0 if no limit */
+//     double tol;         /* pivot tolerance for diagonal preference */
+//     double memgrow;     /* realloc memory growth size for LU factors */
+//     double initmem_amd; /* init. memory size with AMD: c*nnz(L) + n */
+//     double initmem;     /* init. memory size: c*nnz(A) + n */
+//     double maxwork;     /* maxwork for BTF, <= 0 if no limit */
 
-    int btf;      /* use BTF pre-ordering, or not */
-    int ordering; /* 0: AMD, 1: COLAMD, 2: user P and Q,
-                   * 3: user function */
-    int scale;    /* row scaling: -1: none (and no error check),
-                   * 0: none, 1: sum, 2: max */
+//     int btf;      /* use BTF pre-ordering, or not */
+//     int ordering; /* 0: AMD, 1: COLAMD, 2: user P and Q,
+//                    * 3: user function */
+//     int scale;    /* row scaling: -1: none (and no error check),
+//                    * 0: none, 1: sum, 2: max */
 
-    /* pointer to user ordering function */
-    int (*user_order)(int, int *, int *, int *, struct klu_common_struct *);
+//     /* pointer to user ordering function */
+//     int (*user_order)(int, int *, int *, int *, struct klu_common_struct2 *);
 
-    /* pointer to user data, passed unchanged as the last parameter to the
-     * user ordering function (optional, the user function need not use this
-     * information). */
-    void *user_data;
+//     /* pointer to user data, passed unchanged as the last parameter to the
+//      * user ordering function (optional, the user function need not use this
+//      * information). */
+//     void *user_data;
 
-    int halt_if_singular; /* how to handle a singular matrix:
-                           * FALSE: keep going.  Return a Numeric object with a zero U(k,k).  A
-                           *   divide-by-zero may occur when computing L(:,k).  The Numeric object
-                           *   can be passed to klu_solve (a divide-by-zero will occur).  It can
-                           *   also be safely passed to klu_refactor.
-                           * TRUE: stop quickly.  klu_factor will free the partially-constructed
-                           *   Numeric object.  klu_refactor will not free it, but will leave the
-                           *   numerical values only partially defined.  This is the default. */
+//     int halt_if_singular; /* how to handle a singular matrix:
+//                            * FALSE: keep going.  Return a Numeric object with a zero U(k,k).  A
+//                            *   divide-by-zero may occur when computing L(:,k).  The Numeric object
+//                            *   can be passed to klu_solve (a divide-by-zero will occur).  It can
+//                            *   also be safely passed to klu_refactor.
+//                            * TRUE: stop quickly.  klu_factor will free the partially-constructed
+//                            *   Numeric object.  klu_refactor will not free it, but will leave the
+//                            *   numerical values only partially defined.  This is the default. */
 
-    /* ---------------------------------------------------------------------- */
-    /* statistics */
-    /* ---------------------------------------------------------------------- */
+//     /* ---------------------------------------------------------------------- */
+//     /* statistics */
+//     /* ---------------------------------------------------------------------- */
 
-    int status;   /* KLU_OK if OK, < 0 if error */
-    int nrealloc; /* # of reallocations of L and U */
+//     int status;   /* KLU_OK if OK, < 0 if error */
+//     int nrealloc; /* # of reallocations of L and U */
 
-    int structural_rank; /* 0 to n-1 if the matrix is structurally rank
-                          * deficient (as determined by maxtrans).  -1 if not computed.  n if the
-                          * matrix has full structural rank.  This is computed by klu_analyze
-                          * if a BTF preordering is requested. */
+//     int structural_rank; /* 0 to n-1 if the matrix is structurally rank
+//                           * deficient (as determined by maxtrans).  -1 if not computed.  n if the
+//                           * matrix has full structural rank.  This is computed by klu_analyze
+//                           * if a BTF preordering is requested. */
 
-    int numerical_rank; /* First k for which a zero U(k,k) was found,
-                         * if the matrix was singular (in the range 0 to n-1).  n if the matrix
-                         * has full rank. This is not a true rank-estimation.  It just reports
-                         * where the first zero pivot was found.  -1 if not computed.
-                         * Computed by klu_factor and klu_refactor. */
+//     int numerical_rank; /* First k for which a zero U(k,k) was found,
+//                          * if the matrix was singular (in the range 0 to n-1).  n if the matrix
+//                          * has full rank. This is not a true rank-estimation.  It just reports
+//                          * where the first zero pivot was found.  -1 if not computed.
+//                          * Computed by klu_factor and klu_refactor. */
 
-    int singular_col; /* n if the matrix is not singular.  If in the
-                       * range 0 to n-1, this is the column index of the original matrix A that
-                       * corresponds to the column of U that contains a zero diagonal entry.
-                       * -1 if not computed.  Computed by klu_factor and klu_refactor. */
+//     int singular_col; /* n if the matrix is not singular.  If in the
+//                        * range 0 to n-1, this is the column index of the original matrix A that
+//                        * corresponds to the column of U that contains a zero diagonal entry.
+//                        * -1 if not computed.  Computed by klu_factor and klu_refactor. */
 
-    int noffdiag; /* # of off-diagonal pivots, -1 if not computed */
+//     int noffdiag; /* # of off-diagonal pivots, -1 if not computed */
 
-    double flops;   /* actual factorization flop count, from klu_flops */
-    double rcond;   /* crude reciprocal condition est., from klu_rcond */
-    double condest; /* accurate condition est., from klu_condest */
-    double rgrowth; /* reciprocal pivot rgrowth, from klu_rgrowth */
-    double work;    /* actual work done in BTF, in klu_analyze */
+//     double flops;   /* actual factorization flop count, from klu_flops */
+//     double rcond;   /* crude reciprocal condition est., from klu_rcond */
+//     double condest; /* accurate condition est., from klu_condest */
+//     double rgrowth; /* reciprocal pivot rgrowth, from klu_rgrowth */
+//     double work;    /* actual work done in BTF, in klu_analyze */
 
-    size_t memusage; /* current memory usage, in bytes */
-    size_t mempeak;  /* peak memory usage, in bytes */
+//     size_t memusage; /* current memory usage, in bytes */
+//     size_t mempeak;  /* peak memory usage, in bytes */
 
-} klu_common;
+// } klu_common;
 
-typedef struct
-{
-    /* A (P,Q) is in upper block triangular form.  The kth block goes from
-     * row/col index R [k] to R [k+1]-1.  The estimated number of nonzeros
-     * in the L factor of the kth block is Lnz [k].
-     */
+// typedef struct
+// {
+//     /* A (P,Q) is in upper block triangular form.  The kth block goes from
+//      * row/col index R [k] to R [k+1]-1.  The estimated number of nonzeros
+//      * in the L factor of the kth block is Lnz [k].
+//      */
 
-    /* only computed if the AMD ordering is chosen: */
-    double symmetry;  /* symmetry of largest block */
-    double est_flops; /* est. factorization flop count */
-    double lnz, unz;  /* estimated nz in L and U, including diagonals */
-    double *Lnz;      /* size n, but only Lnz [0..nblocks-1] is used */
+//     /* only computed if the AMD ordering is chosen: */
+//     double symmetry;  /* symmetry of largest block */
+//     double est_flops; /* est. factorization flop count */
+//     double lnz, unz;  /* estimated nz in L and U, including diagonals */
+//     double *Lnz;      /* size n, but only Lnz [0..nblocks-1] is used */
 
-    /* computed for all orderings: */
-    int
-        n,        /* input matrix A is n-by-n */
-        nz,       /* # entries in input matrix */
-        *P,       /* size n */
-        *Q,       /* size n */
-        *R,       /* size n+1, but only R [0..nblocks] is used */
-        nzoff,    /* nz in off-diagonal blocks */
-        nblocks,  /* number of blocks */
-        maxblock, /* size of largest block */
-        ordering, /* ordering used (AMD, COLAMD, or GIVEN) */
-        do_btf;   /* whether or not BTF preordering was requested */
+//     /* computed for all orderings: */
+//     int
+//         n,        /* input matrix A is n-by-n */
+//         nz,       /* # entries in input matrix */
+//         *P,       /* size n */
+//         *Q,       /* size n */
+//         *R,       /* size n+1, but only R [0..nblocks] is used */
+//         nzoff,    /* nz in off-diagonal blocks */
+//         nblocks,  /* number of blocks */
+//         maxblock, /* size of largest block */
+//         ordering, /* ordering used (AMD, COLAMD, or GIVEN) */
+//         do_btf;   /* whether or not BTF preordering was requested */
 
-    /* only computed if BTF preordering requested */
-    int structural_rank; /* 0 to n-1 if the matrix is structurally rank
-                          * deficient.  -1 if not computed.  n if the matrix has
-                          * full structural rank */
+//     /* only computed if BTF preordering requested */
+//     int structural_rank; /* 0 to n-1 if the matrix is structurally rank
+//                           * deficient.  -1 if not computed.  n if the matrix has
+//                           * full structural rank */
 
-} klu_symbolic;
+// } klu_symbolic;
 
 typedef struct
 {
@@ -351,7 +351,7 @@ typedef struct
     void *Offx; /* size nzoff, numerical values */
     int nzoff;
 
-} klu_numeric;
+} klu_numeric2;
 
 size_t KLU_kernel /* final size of LU on output */
     (

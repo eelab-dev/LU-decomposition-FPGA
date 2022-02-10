@@ -437,4 +437,14 @@ This function mainly takes 6 parameters, where the first three is the input matr
 
 
 # 06/02/2022
-[PLRAM](https://xilinx.github.io/Vitis_Accel_Examples/2020.2/html/plram_access.html)
+## [PLRAM](https://xilinx.github.io/Vitis_Accel_Examples/2020.2/html/plram_access.html)
+
+PLRAM is small shared memory which is built using the on-chip memory resources of the FPGA fabric. It is intended to provide a small amount of data storage that application kernels can share and access rapidly(lowest latency). PLRAM behaves just like the DDR memory resources managed by the Vitis memory subsystem.
+
+PLRAM can be assigned to a buffer by using sp tags in the `mmult.cfg` file along with the port name and kernel name.
+```json
+[connectivity]
+sp=mmult_1.a:PLRAM[0]
+sp=mmult_1.b:DDR[0]
+sp=mmult_1.c:PLRAM[1]
+```
