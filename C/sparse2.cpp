@@ -103,9 +103,9 @@ int main(int argc, char *argv[])
 
 	analyse(Ap, Ai, Up, Ui, Lp, Li, Lx, &lnz, &unz, n);
 
-	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-	sparselu(n, Ap, Ai, Ax, Lp, Li, Lx, Up, Ui, Ux, lnz, unz);
-	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+	// std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+	// sparselu(n, Ap, Ai, Ax, Lp, Li, Lx, Up, Ui, Ux, lnz, unz);
+	// std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
 	for (int i = 0; i < n + 1; i++)
 		printf("Lp[%d]=%d\tLi[%d]=%d\tLx[%d]=%lf\tUp[%d]=%d\tUi[%d]=%d\tUx[%d]=%lf\n", i, Lp[i], i, Li[i], i, Lx[i], i, Up[i], i, Ui[i], i, Ux[i]);
@@ -114,6 +114,6 @@ int main(int argc, char *argv[])
 	for (int i = n + 1; i < unz; i++)
 		printf("Ui[%d]=%d\tUx[%d]=%lf\n", i, Ui[i], i, Ux[i]);
 
-	std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "[ns]" << std::endl;
+	// std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() << "[ns]" << std::endl;
 	return 0;
 }

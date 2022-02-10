@@ -1,4 +1,5 @@
 #include "klu.h"
+#include <iostream>
 #include <chrono>
 #include "cholmod.h"
 
@@ -11,18 +12,18 @@ int main(void)
     int solved;
     if (A)
     {
-        // if (A->nrow != A->ncol || A->stype != 0 || (!(A->xtype == CHOLMOD_REAL || A->xtype == CHOLMOD_COMPLEX)))
-        // {
-        //     printf("stype=%d,xtype=%d", A->stype, A->xtype);
-        //     printf("invalid matrix\n");
-        // }
-        // else
-        // {
-
+        if (A->nrow != A->ncol || A->stype != 0 || (!(A->xtype == CHOLMOD_REAL || A->xtype == CHOLMOD_COMPLEX)))
+        {
+            printf("stype=%d,xtype=%d", A->stype, A->xtype);
+            printf("invalid matrix\n");
+            return 0;
+        }
+        std::cout << "Loaded" << std::endl;
         klu_common Common;
         klu_defaults(&Common);
+        // Common.btf = 0;
 
-        int runtime = 10;
+        int runtime = 1;
         std::chrono::steady_clock::time_point begin, end;
         long total = 0;
 
@@ -43,6 +44,9 @@ int main(void)
             end = std::chrono::steady_clock::now();
 
             total += std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+
+            std::cout << "Maxblock: " << Symbolic->maxblock << std::endl;
+            std::cout << "nblocks: " << Symbolic->nblocks << std::endl;
 
             klu_free_symbolic(&Symbolic, &Common);
             klu_free_numeric(&Numeric, &Common);
