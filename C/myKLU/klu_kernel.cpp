@@ -9,7 +9,7 @@
 #include "klu.h"
 #include "klu_internal2.h"
 #include "klu_memory.c"
-#include "cholmod.h"
+#include <vector>
 
 /* ========================================================================== */
 /* === dfs ================================================================== */
@@ -2009,11 +2009,6 @@ static void factor2(
 
 int main(void)
 {
-    cholmod_sparse *A;
-    cholmod_common ch;
-    cholmod_start(&ch);
-    // A = cholmod_read_sparse(stdin, &ch);
-
     klu_common Common;
     KLU_numeric Numeric;
     klu_symbolic Symbolic;
@@ -2041,7 +2036,8 @@ int main(void)
     Numeric.n = Symbolic.n;
     Numeric.nblocks = Symbolic.nblocks;
     Numeric.nzoff = Symbolic.nzoff;
-    Numeric.Pnum = malloc(n * sizeof(Int));
+    // Numeric.Pnum = malloc(n * sizeof(Int));
+    Numeric.Pnum = std::vector<int> data(n, 0);
     Numeric.Offp = malloc(n1 * sizeof(Int));
     Numeric.Offi = malloc(nzoff1 * sizeof(Int));
     Numeric.Offx = malloc(nzoff1 * sizeof(Entry));

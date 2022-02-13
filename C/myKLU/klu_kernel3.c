@@ -9,7 +9,7 @@
 #include "klu.h"
 #include "klu_internal2.h"
 #include "klu_memory.c"
-#include "cholmod.h"
+#include "mmio.c"
 
 /* ========================================================================== */
 /* === dfs ================================================================== */
@@ -713,30 +713,30 @@ size_t KLU_kernel /* final size of LU on output */
         /* LU can grow by at most 'nunits' entries if the column is dense */
         PRINTF(("lup %d lusize %g lup+nunits: %g\n", lup, (double)lusize,
                 lup + nunits));
-        xsize = ((double)lup) + nunits;
-        if (xsize > (double)lusize)
-        {
-            /* check here how much to grow */
-            xsize = (memgrow * ((double)lusize) + 4 * n + 1);
-            if (INT_OVERFLOW(xsize))
-            {
-                PRINTF(("Matrix is too large (int overflow)\n"));
-                Common->status = KLU_TOO_LARGE;
-                return (lusize);
-            }
-            newlusize = memgrow * lusize + 2 * n + 1;
-            /* Future work: retry mechanism in case of malloc failure */
-            LU = KLU_realloc(newlusize, lusize, sizeof(double), LU, Common);
-            Common->nrealloc++;
-            p_LU = LU;
-            if (Common->status == KLU_OUT_OF_MEMORY)
-            {
-                PRINTF(("Matrix is too large (LU)\n"));
-                return (lusize);
-            }
-            lusize = newlusize;
-            PRINTF(("inc LU to %d done\n", lusize));
-        }
+        // xsize = ((double)lup) + nunits;
+        // if (xsize > (double)lusize)
+        // {
+        //     /* check here how much to grow */
+        //     xsize = (memgrow * ((double)lusize) + 4 * n + 1);
+        //     if (INT_OVERFLOW(xsize))
+        //     {
+        //         PRINTF(("Matrix is too large (int overflow)\n"));
+        //         Common->status = KLU_TOO_LARGE;
+        //         return (lusize);
+        //     }
+        //     newlusize = memgrow * lusize + 2 * n + 1;
+        //     /* Future work: retry mechanism in case of malloc failure */
+        //     LU = KLU_realloc(newlusize, lusize, sizeof(double), LU, Common);
+        //     Common->nrealloc++;
+        //     p_LU = LU;
+        //     if (Common->status == KLU_OUT_OF_MEMORY)
+        //     {
+        //         PRINTF(("Matrix is too large (LU)\n"));
+        //         return (lusize);
+        //     }
+        //     lusize = newlusize;
+        //     PRINTF(("inc LU to %d done\n", lusize));
+        // }
 
         /* ------------------------------------------------------------------ */
         /* start the kth column of L and U */
@@ -958,7 +958,7 @@ Int klu_solve2(
     int lusize_sum = 0;
     for (int i = 0, j = 0; i < nblocks; i++)
     {
-        // printf("Numeric->LUsize[%d]=%d\n", i, Numeric->LUsize[i]);
+        printf("Numeric->LUsize[%d]=%d\n", i, Numeric->LUsize[i]);
         if (Numeric->LUsize[i])
         {
             if (j)
@@ -2009,34 +2009,45 @@ static void factor2(
 
 int main(void)
 {
-    cholmod_sparse *A;
-    cholmod_common ch;
-    cholmod_start(&ch);
-    // A = cholmod_read_sparse(stdin, &ch);
+    Mtx mtx;
+    char filename[] = "../../Matrix_Sample/arc130.mtx";
+
+    if (read_sparse(filename, &mtx))
+        return 1;
 
     klu_common Common;
     KLU_numeric Numeric;
     klu_symbolic Symbolic;
     klu_defaults(&Common);
-    const int n = 10;
-    int Ap[] = {0, 2, 4, 7, 9, 13, 14, 18, 21, 23, 24};
-    int Ai[] = {0, 7, 1, 5, 0, 2, 7, 3, 8, 3, 4, 5, 8, 5, 0, 6, 7, 8, 4, 5, 7, 2, 8, 9};
-    double Ax[] = {8, 8, 2, 4, 10, 3, 10, 1, 5, 2, 1, 4, 10, 2, 3, 5, 3, 15, 4, 16, 3, 7, 2, 9};
-    double b[] = {172, 18, 38, 19, 18, 118, 20, 181, 159, 9};
+    // const int n = 10;
+    // int Ap[] = {0, 2, 4, 7, 9, 13, 14, 18, 21, 23, 24};
+    // int Ai[] = {0, 7, 1, 5, 0, 2, 7, 3, 8, 3, 4, 5, 8, 5, 0, 6, 7, 8, 4, 5, 7, 2, 8, 9};
+    // double Ax[] = {8, 8, 2, 4, 10, 3, 10, 1, 5, 2, 1, 4, 10, 2, 3, 5, 3, 15, 4, 16, 3, 7, 2, 9};
+    // double b[] = {172, 18, 38, 19, 18, 118, 20, 181, 159, 9};
+
+    int n = mtx.n;
+    int *Ap = mtx.Ap;
+    int *Ai = mtx.Ai;
+    double *Ax = mtx.Ax;
+    double b[] = {279.584743202215, -324.558579717574, 41.6857698124613, 71.7796552191998, -21.8080536390688, -12.1206651085711, 6.96409248369851, 8.06655960258013, 9.07550956120881, 10.0242759948783, 10.9356800700396, 11.2575737075623, 13.0755095612088, 14.6143625004934, 14.6622950007692, 16, 17.0665596025801, 18.0011830061659, 19.0153260491416, -27475.3902422406, -80429157.8945312, -79328370.8867188, -40946052.6914062, -74347681.515625, -72174052.6171875, 45.2518649101257, 25.4358819499556, 29.3744153231358, 33.4031240940092, 32.1007794141767, 68.682388305664, 27.5902938740802, 34.2920764182203, 41.8601366281505, 38.4772992134089, 85.2251358032226, 29.9290522684125, 38.2619187734309, 48.8282384276385, 44.3459486961358, 91.8335390090942, 33.3837329002542, 41.6764824338056, 53.9081966876978, 49.5371791720383, 89.9676032066345, 38.418592582108, 45.5973847664851, 57.5117719173426, 54.1664958000176, 83.7884101867675, 44.8544080049303, 50.2856411694522, 60.4747216701503, 58.5157126188272, 77.5720725059509, 52.0548983215017, 55.7535365455683, 63.5658667087552, 62.8661473095413, 73.8493753075599, 59.3249367251971, 61.7303034401082, 67.1980535984037, 67.3882255144415, 73.2623927593231, 66.1970339380203, 67.8179687568906, 71.427210163325, 72.1252968907355, 75.2432642094791, 72.5106880366802, 73.7411950565874, 76.1072703003883, 77.0394964143633, 78.8693265914917, 78.3303363509476, 79.4039598405361, 81.0516444817185, 82.06717222929, 83.3696878105402, 83.8095736652612, 84.8357935622334, 86.1200445592403, 87.1544153615832, 88.2661053612828, 89.093873038888, 90.1123360395431, 91.2343204244971, 92.2676514834165, 93.3175967484713, 94.2826037406922, 95.3031234964728, 96.3608182370663, 97.390259783715, 98.4220633506775, 99.4306319057942, 100.453658305109, 101.48865038529, 102.515559270978, 103.54242381081, 104.563432127237, 105.587807916105, 106.615641176701, 107.641398645937, 108.666984058917, 109.691199589521, 110.716114014387, 111.741927120835, 112.767261900008, 113.792525097728, 114.817488133907, 115.842579871416, 116.867881961167, 117.893085516989, 118.918268278241, 119.943389151245, 120.968530938029, 121.993717238307, 123.01888525486, 124.044048041105, 125.069199554622, 126.094353720546, 127.119516149163, 128.144675865769, 129.169834211469, 130.194990679622, 131.220147609711, 132.245305974036, 133.270463384688};
+
+    // printf("n=%d\n", n);
+    // for (int i = 0; i <= n; i++)
+    //     printf("Ap[%d]=%d\n", i, mtx.Ap[i]);
+    // for (int i = 0; i < mtx.nz; i++)
+    //     printf("Ai[%d]=%d\tAx[%d]=%lf\n", i, mtx.Ai[i], i, mtx.Ax[i]);
 
     Symbolic = *klu_analyze(n, Ap, Ai, &Common);
 
-    for (int i = 0; i < n; i++)
-        printf("P[%d]=%d,Q[%d]=%d,R[%d]=%d,Lnz[%d]=%lf\n", i, Symbolic.P[i], i, Symbolic.Q[i], i, Symbolic.R[i], i, Symbolic.Lnz[i]);
-    printf("nblocks=%d,nzoff=%d\n", Symbolic.nblocks, Symbolic.nzoff);
+    // for (int i = 0; i < n; i++)
+    //     printf("P[%d]=%d,Q[%d]=%d,R[%d]=%d,Lnz[%d]=%lf\n", i, Symbolic.P[i], i, Symbolic.Q[i], i, Symbolic.R[i], i, Symbolic.Lnz[i]);
+    // printf("nblocks=%d,nzoff=%d\n", Symbolic.nblocks, Symbolic.nzoff);
 
     int maxblock = Symbolic.maxblock, nzoff = Symbolic.nzoff;
     int nzoff1 = nzoff + 1, n1 = n + 1;
-    double lusize = Symbolic.lnz + Symbolic.unz;
+    double lusize = Common.memgrow * (Symbolic.lnz + Symbolic.unz) + 4 * n + 1;
 
-    size_t LUsize[Symbolic.nblocks];
-    for (int i = 0; i < Symbolic.nblocks; i++)
-        LUsize[i] = 0;
+    printf("lusize=%.0lf\n", lusize);
 
     Numeric.n = Symbolic.n;
     Numeric.nblocks = Symbolic.nblocks;
@@ -2049,7 +2060,7 @@ int main(void)
     Numeric.Uip = malloc(n * sizeof(Int));
     Numeric.Llen = malloc(n * sizeof(Int));
     Numeric.Ulen = malloc(n * sizeof(Int));
-    Numeric.LUsize = malloc(Symbolic.nblocks * sizeof(size_t));
+    Numeric.LUsize = calloc(Symbolic.nblocks, sizeof(size_t));
     Numeric.LUbx = malloc(lusize * sizeof(double));
     Numeric.Udiag = malloc(n * sizeof(Entry));
     Numeric.Rs = malloc(n * sizeof(double));

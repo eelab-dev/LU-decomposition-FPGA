@@ -7,9 +7,8 @@
  * Liu's symmetric pruning.  No user-callable routines are in this file.
  */
 #include "klu.h"
-#include "klu_internal2.h"
-#include "klu_memory.c"
-#include "cholmod.h"
+#include "klu_internal4.h"
+#include "mmio.c"
 
 /* ========================================================================== */
 /* === dfs ================================================================== */
@@ -41,7 +40,7 @@ static int dfs(
     int Ap_pos[] /* keeps track of position in adj list during DFS */
 )
 {
-    int i, pos, jnew, head, l_length;
+    int pos, jnew, head, l_length;
     int *Li;
 
     l_length = *plength;
@@ -71,7 +70,7 @@ static int dfs(
         Li = (int *)(LU + Lip[jnew]);
         for (pos = --Ap_pos[head]; pos >= 0; --pos)
         {
-            i = Li[pos];
+            int i = Li[pos];
             if (Flag[i] != k)
             {
                 /* node i is not yet visited */
@@ -588,15 +587,15 @@ static void prune(
 /* === KLU_kernel =========================================================== */
 /* ========================================================================== */
 
-size_t KLU_kernel /* final size of LU on output */
+int KLU_kernel /* final size of LU on output */
     (
         /* input, not modified */
-        int n,         /* A is n-by-n */
-        int Ap[],      /* size n+1, column pointers for A */
-        int Ai[],      /* size nz = Ap [n], row indices for A */
-        double Ax[],   /* size nz, values of A */
-        int Q[],       /* size n, optional input permutation */
-        size_t lusize, /* initial size of LU on input */
+        int n,       /* A is n-by-n */
+        int Ap[],    /* size n+1, column pointers for A */
+        int Ai[],    /* size nz = Ap [n], row indices for A */
+        double Ax[], /* size nz, values of A */
+        int Q[],     /* size n, optional input permutation */
+        int lusize,  /* initial size of LU on input */
 
         /* output, not defined on input */
         int Pinv[],     /* size n, inverse row permutation, where Pinv [i] = k if
@@ -640,7 +639,7 @@ size_t KLU_kernel /* final size of LU on output */
     int *Li, *Ui;
     double *LU; /* LU factors (pattern and values) */
     int k, p, i, j, pivrow = 0, kbar, diagrow, firstrow, lup, top, scale, len;
-    size_t newlusize;
+    int newlusize;
 
     ASSERT(Common != NULL);
     scale = Common->scale;
@@ -713,30 +712,30 @@ size_t KLU_kernel /* final size of LU on output */
         /* LU can grow by at most 'nunits' entries if the column is dense */
         PRINTF(("lup %d lusize %g lup+nunits: %g\n", lup, (double)lusize,
                 lup + nunits));
-        xsize = ((double)lup) + nunits;
-        if (xsize > (double)lusize)
-        {
-            /* check here how much to grow */
-            xsize = (memgrow * ((double)lusize) + 4 * n + 1);
-            if (INT_OVERFLOW(xsize))
-            {
-                PRINTF(("Matrix is too large (int overflow)\n"));
-                Common->status = KLU_TOO_LARGE;
-                return (lusize);
-            }
-            newlusize = memgrow * lusize + 2 * n + 1;
-            /* Future work: retry mechanism in case of malloc failure */
-            LU = KLU_realloc(newlusize, lusize, sizeof(double), LU, Common);
-            Common->nrealloc++;
-            p_LU = LU;
-            if (Common->status == KLU_OUT_OF_MEMORY)
-            {
-                PRINTF(("Matrix is too large (LU)\n"));
-                return (lusize);
-            }
-            lusize = newlusize;
-            PRINTF(("inc LU to %d done\n", lusize));
-        }
+        // xsize = ((double)lup) + nunits;
+        // if (xsize > (double)lusize)
+        // {
+        //     /* check here how much to grow */
+        //     xsize = (memgrow * ((double)lusize) + 4 * n + 1);
+        //     if (INT_OVERFLOW(xsize))
+        //     {
+        //         PRINTF(("Matrix is too large (int overflow)\n"));
+        //         Common->status = KLU_TOO_LARGE;
+        //         return (lusize);
+        //     }
+        //     newlusize = memgrow * lusize + 2 * n + 1;
+        //     /* Future work: retry mechanism in case of malloc failure */
+        //     LU = KLU_realloc(newlusize, lusize, sizeof(double), LU, Common);
+        //     Common->nrealloc++;
+        //     p_LU = LU;
+        //     if (Common->status == KLU_OUT_OF_MEMORY)
+        //     {
+        //         PRINTF(("Matrix is too large (LU)\n"));
+        //         return (lusize);
+        //     }
+        //     lusize = newlusize;
+        //     PRINTF(("inc LU to %d done\n", lusize));
+        // }
 
         /* ------------------------------------------------------------------ */
         /* start the kth column of L and U */
@@ -879,7 +878,7 @@ size_t KLU_kernel /* final size of LU on output */
     /* ---------------------------------------------------------------------- */
 
     newlusize = lup;
-    ASSERT((size_t)newlusize <= lusize);
+    ASSERT((int)newlusize <= lusize);
 
     /* this cannot fail, since the block is descreasing in size */
     // LU = KLU_realloc(newlusize, lusize, sizeof(double), LU, Common);
@@ -903,11 +902,8 @@ Int klu_solve2(
     KLU_common *Common)
 {
     Entry x[4], offik, s;
-    double rs, *Rs;
-    Entry *Offx, *X, *Bz, *Udiag;
-    Int *Q, *R, *Pnum, *Offp, *Offi, *Lip, *Uip, *Llen, *Ulen;
-    Unit *LUbx;
-    Int k1, k2, nk, k, block, pend, n, p, nblocks, chunk, nr, i;
+    double rs;
+    Int k1, k2, nk, k, pend, p, nr, i;
 
     /* ---------------------------------------------------------------------- */
     /* check inputs */
@@ -929,34 +925,12 @@ Int klu_solve2(
     /* get the contents of the Symbolic object */
     /* ---------------------------------------------------------------------- */
 
-    Bz = (Entry *)B;
-    n = Symbolic->n;
-    nblocks = Symbolic->nblocks;
-    Q = Symbolic->Q;
-    R = Symbolic->R;
-
     /* ---------------------------------------------------------------------- */
     /* get the contents of the Numeric object */
     /* ---------------------------------------------------------------------- */
 
-    ASSERT(nblocks == Numeric->nblocks);
-    Pnum = Numeric->Pnum;
-    Offp = Numeric->Offp;
-    Offi = Numeric->Offi;
-    Offx = (Entry *)Numeric->Offx;
-
-    Lip = Numeric->Lip;
-    Llen = Numeric->Llen;
-    Uip = Numeric->Uip;
-    Ulen = Numeric->Ulen;
-    LUbx = (Unit *)Numeric->LUbx;
-    Udiag = Numeric->Udiag;
-
-    Rs = Numeric->Rs;
-    X = (Entry *)Numeric->Xwork;
-
     int lusize_sum = 0;
-    for (int i = 0, j = 0; i < nblocks; i++)
+    for (int i = 0, j = 0; i < Symbolic->nblocks; i++)
     {
         // printf("Numeric->LUsize[%d]=%d\n", i, Numeric->LUsize[i]);
         if (Numeric->LUsize[i])
@@ -975,13 +949,13 @@ Int klu_solve2(
     // for (int i = 0; i < n; i++)
     //     printf("Llen[%d]=%d,Lip[%d]=%d,Ulen[%d]=%d,Uip[%d]=%d\n", i, Llen[i], i, Lip[i], i, Ulen[i], i, Uip[i]);
 
-    ASSERT(KLU_valid(n, Offp, Offi, Offx));
+    ASSERT(KLU_valid(Symbolic->n, Numeric->Offp, Numeric->Offi, Numeric->Offx));
 
     /* ---------------------------------------------------------------------- */
     /* solve in chunks of 4 columns at a time */
     /* ---------------------------------------------------------------------- */
 
-    for (chunk = 0; chunk < nrhs; chunk += 4)
+    for (int chunk = 0; chunk < nrhs; chunk += 4)
     {
 
         /* ------------------------------------------------------------------ */
@@ -994,7 +968,7 @@ Int klu_solve2(
         /* scale and permute the right hand side, X = P*(R\B) */
         /* ------------------------------------------------------------------ */
 
-        if (Rs == NULL)
+        if (Numeric->Rs == NULL)
         {
 
             /* no scaling */
@@ -1003,93 +977,92 @@ Int klu_solve2(
 
             case 1:
 
-                for (k = 0; k < n; k++)
+                for (k = 0; k < Symbolic->n; k++)
                 {
-                    X[k] = Bz[Pnum[k]];
+                    Numeric->Xwork[k] = B[Numeric->Pnum[k]];
                 }
                 break;
 
             case 2:
 
-                for (k = 0; k < n; k++)
+                for (k = 0; k < Symbolic->n; k++)
                 {
-                    i = Pnum[k];
-                    X[2 * k] = Bz[i];
-                    X[2 * k + 1] = Bz[i + d];
+                    i = Numeric->Pnum[k];
+                    Numeric->Xwork[2 * k] = B[i];
+                    Numeric->Xwork[2 * k + 1] = B[i + d];
                 }
                 break;
 
             case 3:
 
-                for (k = 0; k < n; k++)
+                for (k = 0; k < Symbolic->n; k++)
                 {
-                    i = Pnum[k];
-                    X[3 * k] = Bz[i];
-                    X[3 * k + 1] = Bz[i + d];
-                    X[3 * k + 2] = Bz[i + d * 2];
+                    i = Numeric->Pnum[k];
+                    Numeric->Xwork[3 * k] = B[i];
+                    Numeric->Xwork[3 * k + 1] = B[i + d];
+                    Numeric->Xwork[3 * k + 2] = B[i + d * 2];
                 }
                 break;
 
             case 4:
 
-                for (k = 0; k < n; k++)
+                for (k = 0; k < Symbolic->n; k++)
                 {
-                    i = Pnum[k];
-                    X[4 * k] = Bz[i];
-                    X[4 * k + 1] = Bz[i + d];
-                    X[4 * k + 2] = Bz[i + d * 2];
-                    X[4 * k + 3] = Bz[i + d * 3];
+                    i = Numeric->Pnum[k];
+                    Numeric->Xwork[4 * k] = B[i];
+                    Numeric->Xwork[4 * k + 1] = B[i + d];
+                    Numeric->Xwork[4 * k + 2] = B[i + d * 2];
+                    Numeric->Xwork[4 * k + 3] = B[i + d * 3];
                 }
                 break;
             }
         }
         else
         {
-
             switch (nr)
             {
 
             case 1:
 
-                for (k = 0; k < n; k++)
+                for (k = 0; k < Symbolic->n; k++)
                 {
-                    SCALE_DIV_ASSIGN(X[k], Bz[Pnum[k]], Rs[k]);
+                    SCALE_DIV_ASSIGN(Numeric->Xwork[k], B[Numeric->Pnum[k]], Numeric->Rs[k]);
                 }
                 break;
 
             case 2:
 
-                for (k = 0; k < n; k++)
+                for (k = 0; k < Symbolic->n; k++)
                 {
-                    i = Pnum[k];
-                    rs = Rs[k];
-                    SCALE_DIV_ASSIGN(X[2 * k], Bz[i], rs);
-                    SCALE_DIV_ASSIGN(X[2 * k + 1], Bz[i + d], rs);
+                    i = Numeric->Pnum[k];
+                    rs = Numeric->Rs[k];
+                    SCALE_DIV_ASSIGN(Numeric->Xwork[2 * k], B[i], rs);
+                    SCALE_DIV_ASSIGN(Numeric->Xwork[2 * k + 1], B[i + d], rs);
                 }
                 break;
 
             case 3:
 
-                for (k = 0; k < n; k++)
+                for (k = 0; k < Symbolic->n; k++)
                 {
-                    i = Pnum[k];
-                    rs = Rs[k];
-                    SCALE_DIV_ASSIGN(X[3 * k], Bz[i], rs);
-                    SCALE_DIV_ASSIGN(X[3 * k + 1], Bz[i + d], rs);
-                    SCALE_DIV_ASSIGN(X[3 * k + 2], Bz[i + d * 2], rs);
+                    i = Numeric->Pnum[k];
+                    rs = Numeric->Rs[k];
+                    SCALE_DIV_ASSIGN(Numeric->Xwork[3 * k], B[i], rs);
+                    SCALE_DIV_ASSIGN(Numeric->Xwork[3 * k + 1], B[i + d], rs);
+                    SCALE_DIV_ASSIGN(Numeric->Xwork[3 * k + 2], B[i + d * 2], rs);
                 }
                 break;
 
             case 4:
 
-                for (k = 0; k < n; k++)
+                for (k = 0; k < Symbolic->n; k++)
                 {
-                    i = Pnum[k];
-                    rs = Rs[k];
-                    SCALE_DIV_ASSIGN(X[4 * k], Bz[i], rs);
-                    SCALE_DIV_ASSIGN(X[4 * k + 1], Bz[i + d], rs);
-                    SCALE_DIV_ASSIGN(X[4 * k + 2], Bz[i + d * 2], rs);
-                    SCALE_DIV_ASSIGN(X[4 * k + 3], Bz[i + d * 3], rs);
+                    i = Numeric->Pnum[k];
+                    rs = Numeric->Rs[k];
+                    SCALE_DIV_ASSIGN(Numeric->Xwork[4 * k], B[i], rs);
+                    SCALE_DIV_ASSIGN(Numeric->Xwork[4 * k + 1], B[i + d], rs);
+                    SCALE_DIV_ASSIGN(Numeric->Xwork[4 * k + 2], B[i + d * 2], rs);
+                    SCALE_DIV_ASSIGN(Numeric->Xwork[4 * k + 3], B[i + d * 3], rs);
                 }
                 break;
             }
@@ -1099,15 +1072,15 @@ Int klu_solve2(
         /* solve X = (L*U + Off)\X */
         /* ------------------------------------------------------------------ */
 
-        for (block = nblocks - 1; block >= 0; block--)
+        for (int block = Symbolic->nblocks - 1; block >= 0; block--)
         {
 
             /* -------------------------------------------------------------- */
             /* the block of size nk is from rows/columns k1 to k2-1 */
             /* -------------------------------------------------------------- */
 
-            k1 = R[block];
-            k2 = R[block + 1];
+            k1 = Symbolic->R[block];
+            k2 = Symbolic->R[block + 1];
             nk = k2 - k1;
             PRINTF(("solve %d, k1 %d k2-1 %d nk %d\n", block, k1, k2 - 1, nk));
 
@@ -1115,40 +1088,40 @@ Int klu_solve2(
             /* solve the block system */
             if (nk == 1)
             {
-                s = Udiag[k1];
+                s = Numeric->Udiag[k1];
                 // printf("X[%d]=%lf,s=%lf\n", k1, X[k1], s);
                 switch (nr)
                 {
 
                 case 1:
-                    DIV(X[k1], X[k1], s);
+                    DIV(Numeric->Xwork[k1], Numeric->Xwork[k1], s);
                     break;
 
                 case 2:
-                    DIV(X[2 * k1], X[2 * k1], s);
-                    DIV(X[2 * k1 + 1], X[2 * k1 + 1], s);
+                    DIV(Numeric->Xwork[2 * k1], Numeric->Xwork[2 * k1], s);
+                    DIV(Numeric->Xwork[2 * k1 + 1], Numeric->Xwork[2 * k1 + 1], s);
                     break;
 
                 case 3:
-                    DIV(X[3 * k1], X[3 * k1], s);
-                    DIV(X[3 * k1 + 1], X[3 * k1 + 1], s);
-                    DIV(X[3 * k1 + 2], X[3 * k1 + 2], s);
+                    DIV(Numeric->Xwork[3 * k1], Numeric->Xwork[3 * k1], s);
+                    DIV(Numeric->Xwork[3 * k1 + 1], Numeric->Xwork[3 * k1 + 1], s);
+                    DIV(Numeric->Xwork[3 * k1 + 2], Numeric->Xwork[3 * k1 + 2], s);
                     break;
 
                 case 4:
-                    DIV(X[4 * k1], X[4 * k1], s);
-                    DIV(X[4 * k1 + 1], X[4 * k1 + 1], s);
-                    DIV(X[4 * k1 + 2], X[4 * k1 + 2], s);
-                    DIV(X[4 * k1 + 3], X[4 * k1 + 3], s);
+                    DIV(Numeric->Xwork[4 * k1], Numeric->Xwork[4 * k1], s);
+                    DIV(Numeric->Xwork[4 * k1 + 1], Numeric->Xwork[4 * k1 + 1], s);
+                    DIV(Numeric->Xwork[4 * k1 + 2], Numeric->Xwork[4 * k1 + 2], s);
+                    DIV(Numeric->Xwork[4 * k1 + 3], Numeric->Xwork[4 * k1 + 3], s);
                     break;
                 }
             }
             else
             {
-                KLU_lsolve(nk, Lip + k1, Llen + k1, &LUbx[lusize_sum], nr,
-                           X + nr * k1);
-                KLU_usolve(nk, Uip + k1, Ulen + k1, &LUbx[lusize_sum],
-                           Udiag + k1, nr, X + nr * k1);
+                KLU_lsolve(nk, Numeric->Lip + k1, Numeric->Llen + k1, &Numeric->LUbx[lusize_sum], nr,
+                           Numeric->Xwork + nr * k1);
+                KLU_usolve(nk, Numeric->Uip + k1, Numeric->Ulen + k1, &Numeric->LUbx[lusize_sum],
+                           Numeric->Udiag + k1, nr, Numeric->Xwork + nr * k1);
                 lusize_sum -= Numeric->LUsize[block];
             }
 
@@ -1166,12 +1139,12 @@ Int klu_solve2(
                     for (k = k1; k < k2; k++)
                     {
                         // printf("Offp[%d]=%d,Offp[%d]=%d\n", k, Offp[k], k + 1, Offp[k + 1]);
-                        pend = Offp[k + 1];
-                        x[0] = X[k];
-                        for (p = Offp[k]; p < pend; p++)
+                        pend = Numeric->Offp[k + 1];
+                        x[0] = Numeric->Xwork[k];
+                        for (p = Numeric->Offp[k]; p < pend; p++)
                         {
                             // printf("X[%d]=%lf,Offx[%d]=%lf,x[0]=%lf\n", Offi[p], X[Offi[p]], p, Offx[p], x[0]);
-                            MULT_SUB(X[Offi[p]], Offx[p], x[0]);
+                            MULT_SUB(Numeric->Xwork[Numeric->Offi[p]], Numeric->Offx[p], x[0]);
                         }
                     }
                     break;
@@ -1180,15 +1153,15 @@ Int klu_solve2(
 
                     for (k = k1; k < k2; k++)
                     {
-                        pend = Offp[k + 1];
-                        x[0] = X[2 * k];
-                        x[1] = X[2 * k + 1];
-                        for (p = Offp[k]; p < pend; p++)
+                        pend = Numeric->Offp[k + 1];
+                        x[0] = Numeric->Xwork[2 * k];
+                        x[1] = Numeric->Xwork[2 * k + 1];
+                        for (p = Numeric->Offp[k]; p < pend; p++)
                         {
-                            i = Offi[p];
-                            offik = Offx[p];
-                            MULT_SUB(X[2 * i], offik, x[0]);
-                            MULT_SUB(X[2 * i + 1], offik, x[1]);
+                            i = Numeric->Offi[p];
+                            offik = Numeric->Offx[p];
+                            MULT_SUB(Numeric->Xwork[2 * i], offik, x[0]);
+                            MULT_SUB(Numeric->Xwork[2 * i + 1], offik, x[1]);
                         }
                     }
                     break;
@@ -1197,17 +1170,17 @@ Int klu_solve2(
 
                     for (k = k1; k < k2; k++)
                     {
-                        pend = Offp[k + 1];
-                        x[0] = X[3 * k];
-                        x[1] = X[3 * k + 1];
-                        x[2] = X[3 * k + 2];
-                        for (p = Offp[k]; p < pend; p++)
+                        pend = Numeric->Offp[k + 1];
+                        x[0] = Numeric->Xwork[3 * k];
+                        x[1] = Numeric->Xwork[3 * k + 1];
+                        x[2] = Numeric->Xwork[3 * k + 2];
+                        for (p = Numeric->Offp[k]; p < pend; p++)
                         {
-                            i = Offi[p];
-                            offik = Offx[p];
-                            MULT_SUB(X[3 * i], offik, x[0]);
-                            MULT_SUB(X[3 * i + 1], offik, x[1]);
-                            MULT_SUB(X[3 * i + 2], offik, x[2]);
+                            i = Numeric->Offi[p];
+                            offik = Numeric->Offx[p];
+                            MULT_SUB(Numeric->Xwork[3 * i], offik, x[0]);
+                            MULT_SUB(Numeric->Xwork[3 * i + 1], offik, x[1]);
+                            MULT_SUB(Numeric->Xwork[3 * i + 2], offik, x[2]);
                         }
                     }
                     break;
@@ -1216,19 +1189,19 @@ Int klu_solve2(
 
                     for (k = k1; k < k2; k++)
                     {
-                        pend = Offp[k + 1];
-                        x[0] = X[4 * k];
-                        x[1] = X[4 * k + 1];
-                        x[2] = X[4 * k + 2];
-                        x[3] = X[4 * k + 3];
-                        for (p = Offp[k]; p < pend; p++)
+                        pend = Numeric->Offp[k + 1];
+                        x[0] = Numeric->Xwork[4 * k];
+                        x[1] = Numeric->Xwork[4 * k + 1];
+                        x[2] = Numeric->Xwork[4 * k + 2];
+                        x[3] = Numeric->Xwork[4 * k + 3];
+                        for (p = Numeric->Offp[k]; p < pend; p++)
                         {
-                            i = Offi[p];
-                            offik = Offx[p];
-                            MULT_SUB(X[4 * i], offik, x[0]);
-                            MULT_SUB(X[4 * i + 1], offik, x[1]);
-                            MULT_SUB(X[4 * i + 2], offik, x[2]);
-                            MULT_SUB(X[4 * i + 3], offik, x[3]);
+                            i = Numeric->Offi[p];
+                            offik = Numeric->Offx[p];
+                            MULT_SUB(Numeric->Xwork[4 * i], offik, x[0]);
+                            MULT_SUB(Numeric->Xwork[4 * i + 1], offik, x[1]);
+                            MULT_SUB(Numeric->Xwork[4 * i + 2], offik, x[2]);
+                            MULT_SUB(Numeric->Xwork[4 * i + 3], offik, x[3]);
                         }
                     }
                     break;
@@ -1245,42 +1218,42 @@ Int klu_solve2(
 
         case 1:
 
-            for (k = 0; k < n; k++)
+            for (k = 0; k < Symbolic->n; k++)
             {
-                Bz[Q[k]] = X[k];
+                B[Symbolic->Q[k]] = Numeric->Xwork[k];
             }
             break;
 
         case 2:
 
-            for (k = 0; k < n; k++)
+            for (k = 0; k < Symbolic->n; k++)
             {
-                i = Q[k];
-                Bz[i] = X[2 * k];
-                Bz[i + d] = X[2 * k + 1];
+                i = Symbolic->Q[k];
+                B[i] = Numeric->Xwork[2 * k];
+                B[i + d] = Numeric->Xwork[2 * k + 1];
             }
             break;
 
         case 3:
 
-            for (k = 0; k < n; k++)
+            for (k = 0; k < Symbolic->n; k++)
             {
-                i = Q[k];
-                Bz[i] = X[3 * k];
-                Bz[i + d] = X[3 * k + 1];
-                Bz[i + d * 2] = X[3 * k + 2];
+                i = Symbolic->Q[k];
+                B[i] = Numeric->Xwork[3 * k];
+                B[i + d] = Numeric->Xwork[3 * k + 1];
+                B[i + d * 2] = Numeric->Xwork[3 * k + 2];
             }
             break;
 
         case 4:
 
-            for (k = 0; k < n; k++)
+            for (k = 0; k < Symbolic->n; k++)
             {
-                i = Q[k];
-                Bz[i] = X[4 * k];
-                Bz[i + d] = X[4 * k + 1];
-                Bz[i + d * 2] = X[4 * k + 2];
-                Bz[i + d * 3] = X[4 * k + 3];
+                i = Symbolic->Q[k];
+                B[i] = Numeric->Xwork[4 * k];
+                B[i + d] = Numeric->Xwork[4 * k + 1];
+                B[i + d * 2] = Numeric->Xwork[4 * k + 2];
+                B[i + d * 3] = Numeric->Xwork[4 * k + 3];
             }
             break;
         }
@@ -1289,7 +1262,7 @@ Int klu_solve2(
         /* go to the next chunk of B */
         /* ------------------------------------------------------------------ */
 
-        Bz += d * 4;
+        B += d * 4;
     }
     return (TRUE);
 }
@@ -1667,72 +1640,34 @@ static void factor2(
     KLU_numeric *Numeric,
     KLU_common *Common)
 {
-    double lsize;
-    double *Lnz, *Rs;
-    Int *P, *Q, *R, *Pnum, *Offp, *Offi, *Pblock, *Pinv, *Iwork,
-        *Lip, *Uip, *Llen, *Ulen;
-    Entry *Offx, *X, s, *Udiag;
-    Unit *LUbx;
-    Int k1, k2, nk, k, block, oldcol, pend, oldrow, n, lnz, unz, p, newrow,
-        nblocks, poff, nzoff, lnz_block, unz_block, scale, max_lnz_block,
-        max_unz_block;
-
+    Int *Pblock, k1, k2, nk, oldcol, pend, oldrow, lnz = 0, unz = 0, newrow, poff, max_lnz_block = 1, max_unz_block = 1, lusize_sum = 0;
+    double s;
     /* ---------------------------------------------------------------------- */
     /* initializations */
     /* ---------------------------------------------------------------------- */
 
-    /* get the contents of the Symbolic object */
-    n = Symbolic->n;
-    P = Symbolic->P;
-    Q = Symbolic->Q;
-    R = Symbolic->R;
-    Lnz = Symbolic->Lnz;
-    nblocks = Symbolic->nblocks;
-    nzoff = Symbolic->nzoff;
-
-    Pnum = Numeric->Pnum;
-    Offp = Numeric->Offp;
-    Offi = Numeric->Offi;
-    Offx = (Entry *)Numeric->Offx;
-
-    Lip = Numeric->Lip;
-    Uip = Numeric->Uip;
-    Llen = Numeric->Llen;
-    Ulen = Numeric->Ulen;
-    LUbx = (Unit *)Numeric->LUbx;
-    Udiag = Numeric->Udiag;
-
-    Rs = Numeric->Rs;
-    Pinv = Numeric->Pinv;
-    X = (Entry *)Numeric->Xwork; /* X is of size n */
-    Iwork = Numeric->Iwork;      /* 5*maxblock for KLU_factor */
-                                 /* 1*maxblock for Pblock */
-    Pblock = Iwork + 5 * ((size_t)Symbolic->maxblock);
-    Common->nrealloc = 0;
-    scale = Common->scale;
-    max_lnz_block = 1;
-    max_unz_block = 1;
+    // Iwork = Numeric->Iwork; /* 5*maxblock for KLU_factor */
+    //                         /* 1*maxblock for Pblock */
+    Pblock = Numeric->Iwork + 5 * ((int)Symbolic->maxblock);
 
     /* compute the inverse of P from symbolic analysis.  Will be updated to
      * become the inverse of the numerical factorization when the factorization
      * is done, for use in KLU_refactor */
 
-    for (k = 0; k < n; k++)
+    for (int k = 0; k < Symbolic->n; k++)
     {
-        ASSERT(P[k] >= 0 && P[k] < n);
-        Pinv[P[k]] = k;
+        ASSERT(Symbolic->P[k] >= 0 && Symbolic->P[k] < Symbolic->n);
+        Numeric->Pinv[Symbolic->P[k]] = k;
     }
 
-    lnz = 0;
-    unz = 0;
     Common->noffdiag = 0;
-    Offp[0] = 0;
+    Numeric->Offp[0] = 0;
 
     /* ---------------------------------------------------------------------- */
     /* optionally check input matrix and compute scale factors */
     /* ---------------------------------------------------------------------- */
 
-    if (scale >= 0)
+    if (Common->scale >= 0)
     {
         /* use Pnum as workspace. NOTE: scale factors are not yet permuted
          * according to the final pivot row ordering, so Rs [oldrow] is the
@@ -1741,7 +1676,7 @@ static void factor2(
          * the scale factors are permuted according to the final pivot row
          * permutation, so that Rs [k] is the scale factor for the kth row of
          * A(p,q) where p and q are the final row and column permutations. */
-        KLU_scale(scale, n, Ap, Ai, (double *)Ax, Rs, Pnum, Common);
+        KLU_scale(Common->scale, Symbolic->n, Ap, Ai, (double *)Ax, Numeric->Rs, Numeric->Pnum, Common);
         if (Common->status < KLU_OK)
         {
             /* matrix is invalid */
@@ -1749,21 +1684,19 @@ static void factor2(
         }
     }
 
-    int lusize_sum = 0;
-
     /* ---------------------------------------------------------------------- */
     /* factor each block using klu */
     /* ---------------------------------------------------------------------- */
 
-    for (block = 0; block < nblocks; block++)
+    for (int block = 0; block < Symbolic->nblocks; block++)
     {
 
         /* ------------------------------------------------------------------ */
         /* the block is from rows/columns k1 to k2-1 */
         /* ------------------------------------------------------------------ */
 
-        k1 = R[block];
-        k2 = R[block + 1];
+        k1 = Symbolic->R[block];
+        k2 = Symbolic->R[block + 1];
         nk = k2 - k1;
         PRINTF(("FACTOR BLOCK %d, k1 %d k2-1 %d nk %d\n", block, k1, k2 - 1, nk));
 
@@ -1774,22 +1707,22 @@ static void factor2(
             /* singleton case */
             /* -------------------------------------------------------------- */
 
-            poff = Offp[k1];
-            oldcol = Q[k1];
+            poff = Numeric->Offp[k1];
+            oldcol = Symbolic->Q[k1];
             pend = Ap[oldcol + 1];
             CLEAR(s);
 
-            if (scale <= 0)
+            if (Common->scale <= 0)
             {
                 /* no scaling */
-                for (p = Ap[oldcol]; p < pend; p++)
+                for (int p = Ap[oldcol]; p < pend; p++)
                 {
                     oldrow = Ai[p];
-                    newrow = Pinv[oldrow];
+                    newrow = Numeric->Pinv[oldrow];
                     if (newrow < k1)
                     {
-                        Offi[poff] = oldrow;
-                        Offx[poff] = Ax[p];
+                        Numeric->Offi[poff] = oldrow;
+                        Numeric->Offx[poff] = Ax[p];
                         poff++;
                     }
                     else
@@ -1808,15 +1741,15 @@ static void factor2(
                  * used below.  When the factorization is done, the scale
                  * factors are permuted, so that Rs [newrow] will be used in
                  * klu_solve, klu_tsolve, and klu_rgrowth */
-                for (p = Ap[oldcol]; p < pend; p++)
+                for (int p = Ap[oldcol]; p < pend; p++)
                 {
                     oldrow = Ai[p];
-                    newrow = Pinv[oldrow];
+                    newrow = Numeric->Pinv[oldrow];
                     if (newrow < k1)
                     {
-                        Offi[poff] = oldrow;
+                        Numeric->Offi[poff] = oldrow;
                         /* Offx [poff] = Ax [p] / Rs [oldrow] ; */
-                        SCALE_DIV_ASSIGN(Offx[poff], Ax[p], Rs[oldrow]);
+                        SCALE_DIV_ASSIGN(Numeric->Offx[poff], Ax[p], Numeric->Rs[oldrow]);
                         poff++;
                     }
                     else
@@ -1824,12 +1757,12 @@ static void factor2(
                         ASSERT(newrow == k1);
                         PRINTF(("singleton block %d ", block));
                         PRINT_ENTRY(Ax[p]);
-                        SCALE_DIV_ASSIGN(s, Ax[p], Rs[oldrow]);
+                        SCALE_DIV_ASSIGN(s, Ax[p], Numeric->Rs[oldrow]);
                     }
                 }
             }
 
-            Udiag[k1] = s;
+            Numeric->Udiag[k1] = s;
 
             if (IS_ZERO(s))
             {
@@ -1843,19 +1776,19 @@ static void factor2(
                 }
             }
 
-            Offp[k1 + 1] = poff;
-            Pnum[k1] = P[k1];
+            Numeric->Offp[k1 + 1] = poff;
+            Numeric->Pnum[k1] = Symbolic->P[k1];
             lnz++;
             unz++;
         }
         else
         {
-
+            double lsize;
             /* -------------------------------------------------------------- */
             /* construct and factorize the kth block */
             /* -------------------------------------------------------------- */
 
-            if (Lnz[block] < 0)
+            if (Symbolic->Lnz[block] < 0)
             {
                 /* COLAMD was used - no estimate of fill-in */
                 /* use 10 times the nnz in A, plus n */
@@ -1863,14 +1796,8 @@ static void factor2(
             }
             else
             {
-                lsize = Common->initmem_amd * Lnz[block] + nk;
+                lsize = Common->initmem_amd * Symbolic->Lnz[block] + nk;
             }
-            // printf("lsize=%lf\n", lsize);
-            /* allocates 1 arrays: LUbx [block] */
-            // Numeric->LUsize [block] = KLU_kernel_factor (nk, Ap, Ai, Ax, Q,
-            //         lsize, &LUbx [block], Udiag + k1, Llen + k1, Ulen + k1,
-            //         Lip + k1, Uip + k1, Pblock, &lnz_block, &unz_block,
-            //         X, Iwork, k1, Pinv, Rs, Offp, Offi, Offx, Common) ;
 
             nk = MAX(1, nk);
 
@@ -1901,8 +1828,8 @@ static void factor2(
             int lusize = DUNITS(Int, Lsize) + DUNITS(Entry, Lsize) +
                          DUNITS(Int, Usize) + DUNITS(Entry, Usize);
 
-            int *pinv, *Stack, *Flag, *Ap_pos, *Lpend, *W;
-            W = Iwork;
+            int *pinv, *Stack, *Flag, *Ap_pos, *Lpend, *W, lnz_block, unz_block;
+            W = Numeric->Iwork;
             pinv = (Int *)W;
             W += nk;
             Stack = (Int *)W;
@@ -1914,10 +1841,10 @@ static void factor2(
             Ap_pos = (Int *)W;
             W += nk;
 
-            Numeric->LUsize[block] = KLU_kernel(nk, Ap, Ai, Ax, Q, lusize,
-                                                pinv, Pblock, &LUbx[lusize_sum], Udiag + k1, Llen + k1, Ulen + k1, Lip + k1, Uip + k1, &lnz_block, &unz_block,
-                                                X, Stack, Flag, Ap_pos, Lpend,
-                                                k1, Pinv, Rs, Offp, Offi, Offx, Common);
+            Numeric->LUsize[block] = KLU_kernel(nk, Ap, Ai, Ax, Symbolic->Q, lusize,
+                                                pinv, Pblock, &Numeric->LUbx[lusize_sum], Numeric->Udiag + k1, Numeric->Llen + k1, Numeric->Ulen + k1, Numeric->Lip + k1, Numeric->Uip + k1, &lnz_block, &unz_block,
+                                                Numeric->Xwork, Stack, Flag, Ap_pos, Lpend,
+                                                k1, Numeric->Pinv, Numeric->Rs, Numeric->Offp, Numeric->Offi, Numeric->Offx, Common);
             if (Common->status < KLU_OK || (Common->status == KLU_SINGULAR && Common->halt_if_singular))
             {
                 /* out of memory, invalid inputs, or singular */
@@ -1927,9 +1854,9 @@ static void factor2(
             lusize_sum += Numeric->LUsize[block];
 
             PRINTF(("\n----------------------- L %d:\n", block));
-            ASSERT(KLU_valid_LU(nk, TRUE, Lip + k1, Llen + k1, LUbx[block]));
+            ASSERT(KLU_valid_LU(nk, TRUE, Numeric->Lip + k1, Numeric->Llen + k1, Numeric->LUbx[block]));
             PRINTF(("\n----------------------- U %d:\n", block));
-            ASSERT(KLU_valid_LU(nk, FALSE, Uip + k1, Ulen + k1, LUbx[block]));
+            ASSERT(KLU_valid_LU(nk, FALSE, Numeric->Uip + k1, Numeric->Ulen + k1, Numeric->LUbx[block]));
 
             /* -------------------------------------------------------------- */
             /* get statistics */
@@ -1940,10 +1867,10 @@ static void factor2(
             max_lnz_block = MAX(max_lnz_block, lnz_block);
             max_unz_block = MAX(max_unz_block, unz_block);
 
-            if (Lnz[block] == EMPTY)
+            if (Symbolic->Lnz[block] == EMPTY)
             {
                 /* revise estimate for subsequent factorization */
-                Lnz[block] = MAX(lnz_block, unz_block);
+                Symbolic->Lnz[block] = MAX(lnz_block, unz_block);
             }
 
             /* -------------------------------------------------------------- */
@@ -1951,22 +1878,22 @@ static void factor2(
             /* -------------------------------------------------------------- */
 
             PRINTF(("Pnum, 1-based:\n"));
-            for (k = 0; k < nk; k++)
+            for (int k = 0; k < nk; k++)
             {
-                ASSERT(k + k1 < n);
-                ASSERT(Pblock[k] + k1 < n);
+                ASSERT(k + k1 < Symbolic->n);
+                ASSERT(Pblock[k] + k1 < Symbolic->n);
                 // printf("P[%d]=%d\n", k, P[k]);
-                Pnum[k + k1] = P[Pblock[k] + k1];
+                Numeric->Pnum[k + k1] = Symbolic->P[Pblock[k] + k1];
                 PRINTF(("Pnum (%d + %d + 1 = %d) = %d + 1 = %d\n",
-                        k, k1, k + k1 + 1, Pnum[k + k1], Pnum[k + k1] + 1));
+                        k, k1, k + k1 + 1, Numeric->Pnum[k + k1], Numeric->Pnum[k + k1] + 1));
             }
 
             /* the local pivot row permutation Pblock is no longer needed */
         }
     }
-    ASSERT(nzoff == Offp[n]);
+    ASSERT(Symbolic->nzoff == Numeric->Offp[Symbolic->n]);
     PRINTF(("\n------------------- Off diagonal entries:\n"));
-    ASSERT(KLU_valid(n, Offp, Offi, Offx));
+    ASSERT(KLU_valid(Symbolic->n, Numeric->Offp, Numeric->Offi, Numeric->Offx));
 
     Numeric->lnz = lnz;
     Numeric->unz = unz;
@@ -1974,69 +1901,80 @@ static void factor2(
     Numeric->max_unz_block = max_unz_block;
 
     /* compute the inverse of Pnum */
-    for (k = 0; k < n; k++)
+    for (int k = 0; k < Symbolic->n; k++)
     {
-        ASSERT(Pnum[k] >= 0 && Pnum[k] < n);
-        Pinv[Pnum[k]] = k;
+        ASSERT(Numeric->Pnum[k] >= 0 && Numeric->Pnum[k] < Symbolic->n);
+        Numeric->Pinv[Numeric->Pnum[k]] = k;
     }
 
     /* permute scale factors Rs according to pivotal row order */
-    if (scale > 0)
+    if (Common->scale > 0)
     {
-        for (k = 0; k < n; k++)
+        for (int k = 0; k < Symbolic->n; k++)
         {
-            REAL(X[k]) = Rs[Pnum[k]];
+            REAL(Numeric->Xwork[k]) = Numeric->Rs[Numeric->Pnum[k]];
         }
-        for (k = 0; k < n; k++)
+        for (int k = 0; k < Symbolic->n; k++)
         {
-            Rs[k] = REAL(X[k]);
+            Numeric->Rs[k] = REAL(Numeric->Xwork[k]);
         }
     }
 
     PRINTF(("\n------------------- Off diagonal entries, old:\n"));
-    ASSERT(KLU_valid(n, Offp, Offi, Offx));
+    ASSERT(KLU_valid(Symbolic->n, Numeric->Offp, Numeric->Offi, Numeric->Offx));
 
     /* apply the pivot row permutations to the off-diagonal entries */
-    for (p = 0; p < nzoff; p++)
+    for (int p = 0; p < Symbolic->nzoff; p++)
     {
-        ASSERT(Offi[p] >= 0 && Offi[p] < n);
-        Offi[p] = Pinv[Offi[p]];
+        ASSERT(Numeric->Offi[p] >= 0 && Numeric->Offi[p] < Symbolic->n);
+        Numeric->Offi[p] = Numeric->Pinv[Numeric->Offi[p]];
     }
 
     PRINTF(("\n------------------- Off diagonal entries, new:\n"));
-    ASSERT(KLU_valid(n, Offp, Offi, Offx));
+    ASSERT(KLU_valid(Symbolic->n, Numeric->Offp, Numeric->Offi, Numeric->Offx));
 }
 
 int main(void)
 {
-    cholmod_sparse *A;
-    cholmod_common ch;
-    cholmod_start(&ch);
-    // A = cholmod_read_sparse(stdin, &ch);
+    Mtx mtx;
+    char filename[] = "../../Matrix_Sample/arc130.mtx";
+
+    if (read_sparse(filename, &mtx))
+        return 1;
 
     klu_common Common;
     KLU_numeric Numeric;
     klu_symbolic Symbolic;
     klu_defaults(&Common);
-    const int n = 10;
-    int Ap[] = {0, 2, 4, 7, 9, 13, 14, 18, 21, 23, 24};
-    int Ai[] = {0, 7, 1, 5, 0, 2, 7, 3, 8, 3, 4, 5, 8, 5, 0, 6, 7, 8, 4, 5, 7, 2, 8, 9};
-    double Ax[] = {8, 8, 2, 4, 10, 3, 10, 1, 5, 2, 1, 4, 10, 2, 3, 5, 3, 15, 4, 16, 3, 7, 2, 9};
-    double b[] = {172, 18, 38, 19, 18, 118, 20, 181, 159, 9};
+    // const int n = 10;
+    // int Ap[] = {0, 2, 4, 7, 9, 13, 14, 18, 21, 23, 24};
+    // int Ai[] = {0, 7, 1, 5, 0, 2, 7, 3, 8, 3, 4, 5, 8, 5, 0, 6, 7, 8, 4, 5, 7, 2, 8, 9};
+    // double Ax[] = {8, 8, 2, 4, 10, 3, 10, 1, 5, 2, 1, 4, 10, 2, 3, 5, 3, 15, 4, 16, 3, 7, 2, 9};
+    // double b[] = {172, 18, 38, 19, 18, 118, 20, 181, 159, 9};
+
+    int n = mtx.n;
+    int *Ap = mtx.Ap;
+    int *Ai = mtx.Ai;
+    double *Ax = mtx.Ax;
+    double b[] = {279.584743202215, -324.558579717574, 41.6857698124613, 71.7796552191998, -21.8080536390688, -12.1206651085711, 6.96409248369851, 8.06655960258013, 9.07550956120881, 10.0242759948783, 10.9356800700396, 11.2575737075623, 13.0755095612088, 14.6143625004934, 14.6622950007692, 16, 17.0665596025801, 18.0011830061659, 19.0153260491416, -27475.3902422406, -80429157.8945312, -79328370.8867188, -40946052.6914062, -74347681.515625, -72174052.6171875, 45.2518649101257, 25.4358819499556, 29.3744153231358, 33.4031240940092, 32.1007794141767, 68.682388305664, 27.5902938740802, 34.2920764182203, 41.8601366281505, 38.4772992134089, 85.2251358032226, 29.9290522684125, 38.2619187734309, 48.8282384276385, 44.3459486961358, 91.8335390090942, 33.3837329002542, 41.6764824338056, 53.9081966876978, 49.5371791720383, 89.9676032066345, 38.418592582108, 45.5973847664851, 57.5117719173426, 54.1664958000176, 83.7884101867675, 44.8544080049303, 50.2856411694522, 60.4747216701503, 58.5157126188272, 77.5720725059509, 52.0548983215017, 55.7535365455683, 63.5658667087552, 62.8661473095413, 73.8493753075599, 59.3249367251971, 61.7303034401082, 67.1980535984037, 67.3882255144415, 73.2623927593231, 66.1970339380203, 67.8179687568906, 71.427210163325, 72.1252968907355, 75.2432642094791, 72.5106880366802, 73.7411950565874, 76.1072703003883, 77.0394964143633, 78.8693265914917, 78.3303363509476, 79.4039598405361, 81.0516444817185, 82.06717222929, 83.3696878105402, 83.8095736652612, 84.8357935622334, 86.1200445592403, 87.1544153615832, 88.2661053612828, 89.093873038888, 90.1123360395431, 91.2343204244971, 92.2676514834165, 93.3175967484713, 94.2826037406922, 95.3031234964728, 96.3608182370663, 97.390259783715, 98.4220633506775, 99.4306319057942, 100.453658305109, 101.48865038529, 102.515559270978, 103.54242381081, 104.563432127237, 105.587807916105, 106.615641176701, 107.641398645937, 108.666984058917, 109.691199589521, 110.716114014387, 111.741927120835, 112.767261900008, 113.792525097728, 114.817488133907, 115.842579871416, 116.867881961167, 117.893085516989, 118.918268278241, 119.943389151245, 120.968530938029, 121.993717238307, 123.01888525486, 124.044048041105, 125.069199554622, 126.094353720546, 127.119516149163, 128.144675865769, 129.169834211469, 130.194990679622, 131.220147609711, 132.245305974036, 133.270463384688};
+
+    // printf("n=%d\n", n);
+    // for (int i = 0; i <= n; i++)
+    //     printf("Ap[%d]=%d\n", i, mtx.Ap[i]);
+    // for (int i = 0; i < mtx.nz; i++)
+    //     printf("Ai[%d]=%d\tAx[%d]=%lf\n", i, mtx.Ai[i], i, mtx.Ax[i]);
 
     Symbolic = *klu_analyze(n, Ap, Ai, &Common);
 
-    for (int i = 0; i < n; i++)
-        printf("P[%d]=%d,Q[%d]=%d,R[%d]=%d,Lnz[%d]=%lf\n", i, Symbolic.P[i], i, Symbolic.Q[i], i, Symbolic.R[i], i, Symbolic.Lnz[i]);
-    printf("nblocks=%d,nzoff=%d\n", Symbolic.nblocks, Symbolic.nzoff);
+    // for (int i = 0; i < n; i++)
+    //     printf("P[%d]=%d,Q[%d]=%d,R[%d]=%d,Lnz[%d]=%lf\n", i, Symbolic.P[i], i, Symbolic.Q[i], i, Symbolic.R[i], i, Symbolic.Lnz[i]);
+    // printf("nblocks=%d,nzoff=%d\n", Symbolic.nblocks, Symbolic.nzoff);
 
-    int maxblock = Symbolic.maxblock, nzoff = Symbolic.nzoff;
-    int nzoff1 = nzoff + 1, n1 = n + 1;
-    double lusize = Symbolic.lnz + Symbolic.unz;
+    int nzoff1 = Symbolic.nzoff + 1,
+        n1 = n + 1;
+    double lusize = Common.memgrow * (Symbolic.lnz + Symbolic.unz) + 4 * n + 1;
 
-    size_t LUsize[Symbolic.nblocks];
-    for (int i = 0; i < Symbolic.nblocks; i++)
-        LUsize[i] = 0;
+    printf("lusize=%.0lf\n", lusize);
 
     Numeric.n = Symbolic.n;
     Numeric.nblocks = Symbolic.nblocks;
@@ -2049,24 +1987,31 @@ int main(void)
     Numeric.Uip = malloc(n * sizeof(Int));
     Numeric.Llen = malloc(n * sizeof(Int));
     Numeric.Ulen = malloc(n * sizeof(Int));
-    Numeric.LUsize = malloc(Symbolic.nblocks * sizeof(size_t));
+    Numeric.LUsize = calloc(Symbolic.nblocks, sizeof(int));
     Numeric.LUbx = malloc(lusize * sizeof(double));
     Numeric.Udiag = malloc(n * sizeof(Entry));
     Numeric.Rs = malloc(n * sizeof(double));
     Numeric.Pinv = malloc(n * sizeof(Int));
 
-    int ok = 1;
-    int s = KLU_mult_size_t(n, sizeof(Entry), &ok);
-    int n3 = KLU_mult_size_t(n, 3 * sizeof(Entry), &ok);
-    int b6 = KLU_mult_size_t(maxblock, 6 * sizeof(Int), &ok);
-    Numeric.worksize = KLU_add_size_t(s, MAX(n3, b6), &ok);
-    Numeric.Work = malloc(Numeric.worksize);
-    Numeric.Xwork = Numeric.Work;
-    Numeric.Iwork = (Int *)((Entry *)Numeric.Xwork + n);
+    // int ok = 1;
+    // int s = KLU_mult_size_t(n, sizeof(Entry), &ok);
+    // int n3 = KLU_mult_size_t(n, 3 * sizeof(Entry), &ok);
+    // int b6 = KLU_mult_size_t(maxblock, 6 * sizeof(Int), &ok);
+    // Numeric.worksize = KLU_add_size_t(s, MAX(n3, b6), &ok);
+
+    // int s = n * sizeof(double);
+    // int n3 = n * 3 * sizeof(double);
+    // int b6 = Symbolic.maxblock * 6 * sizeof(int);
+    Numeric.worksize = n * sizeof(double) + MAX(n * 3 * sizeof(double), Symbolic.maxblock * 6 * sizeof(int));
+
+    // Numeric.Work = malloc(Numeric.worksize);
+    Numeric.Xwork = malloc(Numeric.worksize);
+    Numeric.Iwork = (int *)(Numeric.Xwork + n);
 
     factor2(Ap, Ai, Ax, &Symbolic, &Numeric, &Common);
 
     klu_solve2(&Symbolic, &Numeric, n, 1, b, &Common);
+
     for (int i = 0; i < n; i++)
         printf("x [%d] = %g\n", i, b[i]);
     return 0;

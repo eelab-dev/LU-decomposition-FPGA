@@ -44,9 +44,17 @@ void get_pointer(int *x, int l);
 
 void get_pointer2(int **x);
 
+typedef struct
+{
+    int a;
+    int b;
+    int c;
+} Mtx;
+
 int main(void)
 {
     klu_numeric *x;
+    Mtx abc;
     // int **lu = malloc(5 * sizeof(int *));
     // int a[100];
     // for (int i = 0; i < 100; i++)
@@ -71,9 +79,11 @@ int main(void)
     printf("2\n");
     get_pointer(&lu[a[2]], 5);
 
-    printf("sizeof(klu_numeric)=%lu\n", sizeof(x));
+    printf("sizeof(klu_numeric)=%ld\n", sizeof(x));
 
-    printf("sizeof(int *)=%lu\n", sizeof(int *));
+    printf("sizeof(abc)=%ld\n", sizeof(abc));
+
+    printf("sizeof(int *)=%ld\n", sizeof(int *));
 
     return 0;
 }

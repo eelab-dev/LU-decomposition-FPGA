@@ -12,7 +12,7 @@ int main(void)
     int solved;
     if (A)
     {
-        if (A->nrow != A->ncol || A->stype != 0 || (!(A->xtype == CHOLMOD_REAL || A->xtype == CHOLMOD_COMPLEX)))
+        if (A->nrow != A->ncol || A->stype != 1 || (!(A->xtype == CHOLMOD_REAL || A->xtype == CHOLMOD_COMPLEX)))
         {
             printf("stype=%d,xtype=%d", A->stype, A->xtype);
             printf("invalid matrix\n");
@@ -30,14 +30,15 @@ int main(void)
         int *Ap, *Ai;
         double *Ax;
 
+        klu_numeric *Numeric;
+        klu_symbolic *Symbolic;
+        Symbolic = klu_analyze(A->nrow, Ap, Ai, &Common);
+
         for (int i = 0; i < runtime; i++)
         {
             Ap = (int *)(A->p);
             Ai = (int *)(A->i);
             Ax = (double *)(A->x);
-            klu_numeric *Numeric;
-            klu_symbolic *Symbolic;
-            Symbolic = klu_analyze(A->nrow, Ap, Ai, &Common);
 
             begin = std::chrono::steady_clock::now();
             Numeric = klu_factor(Ap, Ai, Ax, Symbolic, &Common);
@@ -48,8 +49,8 @@ int main(void)
             std::cout << "Maxblock: " << Symbolic->maxblock << std::endl;
             std::cout << "nblocks: " << Symbolic->nblocks << std::endl;
 
-            klu_free_symbolic(&Symbolic, &Common);
-            klu_free_numeric(&Numeric, &Common);
+            // klu_free_symbolic(&Symbolic, &Common);
+            // klu_free_numeric(&Numeric, &Common);
         }
 
         printf("Time:%lfns\n", total / (double)runtime);
@@ -57,8 +58,8 @@ int main(void)
         // b = klu_malloc(A->nrow, sizeof(double), &Common);
         // for (int i = 0; i < A->nrow; i++)
         //     b[i] = 3;
-
-        // solved = klu_solve(Symbolic, Numeric, A->nrow, 1, b, &Common);
+        double b[] = {42, 61, 27, 39, 19, 60, 21, 29, 56, 66, 39, 36, 49, 46, 45, 112, 78, 42, 88, 73, 59, 101, 105, 63, 90, 135, 70, 83, 121, 32, 37, 42, 52, 54, 57, 59, 62, 67, 49};
+        solved = klu_solve(Symbolic, Numeric, A->nrow, 1, b, &Common);
         // // klu_demo (A->nrow, A->p, A->i, A->x, A->xtype == CHOLMOD_REAL) ;
         // if (solved)
 

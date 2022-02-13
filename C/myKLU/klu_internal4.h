@@ -275,8 +275,8 @@ typedef double Unit;
 //     double rgrowth; /* reciprocal pivot rgrowth, from klu_rgrowth */
 //     double work;    /* actual work done in BTF, in klu_analyze */
 
-//     size_t memusage; /* current memory usage, in bytes */
-//     size_t mempeak;  /* peak memory usage, in bytes */
+//     int memusage; /* current memory usage, in bytes */
+//     int mempeak;  /* peak memory usage, in bytes */
 
 // } klu_common;
 
@@ -328,40 +328,40 @@ typedef struct
     int *Pinv;         /* size n. inverse of final pivot permutation */
 
     /* LU factors of each block */
-    int *Lip;       /* size n. pointers into LUbx[block] for L */
-    int *Uip;       /* size n. pointers into LUbx[block] for U */
-    int *Llen;      /* size n. Llen [k] = # of entries in kth column of L */
-    int *Ulen;      /* size n. Ulen [k] = # of entries in kth column of U */
-    void *LUbx;     /* L and U indices and entries (excl. diagonal of U) */
-    size_t *LUsize; /* size of each LUbx [block], in sizeof (Unit) */
-    void *Udiag;    /* diagonal of U */
+    int *Lip;      /* size n. pointers into LUbx[block] for L */
+    int *Uip;      /* size n. pointers into LUbx[block] for U */
+    int *Llen;     /* size n. Llen [k] = # of entries in kth column of L */
+    int *Ulen;     /* size n. Ulen [k] = # of entries in kth column of U */
+    double *LUbx;  /* L and U indices and entries (excl. diagonal of U) */
+    int *LUsize;   /* size of each LUbx [block], in sizeof (Unit) */
+    double *Udiag; /* diagonal of U */
 
     /* scale factors; can be NULL if no scaling */
     double *Rs; /* size n. Rs [i] is scale factor for row i */
 
     /* permanent workspace for factorization and solve */
-    size_t worksize; /* size (in bytes) of Work */
-    void *Work;      /* workspace */
-    void *Xwork;     /* alias into Numeric->Work */
-    int *Iwork;      /* alias into Numeric->Work */
+    int worksize; /* size (in bytes) of Work */
+    // void *Work;      /* workspace */
+    double *Xwork; /* alias into Numeric->Work */
+    int *Iwork;    /* alias into Numeric->Work */
 
     /* off-diagonal entries in a conventional compressed-column sparse matrix */
-    int *Offp;  /* size n+1, column pointers */
-    int *Offi;  /* size nzoff, row indices */
-    void *Offx; /* size nzoff, numerical values */
+    int *Offp;    /* size n+1, column pointers */
+    int *Offi;    /* size nzoff, row indices */
+    double *Offx; /* size nzoff, numerical values */
     int nzoff;
 
 } klu_numeric2;
 
-size_t KLU_kernel /* final size of LU on output */
+int KLU_kernel /* final size of LU on output */
     (
         /* input, not modified */
-        int n,         /* A is n-by-n */
-        int Ap[],      /* size n+1, column pointers for A */
-        int Ai[],      /* size nz = Ap [n], row indices for A */
-        double Ax[],   /* size nz, values of A */
-        int Q[],       /* size n, optional input permutation */
-        size_t lusize, /* initial size of LU */
+        int n,       /* A is n-by-n */
+        int Ap[],    /* size n+1, column pointers for A */
+        int Ai[],    /* size nz = Ap [n], row indices for A */
+        double Ax[], /* size nz, values of A */
+        int Q[],     /* size n, optional input permutation */
+        int lusize,  /* initial size of LU */
 
         /* output, not defined on input */
         int Pinv[],     /* size n */
@@ -398,7 +398,7 @@ size_t KLU_kernel /* final size of LU on output */
         KLU_common *Common /* the control input/output structure */
     );
 
-size_t KLU_kernel_factor /* 0 if failure, size of LU if OK */
+int KLU_kernel_factor /* 0 if failure, size of LU if OK */
     (
         /* inputs, not modified */
         int n,        /* A is n-by-n. n must be > 0. */
@@ -540,11 +540,5 @@ Int KLU_defaults(
 
     return (TRUE);
 }
-
-size_t KLU_add_size_t(size_t a, size_t b, int *ok);
-
-size_t KLU_mult_size_t(size_t a, size_t k, int *ok);
-
-KLU_symbolic *KLU_alloc_symbolic(int n, int *Ap, int *Ai, KLU_common *Common);
 
 #endif
