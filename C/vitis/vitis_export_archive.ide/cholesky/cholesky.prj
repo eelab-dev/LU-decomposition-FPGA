@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="ASCII"?>
+<openclProject:OpenCLProject xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:openclProject="http://www.xilinx.com/openclproject" name="cholesky" location="/group/bcapps/yunl/indepth_tutorial/workspace/cholesky" platform="/proj/xbuilds/CustTA/2020.1_0528_2016/xbb/dsadev/opt/xilinx/platforms/xilinx_u50_gen3x16_xdma_201920_3/xilinx_u50_gen3x16_xdma_201920_3.xpfm" platformUID="xilinx:u50:gen3x16_xdma:201920.3(custom)" systemProject="cholesky_system" sysConfig="config0_0" cpu="x86" cpuInstance="x86" os="Linux">
+  <configuration name="Emulation-SW" id="com.xilinx.accelerated.config.sw_emu.22216064" dirty="true">
+    <configBuildOptions xsi:type="openclProject:OpenCLOptions" kernelDebug="true">
+      <binaryContainers name="binary_container_1">
+        <kernels name="cholesky_kernel" sourceFile="src/cholesky_kernel.cpp">
+          <computeUnits name="cholesky_kernel_1" slr=""/>
+        </kernels>
+      </binaryContainers>
+    </configBuildOptions>
+  </configuration>
+  <configuration name="Emulation-HW" id="com.xilinx.accelerated.config.hw_emu.1504155564">
+    <configBuildOptions xsi:type="openclProject:OpenCLOptions" target="hw_emu">
+      <binaryContainers name="binary_container_1">
+        <kernels name="cholesky_kernel" sourceFile="src/cholesky_kernel.cpp"/>
+      </binaryContainers>
+    </configBuildOptions>
+    <lastBuildOptions xsi:type="openclProject:OpenCLOptions" target="hw_emu">
+      <binaryContainers name="binary_container_1">
+        <kernels name="cholesky_kernel" sourceFile="src/cholesky_kernel.cpp"/>
+      </binaryContainers>
+    </lastBuildOptions>
+  </configuration>
+  <configuration name="Hardware" id="com.xilinx.accelerated.config.hw.2032456480" dirty="true">
+    <configBuildOptions xsi:type="openclProject:OpenCLOptions" target="hw">
+      <binaryContainers name="binary_container_1">
+        <kernels name="cholesky_kernel" sourceFile="src/cholesky_kernel.cpp">
+          <computeUnits name="cholesky_kernel_1" slr=""/>
+        </kernels>
+      </binaryContainers>
+    </configBuildOptions>
+  </configuration>
+</openclProject:OpenCLProject>

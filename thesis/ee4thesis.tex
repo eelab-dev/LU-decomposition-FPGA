@@ -1,0 +1,89 @@
+% Copyright (c) 2015 Mihail Atanassov
+% Edited by Stewart Smith 2015
+%
+% Permission is hereby granted, free of charge, to any person obtaining a copy
+% of this software and associated documentation files (the "Software"), to deal
+% in the Software without restriction, including without limitation the rights
+% to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+% copies of the Software, and to permit persons to whom the Software is
+% furnished to do so, subject to the following conditions:
+%
+% The above copyright notice and this permission notice shall be included in
+% all copies or substantial portions of the Software.
+%
+% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+% IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+% FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+% AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+% LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+% THE SOFTWARE.
+
+% Final
+\documentclass[a4paper, 11pt, titlepage, openright, oneside]{report}
+% Draft
+%\documentclass[a4paper, 10pt, titlepage, openright, twoside, draft]{report}
+
+\usepackage{Preamble}
+
+
+\begin{document}
+
+%%== Arrangement of files taken directly from page 41 of EE4 handbook ==%%
+
+%%== Attach front cover here ==%%
+
+
+\pagenumbering{gobble}  % Work around a LaTeX warning about duplicate page
+% references in the title page
+
+% left and right margins - 6cm; top - 7cm; bottom - 17.5cm
+\input{00_title_page}
+
+\begin{onehalfspacing} % 1.5 line spacing (see pg.42 of the EE4 manual)
+
+  \pagenumbering{roman} % Roman numbering before the main body of text
+
+  \input{01_mission_statement}
+
+  \input{02_abstract}
+
+  \input{03_doo} %Declaration of Originality
+
+  \input{04_soa} %Statement of Achievement
+
+  \tableofcontents %Table of contents
+  \listoffigures
+  \listoftables
+
+  %\clearpage
+  \input{99_glossary}       % Keep the glossary in a separate file to reduce
+  %   clutter
+  \glsaddall[types={nom}]
+  % The list of symbols should go here (if needed)
+  \printglossary[type=nom,style=listwithwidth]
+
+  \cleardoublepage    % May need to clear that page if the list of symbols
+  % exists
+
+  \label{glossary}
+  \printglossary
+
+  \cleardoublepage
+
+  \pagenumbering{arabic} %arabic numbering from the main text onward
+
+  \input{05_main} % Main text, this will contain individual chapters
+
+  \input{06_acknowledgements} % Acknowledgements
+
+  \include{07_references} % References
+
+  \input{08_appendices} % Appendices
+
+  %§\input{09_trademarks_and_copyright} % If doing an industry project
+
+\end{onehalfspacing}
+%%== Attach back cover here ==%%
+
+\end{document}
