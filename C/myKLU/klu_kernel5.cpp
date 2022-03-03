@@ -13,6 +13,8 @@
 #include <chrono>
 #include <numeric>
 
+#define MAX_SIZE 1000
+
 /* ========================================================================== */
 /* === dfs ================================================================== */
 /* ========================================================================== */
@@ -777,7 +779,8 @@ int KLU_kernel /* final size of LU on output */
                 k, diagrow, UNFLIP(diagrow)));
 
         /* find a pivot and scale the pivot column */
-        if (!lpivot(diagrow, &pivrow, &pivot, &abs_pivot, tol, X, LU, Lip, Llen, k, n, Pinv, &firstrow, Common))
+        if (!lpivot(diagrow, &pivrow, &pivot, &abs_pivot, tol, X, LU, Lip,
+                    Llen, k, n, Pinv, &firstrow, Common))
         {
             /* matrix is structurally or numerically singular */
             Common->status = KLU_SINGULAR;
@@ -892,20 +895,22 @@ int KLU_kernel /* final size of LU on output */
 
 int klu_solve2(
     /* inputs, not modified */
-    KLU_symbolic *Symbolic,
-    KLU_numeric *Numeric,
-    int d,    /* leading dimension of B */
-    int nrhs, /* number of right-hand-sides */
+    int *Q, int *R, int *Pnum, int *Offp, int *Offi, int *Lip, int *Uip, int *Llen, int *Ulen,
+    double *Offx, double *X, double *Udiag, double *Rs,
+    double *LUbx,
+    int *LUsize,
+    int nblocks,
+    int d,          /* leading dimension of B */
+    int lusize_sum, /* number of right-hand-sides */
 
     /* right-hand-side on input, overwritten with solution to Ax=b on output */
-    double B[], /* size n*nrhs, in column-oriented form, with
-                 * leading dimension d. */
+    double Bz[], /* size n*nrhs, in column-oriented form, with
+                  * leading dimension d. */
     /* --------------- */
     KLU_common *Common)
 {
-    double x[4], offik, s;
-    double rs;
-    int k1, k2, nk, k, pend, p, nr, i;
+    double x, s;
+    int k1, k2, nk, k, pend, p, n = d;
 
     /* ---------------------------------------------------------------------- */
     /* check inputs */
@@ -915,12 +920,12 @@ int klu_solve2(
     {
         return (FALSE);
     }
-    if (Numeric == NULL || Symbolic == NULL || d < Symbolic->n || nrhs < 0 ||
-        B == NULL)
-    {
-        Common->status = KLU_INVALID;
-        return (FALSE);
-    }
+    // if (Numeric == NULL || Symbolic == NULL || d < Symbolic->n || nrhs < 0 ||
+    //     B == NULL)
+    // {
+    //     Common->status = KLU_INVALID;
+    //     return (FALSE);
+    // }
     Common->status = KLU_OK;
 
     /* ---------------------------------------------------------------------- */
@@ -931,325 +936,97 @@ int klu_solve2(
     /* get the contents of the Numeric object */
     /* ---------------------------------------------------------------------- */
 
-    // for (int i = 0; i < Numeric->LUsize[1]; i++)
-    //     printf("LU[%d]=%lf\n", i, LUbx[i]);
-
-    // for (int i = 0; i < n; i++)
-    //     printf("Llen[%d]=%d,Lip[%d]=%d,Ulen[%d]=%d,Uip[%d]=%d\n", i, Llen[i], i, Lip[i], i, Ulen[i], i, Uip[i]);
-
-    ASSERT(KLU_valid(Symbolic->n, Numeric->Offp, Numeric->Offi, Numeric->Offx));
+    ASSERT(KLU_valid(n, Offp, Offi, Offx));
 
     /* ---------------------------------------------------------------------- */
     /* solve in chunks of 4 columns at a time */
     /* ---------------------------------------------------------------------- */
 
-    for (int chunk = 0; chunk < nrhs; chunk += 4)
+    /* ------------------------------------------------------------------ */
+    /* scale and permute the right hand side, X = P*(R\B) */
+    /* ------------------------------------------------------------------ */
+
+    if (Rs == NULL)
     {
 
-        /* ------------------------------------------------------------------ */
-        /* get the size of the current chunk */
-        /* ------------------------------------------------------------------ */
+        /* no scaling */
 
-        nr = MIN(nrhs - chunk, 4);
-
-        /* ------------------------------------------------------------------ */
-        /* scale and permute the right hand side, X = P*(R\B) */
-        /* ------------------------------------------------------------------ */
-
-        if (Numeric->Rs == NULL)
+        for (k = 0; k < n; k++)
         {
+            X[k] = Bz[Pnum[k]];
+        }
+    }
+    else
+    {
 
-            /* no scaling */
-            switch (nr)
-            {
+        for (k = 0; k < n; k++)
+        {
+            SCALE_DIV_ASSIGN(X[k], Bz[Pnum[k]], Rs[k]);
+        }
+    }
 
-            case 1:
+    /* ------------------------------------------------------------------ */
+    /* solve X = (L*U + Off)\X */
+    /* ------------------------------------------------------------------ */
 
-                for (k = 0; k < Symbolic->n; k++)
-                {
-                    Numeric->Xwork[k] = B[Numeric->Pnum[k]];
-                }
-                break;
+    for (int block = nblocks - 1; block >= 0; block--)
+    {
 
-            case 2:
+        /* -------------------------------------------------------------- */
+        /* the block of size nk is from rows/columns k1 to k2-1 */
+        /* -------------------------------------------------------------- */
 
-                for (k = 0; k < Symbolic->n; k++)
-                {
-                    i = Numeric->Pnum[k];
-                    Numeric->Xwork[2 * k] = B[i];
-                    Numeric->Xwork[2 * k + 1] = B[i + d];
-                }
-                break;
+        k1 = R[block];
+        k2 = R[block + 1];
+        nk = k2 - k1;
+        PRINTF(("solve %d, k1 %d k2-1 %d nk %d\n", block, k1, k2 - 1, nk));
 
-            case 3:
+        // printf("nr=%d\n", nr);
+        /* solve the block system */
+        if (nk == 1)
+        {
+            s = Udiag[k1];
+            // printf("X[%d]=%lf,s=%lf\n", k1, X[k1], s);
 
-                for (k = 0; k < Symbolic->n; k++)
-                {
-                    i = Numeric->Pnum[k];
-                    Numeric->Xwork[3 * k] = B[i];
-                    Numeric->Xwork[3 * k + 1] = B[i + d];
-                    Numeric->Xwork[3 * k + 2] = B[i + d * 2];
-                }
-                break;
-
-            case 4:
-
-                for (k = 0; k < Symbolic->n; k++)
-                {
-                    i = Numeric->Pnum[k];
-                    Numeric->Xwork[4 * k] = B[i];
-                    Numeric->Xwork[4 * k + 1] = B[i + d];
-                    Numeric->Xwork[4 * k + 2] = B[i + d * 2];
-                    Numeric->Xwork[4 * k + 3] = B[i + d * 3];
-                }
-                break;
-            }
+            DIV(X[k1], X[k1], s);
         }
         else
         {
-            switch (nr)
-            {
-
-            case 1:
-
-                for (k = 0; k < Symbolic->n; k++)
-                {
-                    SCALE_DIV_ASSIGN(Numeric->Xwork[k], B[Numeric->Pnum[k]], Numeric->Rs[k]);
-                }
-                break;
-
-            case 2:
-
-                for (k = 0; k < Symbolic->n; k++)
-                {
-                    i = Numeric->Pnum[k];
-                    rs = Numeric->Rs[k];
-                    SCALE_DIV_ASSIGN(Numeric->Xwork[2 * k], B[i], rs);
-                    SCALE_DIV_ASSIGN(Numeric->Xwork[2 * k + 1], B[i + d], rs);
-                }
-                break;
-
-            case 3:
-
-                for (k = 0; k < Symbolic->n; k++)
-                {
-                    i = Numeric->Pnum[k];
-                    rs = Numeric->Rs[k];
-                    SCALE_DIV_ASSIGN(Numeric->Xwork[3 * k], B[i], rs);
-                    SCALE_DIV_ASSIGN(Numeric->Xwork[3 * k + 1], B[i + d], rs);
-                    SCALE_DIV_ASSIGN(Numeric->Xwork[3 * k + 2], B[i + d * 2], rs);
-                }
-                break;
-
-            case 4:
-
-                for (k = 0; k < Symbolic->n; k++)
-                {
-                    i = Numeric->Pnum[k];
-                    rs = Numeric->Rs[k];
-                    SCALE_DIV_ASSIGN(Numeric->Xwork[4 * k], B[i], rs);
-                    SCALE_DIV_ASSIGN(Numeric->Xwork[4 * k + 1], B[i + d], rs);
-                    SCALE_DIV_ASSIGN(Numeric->Xwork[4 * k + 2], B[i + d * 2], rs);
-                    SCALE_DIV_ASSIGN(Numeric->Xwork[4 * k + 3], B[i + d * 3], rs);
-                }
-                break;
-            }
+            lusize_sum -= LUsize[block];
+            KLU_lsolve(nk, Lip + k1, Llen + k1, &LUbx[lusize_sum], X + k1);
+            KLU_usolve(nk, Uip + k1, Ulen + k1, &LUbx[lusize_sum], Udiag + k1, X + k1);
         }
 
-        /* ------------------------------------------------------------------ */
-        /* solve X = (L*U + Off)\X */
-        /* ------------------------------------------------------------------ */
+        /* -------------------------------------------------------------- */
+        /* block back-substitution for the off-diagonal-block entries */
+        /* -------------------------------------------------------------- */
 
-        for (int block = Symbolic->nblocks - 1; block >= 0; block--)
+        if (block > 0)
         {
 
-            /* -------------------------------------------------------------- */
-            /* the block of size nk is from rows/columns k1 to k2-1 */
-            /* -------------------------------------------------------------- */
-
-            k1 = Symbolic->R[block];
-            k2 = Symbolic->R[block + 1];
-            nk = k2 - k1;
-            PRINTF(("solve %d, k1 %d k2-1 %d nk %d\n", block, k1, k2 - 1, nk));
-
-            // printf("nr=%d\n", nr);
-            /* solve the block system */
-            if (nk == 1)
+            for (k = k1; k < k2; k++)
             {
-                s = Numeric->Udiag[k1];
-                // printf("X[%d]=%lf,s=%lf\n", k1, X[k1], s);
-                switch (nr)
+                // printf("Offp[%d]=%d,Offp[%d]=%d\n", k, Offp[k], k + 1, Offp[k + 1]);
+                pend = Offp[k + 1];
+                x = X[k];
+                for (p = Offp[k]; p < pend; p++)
                 {
-
-                case 1:
-                    DIV(Numeric->Xwork[k1], Numeric->Xwork[k1], s);
-                    break;
-
-                case 2:
-                    DIV(Numeric->Xwork[2 * k1], Numeric->Xwork[2 * k1], s);
-                    DIV(Numeric->Xwork[2 * k1 + 1], Numeric->Xwork[2 * k1 + 1], s);
-                    break;
-
-                case 3:
-                    DIV(Numeric->Xwork[3 * k1], Numeric->Xwork[3 * k1], s);
-                    DIV(Numeric->Xwork[3 * k1 + 1], Numeric->Xwork[3 * k1 + 1], s);
-                    DIV(Numeric->Xwork[3 * k1 + 2], Numeric->Xwork[3 * k1 + 2], s);
-                    break;
-
-                case 4:
-                    DIV(Numeric->Xwork[4 * k1], Numeric->Xwork[4 * k1], s);
-                    DIV(Numeric->Xwork[4 * k1 + 1], Numeric->Xwork[4 * k1 + 1], s);
-                    DIV(Numeric->Xwork[4 * k1 + 2], Numeric->Xwork[4 * k1 + 2], s);
-                    DIV(Numeric->Xwork[4 * k1 + 3], Numeric->Xwork[4 * k1 + 3], s);
-                    break;
-                }
-            }
-            else
-            {
-                Numeric->lusize_sum -= Numeric->LUsize[block];
-                KLU_lsolve(nk, Numeric->Lip + k1, Numeric->Llen + k1, &Numeric->LUbx[Numeric->lusize_sum], nr, Numeric->Xwork + nr * k1);
-                KLU_usolve(nk, Numeric->Uip + k1, Numeric->Ulen + k1, &Numeric->LUbx[Numeric->lusize_sum], Numeric->Udiag + k1, nr, Numeric->Xwork + nr * k1);
-            }
-
-            /* -------------------------------------------------------------- */
-            /* block back-substitution for the off-diagonal-block entries */
-            /* -------------------------------------------------------------- */
-
-            if (block > 0)
-            {
-                switch (nr)
-                {
-
-                case 1:
-
-                    for (k = k1; k < k2; k++)
-                    {
-                        // printf("Offp[%d]=%d,Offp[%d]=%d\n", k, Offp[k], k + 1, Offp[k + 1]);
-                        pend = Numeric->Offp[k + 1];
-                        x[0] = Numeric->Xwork[k];
-                        for (p = Numeric->Offp[k]; p < pend; p++)
-                        {
-                            // printf("X[%d]=%lf,Offx[%d]=%lf,x[0]=%lf\n", Offi[p], X[Offi[p]], p, Offx[p], x[0]);
-                            MULT_SUB(Numeric->Xwork[Numeric->Offi[p]], Numeric->Offx[p], x[0]);
-                        }
-                    }
-                    break;
-
-                case 2:
-
-                    for (k = k1; k < k2; k++)
-                    {
-                        pend = Numeric->Offp[k + 1];
-                        x[0] = Numeric->Xwork[2 * k];
-                        x[1] = Numeric->Xwork[2 * k + 1];
-                        for (p = Numeric->Offp[k]; p < pend; p++)
-                        {
-                            i = Numeric->Offi[p];
-                            offik = Numeric->Offx[p];
-                            MULT_SUB(Numeric->Xwork[2 * i], offik, x[0]);
-                            MULT_SUB(Numeric->Xwork[2 * i + 1], offik, x[1]);
-                        }
-                    }
-                    break;
-
-                case 3:
-
-                    for (k = k1; k < k2; k++)
-                    {
-                        pend = Numeric->Offp[k + 1];
-                        x[0] = Numeric->Xwork[3 * k];
-                        x[1] = Numeric->Xwork[3 * k + 1];
-                        x[2] = Numeric->Xwork[3 * k + 2];
-                        for (p = Numeric->Offp[k]; p < pend; p++)
-                        {
-                            i = Numeric->Offi[p];
-                            offik = Numeric->Offx[p];
-                            MULT_SUB(Numeric->Xwork[3 * i], offik, x[0]);
-                            MULT_SUB(Numeric->Xwork[3 * i + 1], offik, x[1]);
-                            MULT_SUB(Numeric->Xwork[3 * i + 2], offik, x[2]);
-                        }
-                    }
-                    break;
-
-                case 4:
-
-                    for (k = k1; k < k2; k++)
-                    {
-                        pend = Numeric->Offp[k + 1];
-                        x[0] = Numeric->Xwork[4 * k];
-                        x[1] = Numeric->Xwork[4 * k + 1];
-                        x[2] = Numeric->Xwork[4 * k + 2];
-                        x[3] = Numeric->Xwork[4 * k + 3];
-                        for (p = Numeric->Offp[k]; p < pend; p++)
-                        {
-                            i = Numeric->Offi[p];
-                            offik = Numeric->Offx[p];
-                            MULT_SUB(Numeric->Xwork[4 * i], offik, x[0]);
-                            MULT_SUB(Numeric->Xwork[4 * i + 1], offik, x[1]);
-                            MULT_SUB(Numeric->Xwork[4 * i + 2], offik, x[2]);
-                            MULT_SUB(Numeric->Xwork[4 * i + 3], offik, x[3]);
-                        }
-                    }
-                    break;
+                    // printf("X[%d]=%lf,Offx[%d]=%lf,x[0]=%lf\n", Offi[p], X[Offi[p]], p, Offx[p], x[0]);
+                    MULT_SUB(X[Offi[p]], Offx[p], x);
                 }
             }
         }
-
-        /* ------------------------------------------------------------------ */
-        /* permute the result, Bz  = Q*X */
-        /* ------------------------------------------------------------------ */
-
-        switch (nr)
-        {
-
-        case 1:
-
-            for (k = 0; k < Symbolic->n; k++)
-            {
-                B[Symbolic->Q[k]] = Numeric->Xwork[k];
-            }
-            break;
-
-        case 2:
-
-            for (k = 0; k < Symbolic->n; k++)
-            {
-                i = Symbolic->Q[k];
-                B[i] = Numeric->Xwork[2 * k];
-                B[i + d] = Numeric->Xwork[2 * k + 1];
-            }
-            break;
-
-        case 3:
-
-            for (k = 0; k < Symbolic->n; k++)
-            {
-                i = Symbolic->Q[k];
-                B[i] = Numeric->Xwork[3 * k];
-                B[i + d] = Numeric->Xwork[3 * k + 1];
-                B[i + d * 2] = Numeric->Xwork[3 * k + 2];
-            }
-            break;
-
-        case 4:
-
-            for (k = 0; k < Symbolic->n; k++)
-            {
-                i = Symbolic->Q[k];
-                B[i] = Numeric->Xwork[4 * k];
-                B[i + d] = Numeric->Xwork[4 * k + 1];
-                B[i + d * 2] = Numeric->Xwork[4 * k + 2];
-                B[i + d * 3] = Numeric->Xwork[4 * k + 3];
-            }
-            break;
-        }
-
-        /* ------------------------------------------------------------------ */
-        /* go to the next chunk of B */
-        /* ------------------------------------------------------------------ */
-
-        B += d * 4;
     }
+
+    /* ------------------------------------------------------------------ */
+    /* permute the result, Bz  = Q*X */
+    /* ------------------------------------------------------------------ */
+
+    for (k = 0; k < n; k++)
+    {
+        Bz[Q[k]] = X[k];
+    }
+
     return (TRUE);
 }
 
@@ -1259,89 +1036,25 @@ void KLU_lsolve(
     int Lip[],
     int Llen[],
     Unit LU[],
-    int nrhs,
+    // int nrhs,
     /* right-hand-side on input, solution to Lx=b on output */
     double X[])
 {
-    double x[4], lik;
+    double x, *Lx;
     int *Li;
-    double *Lx;
-    int k, p, len, i;
+    int k, p, len;
 
-    switch (nrhs)
+    for (k = 0; k < n; k++)
     {
-
-    case 1:
-        for (k = 0; k < n; k++)
+        x = X[k];
+        GET_POINTER(LU, Lip, Llen, Li, Lx, k, len);
+        /* unit diagonal of L is not stored*/
+        for (p = 0; p < len; p++)
         {
-            x[0] = X[k];
-            GET_POINTER(LU, Lip, Llen, Li, Lx, k, len);
-            /* unit diagonal of L is not stored*/
-            for (p = 0; p < len; p++)
-            {
-                /* X [Li [p]] -= Lx [p] * x [0] ; */
-                MULT_SUB(X[Li[p]], Lx[p], x[0]);
-                // printf("X[%d]=%lf,Lx[%d]=%lf,x[0]=%lf\n", Li[p], X[Li[p]], p, Lx[p], x[0]);
-            }
+            /* X [Li [p]] -= Lx [p] * x [0] ; */
+            MULT_SUB(X[Li[p]], Lx[p], x);
+            // printf("X[%d]=%lf,Lx[%d]=%lf,x[0]=%lf\n", Li[p], X[Li[p]], p, Lx[p], x[0]);
         }
-        break;
-
-    case 2:
-
-        for (k = 0; k < n; k++)
-        {
-            x[0] = X[2 * k];
-            x[1] = X[2 * k + 1];
-            GET_POINTER(LU, Lip, Llen, Li, Lx, k, len);
-            for (p = 0; p < len; p++)
-            {
-                i = Li[p];
-                lik = Lx[p];
-                MULT_SUB(X[2 * i], lik, x[0]);
-                MULT_SUB(X[2 * i + 1], lik, x[1]);
-            }
-        }
-        break;
-
-    case 3:
-
-        for (k = 0; k < n; k++)
-        {
-            x[0] = X[3 * k];
-            x[1] = X[3 * k + 1];
-            x[2] = X[3 * k + 2];
-            GET_POINTER(LU, Lip, Llen, Li, Lx, k, len);
-            for (p = 0; p < len; p++)
-            {
-                i = Li[p];
-                lik = Lx[p];
-                MULT_SUB(X[3 * i], lik, x[0]);
-                MULT_SUB(X[3 * i + 1], lik, x[1]);
-                MULT_SUB(X[3 * i + 2], lik, x[2]);
-            }
-        }
-        break;
-
-    case 4:
-
-        for (k = 0; k < n; k++)
-        {
-            x[0] = X[4 * k];
-            x[1] = X[4 * k + 1];
-            x[2] = X[4 * k + 2];
-            x[3] = X[4 * k + 3];
-            GET_POINTER(LU, Lip, Llen, Li, Lx, k, len);
-            for (p = 0; p < len; p++)
-            {
-                i = Li[p];
-                lik = Lx[p];
-                MULT_SUB(X[4 * i], lik, x[0]);
-                MULT_SUB(X[4 * i + 1], lik, x[1]);
-                MULT_SUB(X[4 * i + 2], lik, x[2]);
-                MULT_SUB(X[4 * i + 3], lik, x[3]);
-            }
-        }
-        break;
     }
 }
 
@@ -1361,116 +1074,24 @@ void KLU_usolve(
     int Ulen[],
     Unit LU[],
     double Udiag[],
-    int nrhs,
+    // int nrhs,
     /* right-hand-side on input, solution to Ux=b on output */
     double X[])
 {
-    double x[4], uik, ukk;
-    int *Ui;
-    double *Ux;
-    int k, p, len, i;
+    double x, *Ux;
+    int *Ui, k, p, len;
 
-    switch (nrhs)
+    for (k = n - 1; k >= 0; k--)
     {
-
-    case 1:
-
-        for (k = n - 1; k >= 0; k--)
+        GET_POINTER(LU, Uip, Ulen, Ui, Ux, k, len);
+        /* x [0] = X [k] / Udiag [k] ; */
+        DIV(x, X[k], Udiag[k]);
+        X[k] = x;
+        for (p = 0; p < len; p++)
         {
-            GET_POINTER(LU, Uip, Ulen, Ui, Ux, k, len);
-            /* x [0] = X [k] / Udiag [k] ; */
-            DIV(x[0], X[k], Udiag[k]);
-            X[k] = x[0];
-            for (p = 0; p < len; p++)
-            {
-                /* X [Ui [p]] -= Ux [p] * x [0] ; */
-                MULT_SUB(X[Ui[p]], Ux[p], x[0]);
-            }
+            /* X [Ui [p]] -= Ux [p] * x [0] ; */
+            MULT_SUB(X[Ui[p]], Ux[p], x);
         }
-
-        break;
-
-    case 2:
-
-        for (k = n - 1; k >= 0; k--)
-        {
-            GET_POINTER(LU, Uip, Ulen, Ui, Ux, k, len);
-            ukk = Udiag[k];
-            /* x [0] = X [2*k    ] / ukk ;
-            x [1] = X [2*k + 1] / ukk ; */
-            DIV(x[0], X[2 * k], ukk);
-            DIV(x[1], X[2 * k + 1], ukk);
-
-            X[2 * k] = x[0];
-            X[2 * k + 1] = x[1];
-            for (p = 0; p < len; p++)
-            {
-                i = Ui[p];
-                uik = Ux[p];
-                /* X [2*i    ] -= uik * x [0] ;
-                X [2*i + 1] -= uik * x [1] ; */
-                MULT_SUB(X[2 * i], uik, x[0]);
-                MULT_SUB(X[2 * i + 1], uik, x[1]);
-            }
-        }
-
-        break;
-
-    case 3:
-
-        for (k = n - 1; k >= 0; k--)
-        {
-            GET_POINTER(LU, Uip, Ulen, Ui, Ux, k, len);
-            ukk = Udiag[k];
-
-            DIV(x[0], X[3 * k], ukk);
-            DIV(x[1], X[3 * k + 1], ukk);
-            DIV(x[2], X[3 * k + 2], ukk);
-
-            X[3 * k] = x[0];
-            X[3 * k + 1] = x[1];
-            X[3 * k + 2] = x[2];
-            for (p = 0; p < len; p++)
-            {
-                i = Ui[p];
-                uik = Ux[p];
-                MULT_SUB(X[3 * i], uik, x[0]);
-                MULT_SUB(X[3 * i + 1], uik, x[1]);
-                MULT_SUB(X[3 * i + 2], uik, x[2]);
-            }
-        }
-
-        break;
-
-    case 4:
-
-        for (k = n - 1; k >= 0; k--)
-        {
-            GET_POINTER(LU, Uip, Ulen, Ui, Ux, k, len);
-            ukk = Udiag[k];
-
-            DIV(x[0], X[4 * k], ukk);
-            DIV(x[1], X[4 * k + 1], ukk);
-            DIV(x[2], X[4 * k + 2], ukk);
-            DIV(x[3], X[4 * k + 3], ukk);
-
-            X[4 * k] = x[0];
-            X[4 * k + 1] = x[1];
-            X[4 * k + 2] = x[2];
-            X[4 * k + 3] = x[3];
-            for (p = 0; p < len; p++)
-            {
-                i = Ui[p];
-                uik = Ux[p];
-
-                MULT_SUB(X[4 * i], uik, x[0]);
-                MULT_SUB(X[4 * i + 1], uik, x[1]);
-                MULT_SUB(X[4 * i + 2], uik, x[2]);
-                MULT_SUB(X[4 * i + 3], uik, x[3]);
-            }
-        }
-
-        break;
     }
 }
 
@@ -1923,8 +1544,8 @@ static void factor2(
 
 int main(void)
 {
-    char filename[] = "../../Matrix_Sample/host.mtx";
-    char bmatrix[] = "../../Matrix_Sample/host_b.mtx";
+    char filename[] = "../../Matrix_Sample/circuit_1.mtx";
+    char bmatrix[] = "../../Matrix_Sample/circuit_1_b.mtx";
 
     std::vector<int> Ap, Ai;
     std::vector<double> Ax, b;
@@ -1932,7 +1553,7 @@ int main(void)
     if (read_sparse(filename, &n, Ap, Ai, Ax))
         return 1;
 
-    // b.resize(n);
+    read_bmatrix(bmatrix, b);
 
     klu_common Common;
     KLU_numeric Numeric;
@@ -1942,7 +1563,7 @@ int main(void)
     // int Ap[] = {0, 2, 4, 7, 9, 13, 14, 18, 21, 23, 24};
     // int Ai[] = {0, 7, 1, 5, 0, 2, 7, 3, 8, 3, 4, 5, 8, 5, 0, 6, 7, 8, 4, 5, 7, 2, 8, 9};
     // double Ax[] = {8, 8, 2, 4, 10, 3, 10, 1, 5, 2, 1, 4, 10, 2, 3, 5, 3, 15, 4, 16, 3, 7, 2, 9};
-    // double b[] = {172, 18, 38, 19, 18, 118, 20, 181, 159, 9};
+    // double b2[] = {172, 18, 38, 19, 18, 118, 20, 181, 159, 9};
 
     Symbolic = *klu_analyze(n, Ap.data(), Ai.data(), &Common);
 
@@ -1950,8 +1571,7 @@ int main(void)
     //     printf("P[%d]=%d,Q[%d]=%d,R[%d]=%d,Lnz[%d]=%lf\n", i, Symbolic.P[i], i, Symbolic.Q[i], i, Symbolic.R[i], i, Symbolic.Lnz[i]);
     // printf("nblocks=%d,nzoff=%d\n", Symbolic.nblocks, Symbolic.nzoff);
 
-    int nzoff1 = Symbolic.nzoff + 1,
-        n1 = n + 1;
+    int nzoff1 = Symbolic.nzoff + 1, n1 = n + 1;
     double lusize = Common.memgrow * (Symbolic.lnz + Symbolic.unz) + 4 * n + 1;
 
     Numeric.n = Symbolic.n;
@@ -1971,32 +1591,16 @@ int main(void)
     Numeric.Rs = (double *)malloc(n * sizeof(double));
     Numeric.Pinv = (int *)malloc(n * sizeof(int));
     Numeric.worksize = n * sizeof(double) + MAX(n * 3 * sizeof(double), Symbolic.maxblock * 6 * sizeof(int));
-    Numeric.Xwork = (double *)malloc(sizeof(double) * 4 * n);
-    // Numeric.Iwork = (int *)malloc(sizeof(int) * 6 * Symbolic.maxblock);
+    Numeric.Xwork = (double *)malloc(sizeof(double) * n);
 
-    const int runtime = 1;
-    std::chrono::steady_clock::time_point begin[3], end[3];
-    long total[3] = {0};
+    printf("Here\n");
+    factor2(Ap.data(), Ai.data(), Ax.data(), &Symbolic, &Numeric, &Common);
 
-    for (int i = 0; i < runtime; i++)
-    {
-        // std::iota(b.begin(), b.end(), 0);
-        read_bmatrix(bmatrix, b);
+    printf("Here\n");
 
-        begin[1] = std::chrono::steady_clock::now();
-        factor2(Ap.data(), Ai.data(), Ax.data(), &Symbolic, &Numeric, &Common);
-        end[1] = std::chrono::steady_clock::now();
-        total[1] += std::chrono::duration_cast<std::chrono::microseconds>(end[1] - begin[1]).count();
-
-        begin[2] = std::chrono::steady_clock::now();
-        klu_solve2(&Symbolic, &Numeric, n, 1, b.data(), &Common);
-        end[2] = std::chrono::steady_clock::now();
-        total[2] += std::chrono::duration_cast<std::chrono::microseconds>(end[2] - begin[2]).count();
-    }
+    klu_solve2(Symbolic.Q, Symbolic.R, Numeric.Pnum, Numeric.Offp, Numeric.Offi, Numeric.Lip, Numeric.Uip, Numeric.Llen, Numeric.Ulen, Numeric.Offx, Numeric.Xwork, Numeric.Udiag, Numeric.Rs, Numeric.LUbx, Numeric.LUsize, Symbolic.nblocks, n, Numeric.lusize_sum, b.data(), &Common);
 
     for (int i = 0; i < n; i++)
         printf("x [%d] = %g\n", i, b[i]);
-
-    std::cout << "Analyze time: " << total[0] / (float)runtime << "µs\nFactorization time: " << total[1] / (float)runtime << "µs\nSolving time: " << total[2] / (float)runtime << "µs" << std::endl;
     return 0;
 }

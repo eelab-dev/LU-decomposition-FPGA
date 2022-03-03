@@ -2,7 +2,7 @@
 
 #include "klu.h"
 #include <iostream>
-#include "../myKLU/mmio.c"
+#include "../myKLU/mmio.h"
 #include <chrono>
 #include <numeric>
 
@@ -14,17 +14,14 @@
 
 int main(void)
 {
-    Mtx mtx;
-    char filename[] = "../../Matrix_Sample/test.mtx";
+    char filename[] = "../../Matrix_Sample/host.mtx";
+    char bmatrix[] = "../../Matrix_Sample/host_b.mtx";
 
-    if (read_sparse(filename, &mtx))
+    std::vector<int> Ap, Ai;
+    std::vector<double> Ax, b;
+    int n;
+    if (read_sparse(filename, &n, Ap, Ai, Ax))
         return 1;
-
-    int n = mtx.n;
-    int *Ap = mtx.Ap;
-    int *Ai = mtx.Ai;
-    double *Ax = mtx.Ax;
-    double b[n];
 
     // for (int i = 0; i < 100; i++)
     //     printf("Ai[%d]=%d\tAx[%d]=%.20lf\n", i, mtx.Ai[i], i, mtx.Ax[i]);
@@ -39,21 +36,22 @@ int main(void)
     klu_numeric *Numeric;
     for (int i = 0; i < runtime; i++)
     {
-
-        std::iota(b, b + n, 0);
+        read_bmatrix(bmatrix, b);
+        // std::iota(b.begin(), b.end(), 10);
 
         begin[0] = std::chrono::steady_clock::now();
-        Symbolic = klu_analyze(n, Ap, Ai, &Common);
+        Symbolic = klu_analyze(n, Ap.data(), Ai.data(), &Common);
         end[0] = std::chrono::steady_clock::now();
         total[0] += std::chrono::duration_cast<std::chrono::microseconds>(end[0] - begin[0]).count();
 
         begin[1] = std::chrono::steady_clock::now();
-        Numeric = klu_factor(Ap, Ai, Ax, Symbolic, &Common);
+        Numeric = klu_factor(Ap.data(), Ai.data(), Ax.data(), Symbolic, &Common);
         end[1] = std::chrono::steady_clock::now();
         total[1] += std::chrono::duration_cast<std::chrono::microseconds>(end[1] - begin[1]).count();
 
         begin[2] = std::chrono::steady_clock::now();
-        klu_solve(Symbolic, Numeric, n, 1, b, &Common);
+        klu_solve(Symbolic, Numeric, n, 1, b.data(), &Common);
+        // klu_solve(Symbolic, Numeric, n, 1, b.data(), &Common);
         end[2] = std::chrono::steady_clock::now();
         total[2] += std::chrono::duration_cast<std::chrono::microseconds>(end[2] - begin[2]).count();
 

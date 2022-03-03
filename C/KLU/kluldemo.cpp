@@ -8,9 +8,16 @@ int main(void)
 {
     cholmod_sparse *A;
     cholmod_common ch;
+    ch.prefer_upper = false;
     cholmod_start(&ch);
     A = cholmod_read_sparse(stdin, &ch);
     int solved;
+
+    for (int i = 0; i < A->ncol; i++)
+        std::cout << "Ap[" << i << "]=" << ((int *)(A->p))[i] << std::endl;
+    for (int i = 0; i < A->nzmax; i++)
+        std::cout << "Ai[" << i << "]=" << ((int *)(A->i))[i] << "\tAx[" << i << "]=" << ((double *)(A->x))[i] << std::endl;
+    /*
     if (A)
     {
         // if (A->nrow != A->ncol || A->stype != 0 || (!(A->xtype == CHOLMOD_REAL || A->xtype == CHOLMOD_COMPLEX)))
@@ -66,7 +73,7 @@ int main(void)
         for (int i = 0; i < A->nrow; i++)
             printf("x [%d] = %g\n", i, b[i]);
         cholmod_free_sparse(&A, &ch);
-    }
+    }*/
     cholmod_finish(&ch);
 
     return (0);

@@ -4,14 +4,15 @@
 
 /* For internal use in KLU routines only, not for user programs */
 
-#ifndef _KLU_INTERNAL_H
-#define _KLU_INTERNAL_H
+#ifndef _KLU_KERNEL_H
+#define _KLU_KERNEL_H
 
-#include <stdio.h>
-#include <assert.h>
+// #include <assert.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <math.h>
+
+#define MAX_SIZE 65536
 
 #ifndef NDEBUG
 #define NDEBUG
@@ -24,9 +25,9 @@
  #undef NDEBUG
  */
 
-// /* To enable diagnostic printing, uncomment this line:
-// #undef NPRINT
-//  */
+/* To enable diagnostic printing, uncomment this line:
+#undef NPRINT
+*/
 
 #undef ASSERT
 #ifndef NDEBUG
@@ -46,9 +47,6 @@
 /* true if an integer (stored in double x) would overflow (or if x is NaN) */
 #define INT_OVERFLOW(x) ((!((x) * (1.0 + 1e-8) <= (double)__INT_MAX__)) || SCALAR_IS_NAN(x))
 
-typedef double Unit;
-#define Entry double
-#define Int int
 #define TRUE 1
 #define FALSE 0
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
@@ -160,34 +158,11 @@ typedef double Unit;
 
 #define KLU_scale klu_scale
 #define KLU_solve klu_solve
-#define KLU_tsolve klu_tsolve
-#define KLU_free_numeric klu_free_numeric
 #define KLU_factor klu_factor
-#define KLU_refactor klu_refactor
-#define KLU_kernel_factor klu_kernel_factor
 #define KLU_lsolve klu_lsolve
-#define KLU_ltsolve klu_ltsolve
 #define KLU_usolve klu_usolve
-#define KLU_utsolve klu_utsolve
 #define KLU_kernel klu_kernel
-#define KLU_valid klu_valid
-#define KLU_valid_LU klu_valid_LU
-#define KLU_sort klu_sort
-#define KLU_rgrowth klu_rgrowth
-#define KLU_rcond klu_rcond
-#define KLU_extract klu_extract
-#define KLU_condest klu_condest
-#define KLU_flops klu_flops
-#define KLU_analyze klu_analyze
-#define KLU_analyze_given klu_analyze_given
-#define KLU_alloc_symbolic klu_alloc_symbolic
-#define KLU_free_symbolic klu_free_symbolic
 #define KLU_defaults klu_defaults
-#define KLU_free klu_free
-#define KLU_malloc klu_malloc
-#define KLU_realloc klu_realloc
-#define KLU_add_size_t klu_add_size_t
-#define KLU_mult_size_t klu_mult_size_t
 
 #define KLU_symbolic klu_symbolic
 #define KLU_numeric klu_numeric2
@@ -402,21 +377,7 @@ void KLU_lsolve(
     int Lp[],
     int Li[],
     double LU[],
-    // int nrhs,
     /* right-hand-side on input, solution to Lx=b on output */
-    double X[]);
-
-void KLU_ltsolve(
-    /* inputs, not modified: */
-    int n,
-    int Lp[],
-    int Li[],
-    double LU[],
-    int nrhs,
-#ifdef COMPLEX
-    int conj_solve,
-#endif
-    /* right-hand-side on input, solution to L'x=b on output */
     double X[]);
 
 void KLU_usolve(
@@ -426,38 +387,10 @@ void KLU_usolve(
     int Ui[],
     double LU[],
     double Udiag[],
-    // int nrhs,
     /* right-hand-side on input, solution to Ux=b on output */
     double X[]);
 
-void KLU_utsolve(
-    /* inputs, not modified: */
-    int n,
-    int Up[],
-    int Ui[],
-    double LU[],
-    double Udiag[],
-    int nrhs,
-#ifdef COMPLEX
-    int conj_solve,
-#endif
-    /* right-hand-side on input, solution to U'x=b on output */
-    double X[]);
-
-int KLU_valid(
-    int n,
-    int Ap[],
-    int Ai[],
-    double Ax[]);
-
-int KLU_valid_LU(
-    int n,
-    int flag_test_start_ptr,
-    int Xip[],
-    int Xlen[],
-    double LU[]);
-
-Int KLU_defaults(
+int KLU_defaults(
     KLU_common *Common)
 {
     if (Common == NULL)

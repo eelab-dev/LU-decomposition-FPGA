@@ -38,7 +38,7 @@ klu_demo: kludemo.c Makefile
 
 klu_demo2: kluldemo.cpp Makefile
 	$(CXX) $(INCL) $(STD) kluldemo.cpp -o kluldemo $(CLIB)
-	- ./kluldemo < ../../Matrix_Sample/494_bus.mtx
+	- ./kluldemo < ../../Matrix_Sample/host.mtx
 
 # klu_extract: klu_extract.cpp Makefile
 # 	$(CXX) $(INCL) $(STD) klu_extract.cpp -o klu_extract $(CLIB)
