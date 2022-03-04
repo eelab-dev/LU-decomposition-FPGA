@@ -12,34 +12,6 @@
 #include "klu_internal.h"
 
 /* ========================================================================== */
-/* === KLU_add_size_t ======================================================= */
-/* ========================================================================== */
-
-/* Safely compute a+b, and check for size_t overflow */
-
-size_t KLU_add_size_t (size_t a, size_t b, Int *ok)
-{
-    (*ok) = (*ok) && ((a + b) >= MAX (a,b)) ;
-    return ((*ok) ? (a + b) : ((size_t) -1)) ;
-}
-
-/* ========================================================================== */
-/* === KLU_mult_size_t ====================================================== */
-/* ========================================================================== */
-
-/* Safely compute a*k, where k should be small, and check for size_t overflow */
-
-size_t KLU_mult_size_t (size_t a, size_t k, Int *ok)
-{
-    size_t i, s = 0 ;
-    for (i = 0 ; i < k ; i++)
-    {
-        s = KLU_add_size_t (s, a, ok) ;
-    }
-    return ((*ok) ? s : ((size_t) -1)) ;
-}
-
-/* ========================================================================== */
 /* === KLU_malloc =========================================================== */
 /* ========================================================================== */
 
@@ -57,52 +29,50 @@ size_t KLU_mult_size_t (size_t a, size_t k, Int *ok)
  * Uses a pointer to the malloc routine (or its equivalent) defined in Common.
  */
 
-void *KLU_malloc        /* returns pointer to the newly malloc'd block */
-(
-    /* ---- input ---- */
-    size_t n,           /* number of items */
-    size_t size,        /* size of each item */
-    /* --------------- */
-    KLU_common *Common
-)
+void *KLU_malloc /* returns pointer to the newly malloc'd block */
+    (
+        /* ---- input ---- */
+        size_t n,    /* number of items */
+        size_t size, /* size of each item */
+        /* --------------- */
+        KLU_common *Common)
 {
-    void *p ;
+    void *p;
 
     if (Common == NULL)
     {
-        p = NULL ;
+        p = NULL;
     }
     else if (size == 0)
     {
         /* size must be > 0 */
-        Common->status = KLU_INVALID ;
-        p = NULL ;
+        Common->status = KLU_INVALID;
+        p = NULL;
     }
     else if (n >= Int_MAX)
     {
         /* object is too big to allocate; p[i] where i is an Int will not
          * be enough. */
-        Common->status = KLU_TOO_LARGE ;
-        p = NULL ;
+        Common->status = KLU_TOO_LARGE;
+        p = NULL;
     }
     else
     {
         /* call malloc, or its equivalent */
-        p = SuiteSparse_malloc (n, size) ;
+        p = SuiteSparse_malloc(n, size);
         if (p == NULL)
         {
             /* failure: out of memory */
-            Common->status = KLU_OUT_OF_MEMORY ;
+            Common->status = KLU_OUT_OF_MEMORY;
         }
         else
         {
-            Common->memusage += (MAX (1,n) * size) ;
-            Common->mempeak = MAX (Common->mempeak, Common->memusage) ;
+            Common->memusage += (MAX(1, n) * size);
+            Common->mempeak = MAX(Common->mempeak, Common->memusage);
         }
     }
-    return (p) ;
+    return (p);
 }
-
 
 /* ========================================================================== */
 /* === KLU_free ============================================================= */
@@ -114,29 +84,27 @@ void *KLU_malloc        /* returns pointer to the newly malloc'd block */
  *      p = KLU_free (p, n, sizeof (int), Common) ;
  */
 
-void *KLU_free          /* always returns NULL */
-(
-    /* ---- in/out --- */
-    void *p,            /* block of memory to free */
-    /* ---- input --- */
-    size_t n,           /* size of block to free, in # of items */
-    size_t size,        /* size of each item */
-    /* --------------- */
-    KLU_common *Common
-)
+void *KLU_free /* always returns NULL */
+    (
+        /* ---- in/out --- */
+        void *p, /* block of memory to free */
+        /* ---- input --- */
+        size_t n,    /* size of block to free, in # of items */
+        size_t size, /* size of each item */
+        /* --------------- */
+        KLU_common *Common)
 {
     if (p != NULL && Common != NULL)
     {
         /* only free the object if the pointer is not NULL */
         /* call free, or its equivalent */
-        SuiteSparse_free (p) ;
-        Common->memusage -= (MAX (1,n) * size) ;
+        SuiteSparse_free(p);
+        Common->memusage -= (MAX(1, n) * size);
     }
     /* return NULL, and the caller should assign this to p.  This avoids
      * freeing the same pointer twice. */
-    return (NULL) ;
+    return (NULL);
 }
-
 
 /* ========================================================================== */
 /* === KLU_realloc ========================================================== */
@@ -159,58 +127,57 @@ void *KLU_free          /* always returns NULL */
  * Uses a pointer to the realloc routine (or its equivalent) defined in Common.
  */
 
-void *KLU_realloc       /* returns pointer to reallocated block */
-(
-    /* ---- input ---- */
-    size_t nnew,        /* requested # of items in reallocated block */
-    size_t nold,        /* old # of items */
-    size_t size,        /* size of each item */
-    /* ---- in/out --- */
-    void *p,            /* block of memory to realloc */
-    /* --------------- */
-    KLU_common *Common
-)
+void *KLU_realloc /* returns pointer to reallocated block */
+    (
+        /* ---- input ---- */
+        size_t nnew, /* requested # of items in reallocated block */
+        size_t nold, /* old # of items */
+        size_t size, /* size of each item */
+        /* ---- in/out --- */
+        void *p, /* block of memory to realloc */
+        /* --------------- */
+        KLU_common *Common)
 {
-    void *pnew ;
-    int ok = TRUE ;
+    void *pnew;
+    int ok = TRUE;
 
     if (Common == NULL)
     {
-        p = NULL ;
+        p = NULL;
     }
     else if (size == 0)
     {
         /* size must be > 0 */
-        Common->status = KLU_INVALID ;
-        p = NULL ;
+        Common->status = KLU_INVALID;
+        p = NULL;
     }
     else if (p == NULL)
     {
         /* A fresh object is being allocated. */
-        p = KLU_malloc (nnew, size, Common) ;
+        p = KLU_malloc(nnew, size, Common);
     }
     else if (nnew >= Int_MAX)
     {
         /* failure: nnew is too big.  Do not change p */
-        Common->status = KLU_TOO_LARGE ;
+        Common->status = KLU_TOO_LARGE;
     }
     else
     {
         /* The object exists, and is changing to some other nonzero size. */
         /* call realloc, or its equivalent */
-        pnew = SuiteSparse_realloc (nnew, nold, size, p, &ok) ;
+        pnew = SuiteSparse_realloc(nnew, nold, size, p, &ok);
         if (ok)
         {
             /* success: return the new p and change the size of the block */
-            Common->memusage += ((nnew-nold) * size) ;
-            Common->mempeak = MAX (Common->mempeak, Common->memusage) ;
-            p = pnew ;
+            Common->memusage += ((nnew - nold) * size);
+            Common->mempeak = MAX(Common->mempeak, Common->memusage);
+            p = pnew;
         }
         else
         {
             /* Do not change p, since it still points to allocated memory */
-            Common->status = KLU_OUT_OF_MEMORY ;
+            Common->status = KLU_OUT_OF_MEMORY;
         }
     }
-    return (p) ;
+    return (p);
 }

@@ -1,5 +1,70 @@
 #include "klu_kernel.h"
 
+void KLU_lsolve(
+    /* inputs, not modified: */
+    int n,
+    int Lip[],
+    int Llen[],
+    double LU[],
+    // int nrhs,
+    /* right-hand-side on input, solution to Lx=b on output */
+    double X[])
+{
+    double x, *Lx;
+    int *Li;
+    int k, p, len;
+
+    for (k = 0; k < n; k++)
+    {
+        // printf("k=%d\n", k);
+        x = X[k];
+        GET_POINTER(LU, Lip, Llen, Li, Lx, k, len);
+        /* unit diagonal of L is not stored*/
+        for (p = 0; p < len; p++)
+        {
+            /* X [Li [p]] -= Lx [p] * x [0] ; */
+            MULT_SUB(X[Li[p]], Lx[p], x);
+        }
+    }
+}
+
+/* ========================================================================== */
+/* === KLU_usolve =========================================================== */
+/* ========================================================================== */
+
+/* Solve Ux=b.  Assumes U is non-unit upper triangular and where the diagonal
+ * entry is NOT stored.  Overwrites B with the solution X.  B is n-by-nrhs
+ * and is stored in ROW form with row dimension nrhs.  nrhs must be in the
+ * range 1 to 4. */
+
+void KLU_usolve(
+    /* inputs, not modified: */
+    int n,
+    int Uip[],
+    int Ulen[],
+    double LU[],
+    double Udiag[],
+    // int nrhs,
+    /* right-hand-side on input, solution to Ux=b on output */
+    double X[])
+{
+    double x, *Ux;
+    int *Ui, k, p, len;
+
+    for (k = n - 1; k >= 0; k--)
+    {
+        GET_POINTER(LU, Uip, Ulen, Ui, Ux, k, len);
+        /* x [0] = X [k] / Udiag [k] ; */
+        DIV(x, X[k], Udiag[k]);
+        X[k] = x;
+        for (p = 0; p < len; p++)
+        {
+            /* X [Ui [p]] -= Ux [p] * x [0] ; */
+            MULT_SUB(X[Ui[p]], Ux[p], x);
+        }
+    }
+}
+
 int klu_solve2(
     /* inputs, not modified */
     KLU_symbolic *Symbolic,
@@ -140,69 +205,4 @@ int klu_solve2(
     /* ------------------------------------------------------------------ */
 
     return (TRUE);
-}
-
-void KLU_lsolve(
-    /* inputs, not modified: */
-    int n,
-    int Lip[],
-    int Llen[],
-    double LU[],
-    // int nrhs,
-    /* right-hand-side on input, solution to Lx=b on output */
-    double X[])
-{
-    double x, *Lx;
-    int *Li;
-    int k, p, len;
-
-    for (k = 0; k < n; k++)
-    {
-        // printf("k=%d\n", k);
-        x = X[k];
-        GET_POINTER(LU, Lip, Llen, Li, Lx, k, len);
-        /* unit diagonal of L is not stored*/
-        for (p = 0; p < len; p++)
-        {
-            /* X [Li [p]] -= Lx [p] * x [0] ; */
-            MULT_SUB(X[Li[p]], Lx[p], x);
-        }
-    }
-}
-
-/* ========================================================================== */
-/* === KLU_usolve =========================================================== */
-/* ========================================================================== */
-
-/* Solve Ux=b.  Assumes U is non-unit upper triangular and where the diagonal
- * entry is NOT stored.  Overwrites B with the solution X.  B is n-by-nrhs
- * and is stored in ROW form with row dimension nrhs.  nrhs must be in the
- * range 1 to 4. */
-
-void KLU_usolve(
-    /* inputs, not modified: */
-    int n,
-    int Uip[],
-    int Ulen[],
-    double LU[],
-    double Udiag[],
-    // int nrhs,
-    /* right-hand-side on input, solution to Ux=b on output */
-    double X[])
-{
-    double x, *Ux;
-    int *Ui, k, p, len;
-
-    for (k = n - 1; k >= 0; k--)
-    {
-        GET_POINTER(LU, Uip, Ulen, Ui, Ux, k, len);
-        /* x [0] = X [k] / Udiag [k] ; */
-        DIV(x, X[k], Udiag[k]);
-        X[k] = x;
-        for (p = 0; p < len; p++)
-        {
-            /* X [Ui [p]] -= Ux [p] * x [0] ; */
-            MULT_SUB(X[Ui[p]], Ux[p], x);
-        }
-    }
 }

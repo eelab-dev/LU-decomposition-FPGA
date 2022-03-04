@@ -48,8 +48,8 @@ amd_l_%.o: ../amd_%.c $(INC)
 static: $(AR_TARGET)
 
 $(AR_TARGET): $(OBJ)
-	$(ARCHIVE) $@ $^
-	$(CP) $@ $(INSTALL_LIB)/$@
+	@mkdir -p $(INSTALL_LIB)
+	$(ARCHIVE) $(INSTALL_LIB)/$@ $^
 
 #-------------------------------------------------------------------------------
 # Remove all but the files in the original distribution

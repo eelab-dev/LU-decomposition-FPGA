@@ -23,8 +23,8 @@ SuiteSparse_config.o: SuiteSparse_config.c SuiteSparse_config.h
 static: $(AR_TARGET)
 
 $(AR_TARGET): $(OBJ)
-	$(ARCHIVE) $(AR_TARGET) SuiteSparse_config.o
-	$(CP) $@ $(INSTALL_LIB)/$@
+	@mkdir -p $(INSTALL_LIB)
+	$(ARCHIVE) $(INSTALL_LIB)/$@ SuiteSparse_config.o
 
 distclean: purge
 

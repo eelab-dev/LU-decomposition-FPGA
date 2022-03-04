@@ -12,6 +12,117 @@
 /* === analyze_worker ======================================================= */
 /* ========================================================================== */
 
+KLU_symbolic *KLU_alloc_symbolic(
+    int n,
+    int *Ap,
+    int *Ai,
+    KLU_common *Common)
+{
+    KLU_symbolic *Symbolic;
+    int *P, *Q, *R;
+    double *Lnz;
+    int nz, i, j, p, pend;
+
+    if (Common == NULL)
+    {
+        return (NULL);
+    }
+    Common->status = KLU_OK;
+
+    /* A is n-by-n, with n > 0.  Ap [0] = 0 and nz = Ap [n] >= 0 required.
+     * Ap [j] <= Ap [j+1] must hold for all j = 0 to n-1.  Row indices in Ai
+     * must be in the range 0 to n-1, and no duplicate entries can be present.
+     * The list of row indices in each column of A need not be sorted.
+     */
+
+    if (n <= 0 || Ap == NULL || Ai == NULL)
+    {
+        /* Ap and Ai must be present, and n must be > 0 */
+        Common->status = KLU_INVALID;
+        return (NULL);
+    }
+
+    nz = Ap[n];
+    if (Ap[0] != 0 || nz < 0)
+    {
+        /* nz must be >= 0 and Ap [0] must equal zero */
+        Common->status = KLU_INVALID;
+        return (NULL);
+    }
+
+    for (j = 0; j < n; j++)
+    {
+        if (Ap[j] > Ap[j + 1])
+        {
+            /* column pointers must be non-decreasing */
+            Common->status = KLU_INVALID;
+            return (NULL);
+        }
+    }
+    P = KLU_malloc(n, sizeof(int), Common);
+    if (Common->status < KLU_OK)
+    {
+        /* out of memory */
+        Common->status = KLU_OUT_OF_MEMORY;
+        return (NULL);
+    }
+    for (i = 0; i < n; i++)
+    {
+        P[i] = EMPTY;
+    }
+    for (j = 0; j < n; j++)
+    {
+        pend = Ap[j + 1];
+        for (p = Ap[j]; p < pend; p++)
+        {
+            i = Ai[p];
+            if (i < 0 || i >= n || P[i] == j)
+            {
+                /* row index out of range, or duplicate entry */
+                KLU_free(P, n, sizeof(int), Common);
+                Common->status = KLU_INVALID;
+                return (NULL);
+            }
+            /* flag row i as appearing in column j */
+            P[i] = j;
+        }
+    }
+
+    /* ---------------------------------------------------------------------- */
+    /* allocate the Symbolic object */
+    /* ---------------------------------------------------------------------- */
+
+    Symbolic = KLU_malloc(1, sizeof(KLU_symbolic), Common);
+    if (Common->status < KLU_OK)
+    {
+        /* out of memory */
+        KLU_free(P, n, sizeof(int), Common);
+        Common->status = KLU_OUT_OF_MEMORY;
+        return (NULL);
+    }
+
+    Q = KLU_malloc(n, sizeof(int), Common);
+    R = KLU_malloc(n + 1, sizeof(int), Common);
+    Lnz = KLU_malloc(n, sizeof(double), Common);
+
+    Symbolic->n = n;
+    Symbolic->nz = nz;
+    Symbolic->P = P;
+    Symbolic->Q = Q;
+    Symbolic->R = R;
+    Symbolic->Lnz = Lnz;
+
+    if (Common->status < KLU_OK)
+    {
+        /* out of memory */
+        KLU_free_symbolic(&Symbolic, Common);
+        Common->status = KLU_OUT_OF_MEMORY;
+        return (NULL);
+    }
+
+    return (Symbolic);
+}
+
 static int analyze_worker /* returns KLU_OK or < 0 if error */
     (
         /* inputs, not modified */
@@ -42,7 +153,7 @@ static int analyze_worker /* returns KLU_OK or < 0 if error */
 {
     double amd_Info[AMD_INFO], lnz, lnz1, flops, flops1;
     int k1, k2, nk, k, block, oldcol, pend, newcol, result, pc, p, newrow,
-        maxnz, nzoff, cstats[COLAMD_STATS], ok, err = KLU_INVALID;
+        maxnz, nzoff, ok, err = KLU_INVALID;
 
     /* ---------------------------------------------------------------------- */
     /* initializations */
@@ -229,7 +340,7 @@ static int analyze_worker /* returns KLU_OK or < 0 if error */
  * or the user ordering function.  Does not handle the natural or given
  * ordering cases. */
 
-static KLU_symbolic *KLU_analyze /* returns NULL if error, or a valid
+KLU_symbolic *KLU_analyze /* returns NULL if error, or a valid
                                           KLU_symbolic object if successful */
     (
         /* inputs, not modified */
@@ -394,116 +505,5 @@ static KLU_symbolic *KLU_analyze /* returns NULL if error, or a valid
     {
         KLU_free_symbolic(&Symbolic, Common);
     }
-    return (Symbolic);
-}
-
-KLU_symbolic *KLU_alloc_symbolic(
-    Int n,
-    Int *Ap,
-    Int *Ai,
-    KLU_common *Common)
-{
-    KLU_symbolic *Symbolic;
-    Int *P, *Q, *R;
-    double *Lnz;
-    Int nz, i, j, p, pend;
-
-    if (Common == NULL)
-    {
-        return (NULL);
-    }
-    Common->status = KLU_OK;
-
-    /* A is n-by-n, with n > 0.  Ap [0] = 0 and nz = Ap [n] >= 0 required.
-     * Ap [j] <= Ap [j+1] must hold for all j = 0 to n-1.  Row indices in Ai
-     * must be in the range 0 to n-1, and no duplicate entries can be present.
-     * The list of row indices in each column of A need not be sorted.
-     */
-
-    if (n <= 0 || Ap == NULL || Ai == NULL)
-    {
-        /* Ap and Ai must be present, and n must be > 0 */
-        Common->status = KLU_INVALID;
-        return (NULL);
-    }
-
-    nz = Ap[n];
-    if (Ap[0] != 0 || nz < 0)
-    {
-        /* nz must be >= 0 and Ap [0] must equal zero */
-        Common->status = KLU_INVALID;
-        return (NULL);
-    }
-
-    for (j = 0; j < n; j++)
-    {
-        if (Ap[j] > Ap[j + 1])
-        {
-            /* column pointers must be non-decreasing */
-            Common->status = KLU_INVALID;
-            return (NULL);
-        }
-    }
-    P = KLU_malloc(n, sizeof(Int), Common);
-    if (Common->status < KLU_OK)
-    {
-        /* out of memory */
-        Common->status = KLU_OUT_OF_MEMORY;
-        return (NULL);
-    }
-    for (i = 0; i < n; i++)
-    {
-        P[i] = EMPTY;
-    }
-    for (j = 0; j < n; j++)
-    {
-        pend = Ap[j + 1];
-        for (p = Ap[j]; p < pend; p++)
-        {
-            i = Ai[p];
-            if (i < 0 || i >= n || P[i] == j)
-            {
-                /* row index out of range, or duplicate entry */
-                KLU_free(P, n, sizeof(Int), Common);
-                Common->status = KLU_INVALID;
-                return (NULL);
-            }
-            /* flag row i as appearing in column j */
-            P[i] = j;
-        }
-    }
-
-    /* ---------------------------------------------------------------------- */
-    /* allocate the Symbolic object */
-    /* ---------------------------------------------------------------------- */
-
-    Symbolic = KLU_malloc(1, sizeof(KLU_symbolic), Common);
-    if (Common->status < KLU_OK)
-    {
-        /* out of memory */
-        KLU_free(P, n, sizeof(Int), Common);
-        Common->status = KLU_OUT_OF_MEMORY;
-        return (NULL);
-    }
-
-    Q = KLU_malloc(n, sizeof(Int), Common);
-    R = KLU_malloc(n + 1, sizeof(Int), Common);
-    Lnz = KLU_malloc(n, sizeof(double), Common);
-
-    Symbolic->n = n;
-    Symbolic->nz = nz;
-    Symbolic->P = P;
-    Symbolic->Q = Q;
-    Symbolic->R = R;
-    Symbolic->Lnz = Lnz;
-
-    if (Common->status < KLU_OK)
-    {
-        /* out of memory */
-        KLU_free_symbolic(&Symbolic, Common);
-        Common->status = KLU_OUT_OF_MEMORY;
-        return (NULL);
-    }
-
     return (Symbolic);
 }

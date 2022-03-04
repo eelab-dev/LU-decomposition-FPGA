@@ -26,8 +26,8 @@ OBJ = btf_order.o btf_maxtrans.o btf_strongcomp.o
 static: $(AR_TARGET)
 
 $(AR_TARGET): $(OBJ)
-	$(ARCHIVE) $@ $^
-	$(CP) $@ $(INSTALL_LIB)/$@
+	@mkdir -p $(INSTALL_LIB)
+	$(ARCHIVE) $(INSTALL_LIB)/$@ $^
 
 #-------------------------------------------------------------------------------
 

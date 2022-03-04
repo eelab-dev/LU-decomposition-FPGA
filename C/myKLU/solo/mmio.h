@@ -12,8 +12,6 @@
 #include <string.h>
 #include <ctype.h>
 #include <vector>
-#include <numeric>	 // std::iota
-#include <algorithm> // std::sort, std::stable_sort
 
 #define MM_MAX_LINE_LENGTH 1025
 #define MatrixMarketBanner "%%MatrixMarket"

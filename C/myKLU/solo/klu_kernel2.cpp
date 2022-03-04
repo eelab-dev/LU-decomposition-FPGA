@@ -3,7 +3,6 @@
 /* ========================================================================== */
 
 #include <iostream>
-#include "klu.h"
 #include "klu_factor.h"
 #include "klu_solve.h"
 #include "mmio.h"
@@ -12,8 +11,8 @@
 
 int main(void)
 {
-    char filename[] = "../../Matrix_Sample/host.mtx";
-    char bmatrix[] = "../../Matrix_Sample/host_b.mtx";
+    char filename[] = "../../../Matrix_Sample/host.mtx";
+    char bmatrix[] = "../../../Matrix_Sample/host_b.mtx";
 
     std::vector<int> Ap, Ai;
     std::vector<double> Ax, b;
