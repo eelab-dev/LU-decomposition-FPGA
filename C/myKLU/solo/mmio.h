@@ -12,6 +12,8 @@
 #include <string.h>
 #include <ctype.h>
 #include <vector>
+#include <numeric>	 // std::iota
+#include <algorithm> // std::sort, std::stable_sort
 
 #define MM_MAX_LINE_LENGTH 1025
 #define MatrixMarketBanner "%%MatrixMarket"
@@ -659,7 +661,7 @@ int read_sparse(char *filename, int *n, std::vector<int, T> &Ap, std::vector<int
 
 		temp = sscanf(num, "%d %d %lg\n", &I[i], &J[i], &val[i]);
 		if (temp == 2)
-			val[i] = 0;
+			val[i] = 1;
 		else if (temp < 2)
 		{
 			printf("No enough value\n");
@@ -676,57 +678,89 @@ int read_sparse(char *filename, int *n, std::vector<int, T> &Ap, std::vector<int
 		}
 	}
 
+	if (f != stdin)
+		fclose(f);
+
 	std::vector<int> temp(nz, 0);
-	double nz2 = 0;
+	*n = M;
+	Ap.resize(M + 1);
+	Ai.resize(nz);
+	Ax.resize(nz);
 
 	for (int k = 0; k < nz; k++)
 		temp[J[k]]++;
+	for (int i = 0, temp2 = 0; i < M; i++)
+	{
+		Ap[i] = temp2;
+		temp2 += temp[i];
+		temp[i] = Ap[i]; /* also copy p[0..n-1] back into c[0..n-1]*/
+	}
+	Ap[M] = nz;
 
-	int temp2 = 0;
+	for (int k = 0, p; k < nz; k++)
+	{
+		Ai[p = temp[J[k]]++] = I[k]; /* A(i,j) is the pth entry in C */
+									 // if (mtx->Ax)
+		Ax[p] = val[k];
+	}
 
 	if (matcode[3] == 'S') // Symmetric
 	{
+		std::vector<int, T> Ap_new(Ap.begin(), Ap.end());
+		const std::vector<int> I2(I.begin(), I.end()), J2(J.begin(), J.end());
+		const std::vector<double> val2(val.begin(), val.end());
+		I.reserve(2 * nz - M);
+		J.reserve(2 * nz - M);
 		for (int i = 0; i < M; i++)
 		{
-			for (int j = {i ? temp[i] : 0}; j < temp[i]; j++)
+			for (int j = Ap[i]; j < Ap[i + 1]; j++)
 			{
+				if (Ai[j] > i)
+				{
+					I.insert(I.begin() + Ap_new[Ai[j]], J2[j]);
+					J.insert(J.begin() + Ap_new[Ai[j]], I2[j]);
+					val.insert(val.begin() + Ap_new[Ai[j]], val2[j]);
+					for (int k = Ai[j]; k < M; k++)
+						Ap_new[k]++;
+				}
 			}
 		}
-	}
 
-	if (f != stdin)
-		fclose(f);
+		nz = I.size();
+		// printf("nz=%d\n", nz);
+		std::fill(temp.begin(), temp.end(), 0);
+		Ai.resize(nz);
+		Ax.resize(nz);
+
+		for (int k = 0; k < nz; k++)
+			temp[J[k]]++;
+		for (int i = 0, temp2 = 0; i < M; i++)
+		{
+			Ap[i] = temp2;
+			temp2 += temp[i];
+			temp[i] = Ap[i]; /* also copy p[0..n-1] back into c[0..n-1]*/
+		}
+		Ap[M] = nz;
+
+		for (int k = 0, p; k < nz; k++)
+		{
+			Ai[p = temp[J[k]]++] = I[k]; /* A(i,j) is the pth entry in C */
+										 // if (mtx->Ax)
+			Ax[p] = val[k];
+		}
+	}
 
 	/************************/
 	/* now write out matrix */
 	/************************/
 	// mm_write_banner(stdout, matcode);
 	// mm_write_mtx_crd_size(stdout, M, N, nz);
-	// for (i = 0; i < nz; i++)
-	//     fprintf(stdout, "%d %d %20.19g\n", I[i] + 1, J[i] + 1, val[i]);
-
-	*n = M;
-	// mtx->nz = nz;
-	Ap.resize(M + 1);
-	Ai.resize(nz);
-	Ax.resize(nz);
-
-	for (int i = 0; i < M; i++)
-	{
-		Ap[i] = temp2;
-		temp2 += temp[i];
-		nz2 += temp[i];	 /* also in double to avoid csi overflow */
-		temp[i] = Ap[i]; /* also copy p[0..n-1] back into c[0..n-1]*/
-	}
-	Ap[M] = temp2;
-
-	int p;
-	for (int k = 0; k < nz; k++)
-	{
-		Ai[p = temp[J[k]]++] = I[k]; /* A(i,j) is the pth entry in C */
-									 // if (mtx->Ax)
-		Ax[p] = val[k];
-	}
+	// for (int i = 0; i < nz; i++)
+	// 	fprintf(stdout, "%d %d %20.19g\n", I[i] + 1, J[i] + 1, val[i]);
+	// for (int i = 0; i <= M; i++)
+	// 	printf("Ap[%d]=%d\n", i, Ap[i]);
+	// for (int i = 0; i < nz; i++)
+	// 	printf("Ai[%d]=%d\tAx[%d]=%lf\n", i, Ai[i], i, Ax[i]);
 
 	return 0;
 }
