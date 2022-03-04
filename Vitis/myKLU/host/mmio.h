@@ -12,6 +12,8 @@
 #include <string.h>
 #include <ctype.h>
 #include <vector>
+#include <numeric>	 // std::iota
+#include <algorithm> // std::sort, std::stable_sort
 
 #define MM_MAX_LINE_LENGTH 1025
 #define MatrixMarketBanner "%%MatrixMarket"
@@ -753,12 +755,12 @@ int read_sparse(char *filename, int *n, std::vector<int, T> &Ap, std::vector<int
 	/************************/
 	// mm_write_banner(stdout, matcode);
 	// mm_write_mtx_crd_size(stdout, M, N, nz);
-	// for (int i = 0; i < nz; i++)
-	// 	fprintf(stdout, "%d %d %20.19g\n", I[i] + 1, J[i] + 1, val[i]);
-	// for (int i = 0; i <= M; i++)
-	// 	printf("Ap[%d]=%d\n", i, Ap[i]);
-	// for (int i = 0; i < nz; i++)
-	// 	printf("Ai[%d]=%d\tAx[%d]=%lf\n", i, Ai[i], i, Ax[i]);
+//	for (int i = 0; i < nz; i++)
+//		fprintf(stdout, "%d %d %20.19g\n", I[i] + 1, J[i] + 1, val[i]);
+//	for (int i = 0; i <= M; i++)
+//		printf("Ap[%d]=%d\n", i, Ap[i]);
+//	for (int i = 0; i < nz; i++)
+//		printf("Ai[%d]=%d\tAx[%d]=%lf\n", i, Ai[i], i, Ax[i]);
 
 	return 0;
 }

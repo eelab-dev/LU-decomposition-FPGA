@@ -4,7 +4,7 @@
 
 /* Free the KLU Symbolic object. */
 
-#include "klu_internal.h"
+#include "klu_kernel.h"
 
 int KLU_free_symbolic(
     KLU_symbolic **SymbolicHandle,

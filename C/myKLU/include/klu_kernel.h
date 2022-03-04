@@ -7,6 +7,8 @@
 #ifndef _KLU_KERNEL_H
 #define _KLU_KERNEL_H
 
+#include "amd.h"
+#include "btf.h"
 // #include <assert.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -161,10 +163,19 @@
 #define KLU_usolve klu_usolve
 #define KLU_kernel klu_kernel
 #define KLU_defaults klu_defaults
-
+#define KLU_analyze klu_analyze
+#define KLU_alloc_symbolic klu_alloc_symbolic
+#define KLU_free_symbolic klu_free_symbolic
+#define KLU_free klu_free
+#define KLU_malloc klu_malloc
 #define KLU_symbolic klu_symbolic
 #define KLU_numeric klu_numeric
 #define KLU_common klu_common
+
+#define BTF_order btf_order
+#define BTF_strongcomp btf_strongcomp
+
+#define AMD_order amd_order
 
 #define BYTES(type, n) (sizeof(type) * (n))
 #define CEILING(b, u) (((b) + (u)-1) / (u))
@@ -176,6 +187,8 @@
 #define KLU_OUT_OF_MEMORY (-2)
 #define KLU_INVALID (-3)
 #define KLU_TOO_LARGE (-4) /* integer overflow has occured */
+
+#define Int_MAX INT_MAX
 
 typedef struct klu_common_struct
 {
@@ -323,50 +336,22 @@ typedef struct
 
 } klu_numeric;
 
-int KLU_kernel /* final size of LU on output */
+void *klu_malloc /* returns pointer to the newly malloc'd block */
     (
-        /* input, not modified */
-        int n,       /* A is n-by-n */
-        int Ap[],    /* size n+1, column pointers for A */
-        int Ai[],    /* size nz = Ap [n], row indices for A */
-        double Ax[], /* size nz, values of A */
-        int Q[],     /* size n, optional input permutation */
-        int lusize,  /* initial size of LU */
+        /* ---- input ---- */
+        size_t n,    /* number of items */
+        size_t size, /* size of each item */
+        /* --------------- */
+        klu_common *Common);
 
-        /* output, not defined on input */
-        int Pinv[],     /* size n */
-        int P[],        /* size n */
-        double *p_LU,   /* size lusize on input, size Uxp[n] on output*/
-        double Udiag[], /* size n, diagonal of U */
-        int Llen[],     /* size n, column length of L */
-        int Ulen[],     /* size n, column length of U */
-        int Lip[],      /* size n+1 */
-        int Uip[],      /* size n+1 */
-        int *lnz,       /* size of L */
-        int *unz,       /* size of U */
-
-        /* workspace, not defined on input */
-        double X[], /* size n, zero on output */
-
-        /* workspace, not defined on input or output */
-        int Stack[],   /* size n */
-        int Flag[],    /* size n */
-        int adj_pos[], /* size n */
-
-        /* workspace for pruning only */
-        int Lpend[], /* size n workspace */
-
-        /* inputs, not modified on output */
-        int k1,      /* the block of A is from k1 to k2-1 */
-        int PSinv[], /* inverse of P from symbolic factorization */
-        double Rs[], /* scale factors for A */
-
-        /* inputs, modified on output */
-        int Offp[], /* off-diagonal matrix (modified by this routine) */
-        int Offi[],
-        double Offx[],
-        KLU_common *Common /* the control input/output structure */
-    );
+void *klu_free /* always returns NULL */
+    (
+        /* ---- in/out --- */
+        void *p,     /* block of memory to free */
+        size_t n,    /* number of items */
+        size_t size, /* size of each item */
+        /* --------------- */
+        klu_common *Common);
 
 #ifdef __cplusplus
 extern "C"

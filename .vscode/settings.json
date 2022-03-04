@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "*.cmake": "makefile",
+        "*.c": "c",
         "*.py": "python",
         "iostream": "cpp",
         "chrono": "cpp",
@@ -69,7 +70,8 @@
         "cinttypes": "cpp",
         "stdio.h": "c",
         "mutex": "cpp",
-        "klu_internal.h": "c"
+        "klu_internal.h": "c",
+        "klu_kernel.h": "c"
     },
     "editor.formatOnSave": true,
     "code-runner.runInTerminal": true,

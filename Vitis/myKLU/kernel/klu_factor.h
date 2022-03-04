@@ -1015,8 +1015,6 @@ int KLU_kernel /* final size of LU on output */
     p_LU = LU;
     // for (int i = 0; i < newlusize; i++)
     //     printf("LU[%d]=%lf", i, LU[i]);
-    // for (int i = 0; i < n; i++)
-    //     printf("Llen[%d]=%d,Lip[%d]=%d,Ulen[%d]=%d,Uip[%d]=%d\n", i, Llen[i], i, Lip[i], i, Ulen[i], i, Uip[i]);
     return (newlusize);
 }
 
@@ -1041,7 +1039,7 @@ void factor2(
 
     // Iwork = Numeric->Iwork; /* 5*maxblock for KLU_factor */
     //                         /* 1*maxblock for Pblock */
-    int Pblock[Symbolic->maxblock];
+    int Pblock[MAX_SIZE];
 
     /* compute the inverse of P from symbolic analysis.  Will be updated to
      * become the inverse of the numerical factorization when the factorization
@@ -1234,7 +1232,7 @@ void factor2(
             // Ap_pos = (int *)W;
             // W += nk;
 
-            int pinv[Symbolic->maxblock], Stack[Symbolic->maxblock], Flag[Symbolic->maxblock], Ap_pos[Symbolic->maxblock], Lpend[Symbolic->maxblock];
+            int pinv[MAX_SIZE], Stack[MAX_SIZE], Flag[MAX_SIZE], Ap_pos[MAX_SIZE], Lpend[MAX_SIZE];
 
             Numeric->LUsize[block] = KLU_kernel(nk, Ap, Ai, Ax, Symbolic->Q, lusize, pinv, Pblock, &Numeric->LUbx[Numeric->lusize_sum], Numeric->Udiag + k1, Numeric->Llen + k1, Numeric->Ulen + k1, Numeric->Lip + k1, Numeric->Uip + k1, &lnz_block, &unz_block, Numeric->Xwork, Stack, Flag, Ap_pos, Lpend, k1, Numeric->Pinv, Numeric->Rs, Numeric->Offp, Numeric->Offi, Numeric->Offx, Common);
             if (Common->status < KLU_OK || (Common->status == KLU_SINGULAR && Common->halt_if_singular))

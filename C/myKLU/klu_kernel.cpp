@@ -11,8 +11,8 @@
 
 int main(void)
 {
-    char filename[] = "../../../Matrix_Sample/host.mtx";
-    char bmatrix[] = "../../../Matrix_Sample/host_b.mtx";
+    char filename[] = "../../Matrix_Sample/host.mtx";
+    char bmatrix[] = "../../Matrix_Sample/host_b.mtx";
 
     std::vector<int> Ap, Ai;
     std::vector<double> Ax, b;
@@ -70,12 +70,12 @@ int main(void)
         read_bmatrix(bmatrix, b);
 
         begin[1] = std::chrono::steady_clock::now();
-        factor2(Ap.data(), Ai.data(), Ax.data(), &Symbolic, &Numeric, &Common);
+        klu_factor(Ap.data(), Ai.data(), Ax.data(), &Symbolic, &Numeric, &Common);
         end[1] = std::chrono::steady_clock::now();
         total[1] += std::chrono::duration_cast<std::chrono::microseconds>(end[1] - begin[1]).count();
 
         begin[2] = std::chrono::steady_clock::now();
-        klu_solve2(&Symbolic, &Numeric, n, b.data(), &Common);
+        klu_solve(&Symbolic, &Numeric, n, b.data(), &Common);
         end[2] = std::chrono::steady_clock::now();
         total[2] += std::chrono::duration_cast<std::chrono::microseconds>(end[2] - begin[2]).count();
     }

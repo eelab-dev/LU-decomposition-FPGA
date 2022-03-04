@@ -4,7 +4,7 @@
 
 /* Sets default parameters for KLU */
 
-#include "klu_internal.h"
+#include "klu_kernel.h"
 
 int KLU_defaults(
     KLU_common *Common)

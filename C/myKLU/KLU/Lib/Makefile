@@ -22,7 +22,7 @@ C = $(CC) $(CF)
 
 INC = ../Include/klu_internal.h ../../SuiteSparse_config/SuiteSparse_config.h
 
-I = -I../../AMD/Include -I../../BTF/Include -I../Include -I../../SuiteSparse_config
+I = -I../../include -I../../SuiteSparse_config
 
 
 COMMON = klu_free_symbolic.o klu_defaults.o klu_analyze.o klu_memory.o

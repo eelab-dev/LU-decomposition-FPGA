@@ -6,13 +6,13 @@
  * ordering, or the user-provided-function on the blocks.  Does not support
  * using a given ordering (use klu_analyze_given for that case). */
 
-#include "klu_internal.h"
+#include "klu_kernel.h"
 
 /* ========================================================================== */
 /* === analyze_worker ======================================================= */
 /* ========================================================================== */
 
-KLU_symbolic *KLU_alloc_symbolic(
+static KLU_symbolic *KLU_alloc_symbolic(
     int n,
     int *Ap,
     int *Ai,

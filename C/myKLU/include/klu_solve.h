@@ -65,7 +65,7 @@ void KLU_usolve(
     }
 }
 
-int klu_solve2(
+int KLU_solve(
     /* inputs, not modified */
     KLU_symbolic *Symbolic,
     KLU_numeric *Numeric,
