@@ -1,5 +1,5 @@
 #include <iostream>
-#include "../C/myKLU/mmio.h"
+#include "../C/myKLU/include/mmio.h"
 
 int main(void)
 {

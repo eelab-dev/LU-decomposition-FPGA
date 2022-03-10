@@ -6,6 +6,8 @@ INCL=-I include
 
 STD=-std=c++20 -stdlib=libc++
 
+PRE?=TRUE
+
 library:
 	(cd SuiteSparse_config ; $(MAKE))
 	(cd AMD/Lib ; $(MAKE))

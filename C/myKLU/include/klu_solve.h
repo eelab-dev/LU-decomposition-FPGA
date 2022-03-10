@@ -1,6 +1,6 @@
 #include "klu_kernel.h"
 
-void KLU_lsolve(
+static void KLU_lsolve(
     /* inputs, not modified: */
     int n,
     int Lip[],
@@ -10,17 +10,14 @@ void KLU_lsolve(
     /* right-hand-side on input, solution to Lx=b on output */
     double X[])
 {
-    double x, *Lx;
-    int *Li;
-    int k, p, len;
-
-    for (k = 0; k < n; k++)
+klu_lsolve_loop:
+    for (int k = 0; k < n; k++)
     {
-        // printf("k=%d\n", k);
-        x = X[k];
+        double x = X[k], *Lx;
+        int len, *Li;
         GET_POINTER(LU, Lip, Llen, Li, Lx, k, len);
         /* unit diagonal of L is not stored*/
-        for (p = 0; p < len; p++)
+        for (int p = 0; p < len; p++)
         {
             /* X [Li [p]] -= Lx [p] * x [0] ; */
             MULT_SUB(X[Li[p]], Lx[p], x);
@@ -37,7 +34,7 @@ void KLU_lsolve(
  * and is stored in ROW form with row dimension nrhs.  nrhs must be in the
  * range 1 to 4. */
 
-void KLU_usolve(
+static void KLU_usolve(
     /* inputs, not modified: */
     int n,
     int Uip[],
@@ -48,16 +45,16 @@ void KLU_usolve(
     /* right-hand-side on input, solution to Ux=b on output */
     double X[])
 {
-    double x, *Ux;
-    int *Ui, k, p, len;
-
-    for (k = n - 1; k >= 0; k--)
+klu_usolve_loop:
+    for (int k = n - 1; k >= 0; k--)
     {
+        double x, *Ux;
+        int *Ui, len;
         GET_POINTER(LU, Uip, Ulen, Ui, Ux, k, len);
         /* x [0] = X [k] / Udiag [k] ; */
         DIV(x, X[k], Udiag[k]);
         X[k] = x;
-        for (p = 0; p < len; p++)
+        for (int p = 0; p < len; p++)
         {
             /* X [Ui [p]] -= Ux [p] * x [0] ; */
             MULT_SUB(X[Ui[p]], Ux[p], x);
@@ -78,9 +75,6 @@ int KLU_solve(
     /* --------------- */
     KLU_common *Common)
 {
-    double x, s;
-    int k1, k2, nk, pend, p, lusize_sum = Numeric->lusize_sum;
-
     /* ---------------------------------------------------------------------- */
     /* check inputs */
     /* ---------------------------------------------------------------------- */
@@ -89,12 +83,6 @@ int KLU_solve(
     {
         return (FALSE);
     }
-    // if (Numeric == NULL || Symbolic == NULL || d < Symbolic->n || nrhs < 0 ||
-    //     B == NULL)
-    // {
-    //     Common->status = KLU_INVALID;
-    //     return (FALSE);
-    // }
     Common->status = KLU_OK;
 
     /* ---------------------------------------------------------------------- */
@@ -121,9 +109,7 @@ int KLU_solve(
 
     if (Numeric->Rs == NULL)
     {
-
         /* no scaling */
-
         for (int k = 0; k < Symbolic->n; k++)
         {
             Numeric->Xwork[k] = B[Numeric->Pnum[k]];
@@ -131,7 +117,6 @@ int KLU_solve(
     }
     else
     {
-
         for (int k = 0; k < Symbolic->n; k++)
         {
             SCALE_DIV_ASSIGN(Numeric->Xwork[k], B[Numeric->Pnum[k]], Numeric->Rs[k]);
@@ -142,6 +127,7 @@ int KLU_solve(
     /* solve X = (L*U + Off)\X */
     /* ------------------------------------------------------------------ */
 
+klu_solve_loop:
     for (int block = Symbolic->nblocks - 1; block >= 0; block--)
     {
 
@@ -149,25 +135,21 @@ int KLU_solve(
         /* the block of size nk is from rows/columns k1 to k2-1 */
         /* -------------------------------------------------------------- */
 
-        k1 = Symbolic->R[block];
-        k2 = Symbolic->R[block + 1];
-        nk = k2 - k1;
+        int k1 = Symbolic->R[block];
+        int k2 = Symbolic->R[block + 1];
+        int nk = k2 - k1;
         PRINTF(("solve %d, k1 %d k2-1 %d nk %d\n", block, k1, k2 - 1, nk));
 
-        // printf("nr=%d\n", nr);
         /* solve the block system */
         if (nk == 1)
         {
-            s = Numeric->Udiag[k1];
-            // printf("X[%d]=%lf,s=%lf\n", k1, X[k1], s);
-
+            double s = Numeric->Udiag[k1];
             DIV(Numeric->Xwork[k1], Numeric->Xwork[k1], s);
         }
         else
         {
-            lusize_sum -= Numeric->LUsize[block];
-            KLU_lsolve(nk, Numeric->Lip + k1, Numeric->Llen + k1, &Numeric->LUbx[lusize_sum], Numeric->Xwork + k1);
-            KLU_usolve(nk, Numeric->Uip + k1, Numeric->Ulen + k1, &Numeric->LUbx[lusize_sum], Numeric->Udiag + k1, Numeric->Xwork + k1);
+            KLU_lsolve(nk, Numeric->Lip + k1, Numeric->Llen + k1, &Numeric->LUbx[Numeric->LUsize[block]], Numeric->Xwork + k1);
+            KLU_usolve(nk, Numeric->Uip + k1, Numeric->Ulen + k1, &Numeric->LUbx[Numeric->LUsize[block]], Numeric->Udiag + k1, Numeric->Xwork + k1);
         }
 
         /* -------------------------------------------------------------- */
@@ -176,15 +158,12 @@ int KLU_solve(
 
         if (block > 0)
         {
-
             for (int k = k1; k < k2; k++)
             {
-                // printf("Offp[%d]=%d,Offp[%d]=%d\n", k, Offp[k], k + 1, Offp[k + 1]);
-                pend = Numeric->Offp[k + 1];
-                x = Numeric->Xwork[k];
-                for (p = Numeric->Offp[k]; p < pend; p++)
+                int pend = Numeric->Offp[k + 1];
+                double x = Numeric->Xwork[k];
+                for (int p = Numeric->Offp[k]; p < pend; p++)
                 {
-                    // printf("X[%d]=%lf,Offx[%d]=%lf,x[0]=%lf\n", Numeric->Offi[p], Numeric->Xwork[Numeric->Offi[p]], p, Numeric->Offx[p], x);
                     MULT_SUB(Numeric->Xwork[Numeric->Offi[p]], Numeric->Offx[p], x);
                 }
             }

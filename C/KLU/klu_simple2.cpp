@@ -2,7 +2,7 @@
 
 #include "klu.h"
 #include <iostream>
-#include "../myKLU/mmio.h"
+#include "../myKLU/include/mmio.h"
 #include <chrono>
 #include <numeric>
 

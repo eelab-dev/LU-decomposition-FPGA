@@ -157,8 +157,7 @@ int main(int argc, char **argv)
     // For HLS kernels global and local size is always (1,1,1). So, it is
     // recommended
     // to always use enqueueTask() for invoking HLS kernel
-    for(int i =0;i<100;i++)
-    	OCL_CHECK(err, err = q.enqueueTask(krnl_vector_add));
+    OCL_CHECK(err, err = q.enqueueTask(krnl_vector_add));
 
     // Copy Result from Device Global Memory to Host Local Memory
     OCL_CHECK(err, err = q.enqueueMigrateMemObjects({buffer_output}, CL_MIGRATE_MEM_OBJECT_HOST));

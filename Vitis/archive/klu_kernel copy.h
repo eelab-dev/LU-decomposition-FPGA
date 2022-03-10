@@ -258,23 +258,23 @@ typedef struct
      */
 
     /* only computed if the AMD ordering is chosen: */
-    double symmetry;      /* symmetry of largest block */
-    double est_flops;     /* est. factorization flop count */
-    double lnz, unz;      /* estimated nz in L and U, including diagonals */
-    double Lnz[MAX_SIZE]; /* size n, but only Lnz [0..nblocks-1] is used */
+    double symmetry;  /* symmetry of largest block */
+    double est_flops; /* est. factorization flop count */
+    double lnz, unz;  /* estimated nz in L and U, including diagonals */
+    double *Lnz;      /* size n, but only Lnz [0..nblocks-1] is used */
 
     /* computed for all orderings: */
     int
-        n,               /* input matrix A is n-by-n */
-        nz,              /* # entries in input matrix */
-        P[MAX_SIZE],     /* size n */
-        Q[MAX_SIZE],     /* size n */
-        R[MAX_SIZE + 1], /* size n+1, but only R [0..nblocks] is used */
-        nzoff,           /* nz in off-diagonal blocks */
-        nblocks,         /* number of blocks */
-        maxblock,        /* size of largest block */
-        ordering,        /* ordering used (AMD, COLAMD, or GIVEN) */
-        do_btf;          /* whether or not BTF preordering was requested */
+        n,        /* input matrix A is n-by-n */
+        nz,       /* # entries in input matrix */
+        *P,       /* size n */
+        *Q,       /* size n */
+        *R,       /* size n+1, but only R [0..nblocks] is used */
+        nzoff,    /* nz in off-diagonal blocks */
+        nblocks,  /* number of blocks */
+        maxblock, /* size of largest block */
+        ordering, /* ordering used (AMD, COLAMD, or GIVEN) */
+        do_btf;   /* whether or not BTF preordering was requested */
 
     /* only computed if BTF preordering requested */
     int structural_rank; /* 0 to n-1 if the matrix is structurally rank
@@ -288,36 +288,36 @@ typedef struct
     /* LU factors of each block, the pivot row permutation, and the
      * entries in the off-diagonal blocks */
 
-    int n;              /* A is n-by-n */
-    int nblocks;        /* number of diagonal blocks */
-    int lnz;            /* actual nz in L, including diagonal */
-    int unz;            /* actual nz in U, including diagonal */
-    int max_lnz_block;  /* max actual nz in L in any one block, incl. diag */
-    int max_unz_block;  /* max actual nz in U in any one block, incl. diag */
-    int Pnum[MAX_SIZE]; /* size n. final pivot permutation */
-    int Pinv[MAX_SIZE]; /* size n. inverse of final pivot permutation */
+    int n;             /* A is n-by-n */
+    int nblocks;       /* number of diagonal blocks */
+    int lnz;           /* actual nz in L, including diagonal */
+    int unz;           /* actual nz in U, including diagonal */
+    int max_lnz_block; /* max actual nz in L in any one block, incl. diag */
+    int max_unz_block; /* max actual nz in U in any one block, incl. diag */
+    int *Pnum;         /* size n. final pivot permutation */
+    int *Pinv;         /* size n. inverse of final pivot permutation */
 
     /* LU factors of each block */
-    int Lip[MAX_SIZE];      /* size n. pointers into LUbx[block] for L */
-    int Uip[MAX_SIZE];      /* size n. pointers into LUbx[block] for U */
-    int Llen[MAX_SIZE];     /* size n. Llen [k] = # of entries in kth column of L */
-    int Ulen[MAX_SIZE];     /* size n. Ulen [k] = # of entries in kth column of U */
-    double LUbx[MAX_SIZE];  /* L and U indices and entries (excl. diagonal of U) */
-    int LUsize[MAX_SIZE];   /* size of each LUbx [block], in sizeof (Unit) */
-    double Udiag[MAX_SIZE]; /* diagonal of U */
+    int *Lip;      /* size n. pointers into LUbx[block] for L */
+    int *Uip;      /* size n. pointers into LUbx[block] for U */
+    int *Llen;     /* size n. Llen [k] = # of entries in kth column of L */
+    int *Ulen;     /* size n. Ulen [k] = # of entries in kth column of U */
+    double *LUbx;  /* L and U indices and entries (excl. diagonal of U) */
+    int *LUsize;   /* size of each LUbx [block], in sizeof (Unit) */
+    double *Udiag; /* diagonal of U */
 
     /* scale factors; can be NULL if no scaling */
-    double Rs[MAX_SIZE]; /* size n. Rs [i] is scale factor for row i */
+    double *Rs; /* size n. Rs [i] is scale factor for row i */
 
     /* permanent workspace for factorization and solve */
     int worksize; /* size (in bytes) of Work */
     // void *Work;      /* workspace */
-    double Xwork[MAX_SIZE]; /* alias into Numeric->Work */
+    double *Xwork; /* alias into Numeric->Work */
 
     /* off-diagonal entries in a conventional compressed-column sparse matrix */
-    int Offp[MAX_SIZE];    /* size n+1, column pointers */
-    int Offi[MAX_SIZE];    /* size nzoff, row indices */
-    double Offx[MAX_SIZE]; /* size nzoff, numerical values */
+    int *Offp;    /* size n+1, column pointers */
+    int *Offi;    /* size nzoff, row indices */
+    double *Offx; /* size nzoff, numerical values */
     int nzoff;
 
     int lusize_sum;

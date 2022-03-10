@@ -59,83 +59,102 @@ Input Vector 2 from Global Memory --->|             |      |__|
 *******************************************************************************/
 
 // Includes
-#include <hls_vector.h>
-#include <hls_stream.h>
+#include "stdio.h"
 #include "assert.h"
 #include "klu_factor.h"
 #include "klu_solve.h"
 
+void read(int *AP, int *AI, double *AX, int *P, int *Q, int *R, double *LNZ,double *B)
+{
+
+}
+
 extern "C"
 {
-    void lu(int *AP, int *AI, double *AX, int *P, int *Q, int *R, double *LNZ, int N, int NBLOCKS, int MAXBLOCK, int NZOFF, int NZ, double *B)
-    {
-        klu_common Common;
-        KLU_numeric Numeric;
-        klu_symbolic Symbolic;
-        klu_defaults(&Common);
-
-        int Ap[MAX_SIZE], Ai[MAX_SIZE], p[MAX_SIZE], q[MAX_SIZE], r[MAX_SIZE];
-        double Ax[MAX_SIZE], b[MAX_SIZE], Lnz[MAX_SIZE];
-
-        int Pnum[MAX_SIZE], Offp[MAX_SIZE], Offi[MAX_SIZE], Lip[MAX_SIZE], Uip[MAX_SIZE], Llen[MAX_SIZE], Ulen[MAX_SIZE], Pinv[MAX_SIZE], LUsize[MAX_SIZE];
-
-        double Offx[MAX_SIZE], Udiag[MAX_SIZE], LUbx[MAX_SIZE], Rs[MAX_SIZE], Xwork[MAX_SIZE];
-
-        for (int i = 0; i < N; i++)
+        void lu(int *AP, int *AI, double *AX, int *P, int *Q, int *R, double *LNZ, int N, int NBLOCKS, int MAXBLOCK, int NZOFF, int NZ, double *B)
         {
+                klu_common Common;
+                KLU_numeric Numeric;
+                klu_symbolic Symbolic;
+                klu_defaults(&Common);
+
+#pragma HLS INTERFACE m_axi depth = 2048 port = AP max_read_burst_length = 64 offset = slave bundle = gmem
+#pragma HLS INTERFACE m_axi depth = 2048 port = AI max_read_burst_length = 64 offset = slave bundle = gmem1
+#pragma HLS INTERFACE m_axi depth = 2048 port = AX max_read_burst_length = 64 offset = slave bundle = gmem2
+#pragma HLS INTERFACE m_axi depth = 2048 port = P max_read_burst_length = 64 offset = slave bundle = gmem3
+#pragma HLS INTERFACE m_axi depth = 2048 port = Q max_read_burst_length = 64 offset = slave bundle = gmem4
+#pragma HLS INTERFACE m_axi depth = 2048 port = R max_read_burst_length = 64 offset = slave bundle = gmem5
+#pragma HLS INTERFACE m_axi depth = 2048 port = LNZ max_read_burst_length = 64 offset = slave bundle = gmem6
+#pragma HLS INTERFACE m_axi depth = 2048 port = B max_read_burst_length = 64 offset = slave bundle = gmem7
+
+                int Ap[MAX_SIZE], Ai[MAX_SIZE];
+                double Ax[MAX_SIZE], b[MAX_SIZE];
+
+        //#pragma HLS array_partition variable = Ap factor = 16
+        //#pragma HLS array_partition variable = Ai factor = 16
+        //#pragma HLS array_partition variable = Symbolic.P factor = 16
+        //#pragma HLS array_partition variable = q
+        //#pragma HLS array_partition variable = r
+        //#pragma HLS array_partition variable = Ax
+        //#pragma HLS array_partition variable = b factor = 16
+        //#pragma HLS array_partition variable = Lnz
+        //#pragma HLS array_partition variable = Pnum
+        //#pragma HLS array_partition variable = Offp
+        //#pragma HLS array_partition variable = Offi
+        //#pragma HLS array_partition variable = Lip
+        //#pragma HLS array_partition variable = Uip
+        //#pragma HLS array_partition variable = Llen
+        //#pragma HLS array_partition variable = Ulen
+        //#pragma HLS array_partition variable = Pinv
+        //#pragma HLS array_partition variable = LUsize
+        //#pragma HLS array_partition variable = Offx
+        //#pragma HLS array_partition variable = Udiag
+        //#pragma HLS array_partition variable = LUbx
+        //#pragma HLS array_partition variable = Rs
+        //#pragma HLS array_partition variable = Xwork
+        Read_loop_1:
+                for (int i = 0; i < N; i++)
+                {
 #pragma HLS pipeline
-            Ap[i] = AP[i];
-            p[i] = P[i];
-            q[i] = Q[i];
-            r[i] = R[i];
-            b[i] = B[i];
-            Lnz[i] = LNZ[i];
-        }
-        Ap[N] = AP[N];
-        r[N] = R[N];
-        for (int i = 0; i < NZ; i++)
-        {
+                        Ap[i] = AP[i];
+                        //            Ai[i] = AI[i];
+                        //            Ax[i] = AX[i];
+                        b[i] = B[i];
+                        Symbolic.P[i] = P[i];
+                        Symbolic.Q[i] = Q[i];
+                        Symbolic.R[i] = R[i];
+                        Symbolic.Lnz[i] = LNZ[i];
+                }
+                Ap[N] = AP[N];
+                Symbolic.R[N] = R[N];
+
+        Read_loop_2:
+                for (int i = 0; i < NZ; i++)
+                {
 #pragma HLS pipeline
-            Ai[i] = AI[i];
-            Ax[i] = AX[i];
-        }
+                        Ai[i] = AI[i];
+                        Ax[i] = AX[i];
+                }
 
-        Symbolic.n = N;
-        Symbolic.nz = NZ;
-        Symbolic.P = p;
-        Symbolic.Q = q;
-        Symbolic.R = r;
-        Symbolic.nzoff = NZOFF;
-        Symbolic.nblocks = NBLOCKS;
-        Symbolic.maxblock = MAXBLOCK;
-        Symbolic.Lnz = Lnz;
+                Symbolic.n = N;
+                Symbolic.nz = NZ;
+                Symbolic.nzoff = NZOFF;
+                Symbolic.nblocks = NBLOCKS;
+                Symbolic.maxblock = MAXBLOCK;
 
-        Numeric.n = Symbolic.n;
-        Numeric.nblocks = Symbolic.nblocks;
-        Numeric.nzoff = Symbolic.nzoff;
-        Numeric.Pnum = Pnum;
-        Numeric.Offp = Offp;
-        Numeric.Offi = Offi;
-        Numeric.Offx = Offx;
-        Numeric.Lip = Lip;
-        Numeric.Uip = Uip;
-        Numeric.Llen = Llen;
-        Numeric.Ulen = Ulen;
-        Numeric.LUsize = LUsize;
-        Numeric.LUbx = LUbx;
-        Numeric.Udiag = Udiag;
-        Numeric.Rs = Rs;
-        Numeric.Pinv = Pinv;
-        Numeric.Xwork = Xwork;
+                Numeric.n = Symbolic.n;
+                Numeric.nblocks = Symbolic.nblocks;
+                Numeric.nzoff = Symbolic.nzoff;
 
-        factor2(Ap, Ai, Ax, &Symbolic, &Numeric, &Common);
+                klu_factor(Ap, Ai, Ax, &Symbolic, &Numeric, &Common);
 
-        klu_solve2(Symbolic.Q, Symbolic.R, Numeric.Pnum, Numeric.Offp, Numeric.Offi, Numeric.Lip, Numeric.Uip, Numeric.Llen, Numeric.Ulen, Numeric.Offx, Numeric.Xwork, Numeric.Udiag, Numeric.Rs, Numeric.LUbx, Numeric.LUsize, Symbolic.nblocks, N, Numeric.lusize_sum, b, &Common);
+                klu_solve(&Symbolic, &Numeric, N, b, &Common);
 
-        for (int i = 0; i < N; i++)
-        {
+        Write_loop:
+                for (int i = 0; i < N; i++)
+                {
 #pragma HLS pipeline
-            B[i] = b[i];
+                        B[i] = b[i];
+                }
         }
-    }
 }

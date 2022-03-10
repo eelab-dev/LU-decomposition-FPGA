@@ -5,8 +5,7 @@
 /* ========================================================================== */
 
 /* Does a depth-first-search, starting at node j. */
-
-int dfs(
+static int dfs(
     /* input, not modified on output: */
     int j,      /* node at which to start the DFS */
     int k,      /* mark value, for the Flag array */
@@ -30,19 +29,17 @@ int dfs(
     int Ap_pos[] /* keeps track of position in adj list during DFS */
 )
 {
-    int pos, jnew, head, l_length;
+    int pos, l_length = *plength;
     int *Li;
 
-    l_length = *plength;
-
-    head = 0;
     Stack[0] = j;
     ASSERT(Flag[j] != k);
 
-    while (head >= 0)
+dfs_loop:
+    for (int head = 0; head >= 0;)
     {
         j = Stack[head];
-        jnew = Pinv[j];
+        int jnew = Pinv[j];
         ASSERT(jnew >= 0 && jnew < k); /* j is pivotal */
 
         if (Flag[j] != k) /* a node is not yet visited */
@@ -51,13 +48,14 @@ int dfs(
             Flag[j] = k;
             PRINTF(("[ start dfs at %d : new %d\n", j, jnew));
             /* set Ap_pos [head] to one past the last entry in col j to scan */
-            Ap_pos[head] =
-                (Lpend[jnew] == EMPTY) ? Llen[jnew] : Lpend[jnew];
+            Ap_pos[head] = (Lpend[jnew] == EMPTY) ? Llen[jnew] : Lpend[jnew];
         }
 
         /* add the adjacent nodes to the recursive stack by iterating through
          * until finding another non-visited pivotal node */
         Li = (int *)(LU + Lip[jnew]);
+
+    dfs_loop_2:
         for (pos = --Ap_pos[head]; pos >= 0; --pos)
         {
             int i = Li[pos];
@@ -107,8 +105,7 @@ int dfs(
 /* ========================================================================== */
 
 /* Finds the pattern of x, for the solution of Lx=b */
-
-int lsolve_symbolic(
+static int lsolve_symbolic(
     /* input, not modified on output: */
     int n, /* L is n-by-n, where n >= 0 */
     int k, /* also used as the mark value, for the Flag array */
@@ -142,10 +139,8 @@ int lsolve_symbolic(
 )
 {
     int *Lik;
-    int i, p, pend, oldcol, kglobal, top, l_length;
+    int pend, oldcol, kglobal, top = n, l_length = 0;
 
-    top = n;
-    l_length = 0;
     Lik = (int *)(LU + lup);
 
     /* ---------------------------------------------------------------------- */
@@ -155,9 +150,11 @@ int lsolve_symbolic(
     kglobal = k + k1;    /* column k of the block is col kglobal of A */
     oldcol = Q[kglobal]; /* Q must be present for BTF case */
     pend = Ap[oldcol + 1];
-    for (p = Ap[oldcol]; p < pend; p++)
+
+lsolve_symbolic_loop:
+    for (int p = Ap[oldcol]; p < pend; p++)
     {
-        i = PSinv[Ai[p]] - k1;
+        int i = PSinv[Ai[p]] - k1;
         if (i < 0)
             continue; /* skip entry outside the block */
 
@@ -167,8 +164,7 @@ int lsolve_symbolic(
         {
             if (Pinv[i] >= 0)
             {
-                top = dfs(i, k, Pinv, Llen, Lip, Stack, Flag,
-                          Lpend, top, LU, Lik, &l_length, Ap_pos);
+                top = dfs(i, k, Pinv, Llen, Lip, Stack, Flag, Lpend, top, LU, Lik, &l_length, Ap_pos);
             }
             else
             {
@@ -193,7 +189,7 @@ int lsolve_symbolic(
  * Scatter the numerical values into the workspace X, and construct the
  * corresponding column of the off-diagonal matrix. */
 
-void construct_column(
+static void construct_column(
     /* inputs, not modified on output */
     int k, /* the column of A (or the column of the block) to get */
     int Ap[],
@@ -218,7 +214,7 @@ void construct_column(
     double Offx[])
 {
     double aik;
-    int i, p, pend, oldcol, kglobal, poff, oldrow;
+    int pend, oldcol, kglobal, poff, oldrow;
 
     /* ---------------------------------------------------------------------- */
     /* Scale and scatter the column into X. */
@@ -232,10 +228,10 @@ void construct_column(
     if (scale <= 0)
     {
         /* no scaling */
-        for (p = Ap[oldcol]; p < pend; p++)
+        for (int p = Ap[oldcol]; p < pend; p++)
         {
             oldrow = Ai[p];
-            i = PSinv[oldrow] - k1;
+            int i = PSinv[oldrow] - k1;
             aik = Ax[p];
             if (i < 0)
             {
@@ -254,10 +250,10 @@ void construct_column(
     else
     {
         /* row scaling */
-        for (p = Ap[oldcol]; p < pend; p++)
+        for (int p = Ap[oldcol]; p < pend; p++)
         {
             oldrow = Ai[p];
-            i = PSinv[oldrow] - k1;
+            int i = PSinv[oldrow] - k1;
             aik = Ax[p];
             SCALE_DIV(aik, Rs[oldrow]);
             if (i < 0)
@@ -287,7 +283,7 @@ void construct_column(
  * to be unit-diagonal, with possibly unsorted columns (but the first entry in
  * the column must always be the diagonal entry). */
 
-void lsolve_numeric(
+static void lsolve_numeric(
     /* input, not modified on output: */
     int Pinv[],  /* Pinv [i] = k if i is kth pivot row, or EMPTY if row i
                   * is not yet pivotal.  */
@@ -305,22 +301,21 @@ void lsolve_numeric(
 
 )
 {
-    double xj;
     double *Lx;
-    int *Li;
-    int p, s, j, jnew, len;
+    int *Li, len;
 
     /* solve Lx=b */
-    for (s = top; s < n; s++)
+lsolve_numeric_loop:
+    for (int s = top; s < n; s++)
     {
         /* forward solve with column j of L */
-        j = Stack[s];
-        jnew = Pinv[j];
+        int j = Stack[s];
+        int jnew = Pinv[j];
         ASSERT(jnew >= 0);
-        xj = X[j];
+        double xj = X[j];
         GET_POINTER(LU, Lip, Llen, Li, Lx, jnew, len);
         ASSERT(Lip[jnew] <= Lip[jnew + 1]);
-        for (p = 0; p < len; p++)
+        for (int p = 0; p < len; p++)
         {
             /*X [Li [p]] -= Lx [p] * xj ; */
             MULT_SUB(X[Li[p]], Lx[p], xj);
@@ -334,7 +329,7 @@ void lsolve_numeric(
 
 /* Find a pivot via partial pivoting, and scale the column of L. */
 
-int lpivot(
+static int lpivot(
     int diagrow,
     int *p_pivrow,
     double *p_pivot,
@@ -355,7 +350,7 @@ int lpivot(
 {
     double x, pivot, *Lx;
     double abs_pivot, xabs;
-    int p, i, ppivrow, pdiag, pivrow, *Li, last_row_index, firstrow, len;
+    int i, ppivrow, pdiag, pivrow, *Li, last_row_index, firstrow, len;
 
     pivrow = EMPTY;
     if (Llen[k] == 0)
@@ -397,7 +392,8 @@ int lpivot(
     GET_POINTER(LU, Lip, Llen, Li, Lx, k, len);
 
     /* look in Li [0 ..Llen [k] - 1 ] for a pivot row */
-    for (p = 0; p < len; p++)
+lpivot_loop:
+    for (int p = 0; p < len; p++)
     {
         /* gather the entry from X and store in L */
         i = Li[p];
@@ -478,7 +474,7 @@ int lpivot(
     }
 
     /* divide L by the pivot value */
-    for (p = 0; p < Llen[k]; p++)
+    for (int p = 0; p < Llen[k]; p++)
     {
         /* Lx [p] /= pivot ; */
         DIV(Lx[p], Lx[p], pivot);
@@ -492,7 +488,7 @@ int lpivot(
 /* ========================================================================== */
 
 /* Prune the columns of L to reduce work in subsequent depth-first searches */
-void prune(
+static void prune(
     /* input/output: */
     int Lpend[], /* Lpend [j] marks symmetric pruning point for L(:,j) */
 
@@ -512,17 +508,18 @@ void prune(
     int Llen[]  /* size n, column length of L */
 )
 {
-    double x;
     double *Lx, *Ux;
     int *Li, *Ui;
-    int p, i, j, p2, phead, ptail, llen, ulen;
+    int llen, ulen;
 
     /* check to see if any column of L can be pruned */
     /* Ux is set but not used.  This OK. */
     GET_POINTER(LU, Uip, Ulen, Ui, Ux, k, ulen);
-    for (p = 0; p < ulen; p++)
+
+prune_loop:
+    for (int p = 0; p < ulen; p++)
     {
-        j = Ui[p];
+        int j = Ui[p];
         ASSERT(j < k);
         PRINTF(("%d is pruned: %d. Lpend[j] %d Lip[j+1] %d\n",
                 j, Lpend[j] != EMPTY, Lpend[j], Lip[j + 1]));
@@ -530,7 +527,7 @@ void prune(
         {
             /* scan column j of L for the pivot row */
             GET_POINTER(LU, Lip, Llen, Li, Lx, j, llen);
-            for (p2 = 0; p2 < llen; p2++)
+            for (int p2 = 0; p2 < llen; p2++)
             {
                 if (pivrow == Li[p2])
                 {
@@ -538,11 +535,11 @@ void prune(
 
                     /* partition column j of L.  The unit diagonal of L
                      * is not stored in the column of L. */
-                    phead = 0;
-                    ptail = Llen[j];
+                    int phead = 0;
+                    int ptail = Llen[j];
                     while (phead < ptail)
                     {
-                        i = Li[phead];
+                        int i = Li[phead];
                         if (Pinv[i] >= 0)
                         {
                             /* leave at the head */
@@ -554,7 +551,7 @@ void prune(
                             ptail--;
                             Li[phead] = Li[ptail];
                             Li[ptail] = i;
-                            x = Lx[phead];
+                            double x = Lx[phead];
                             Lx[phead] = Lx[ptail];
                             Lx[ptail] = x;
                         }
@@ -584,8 +581,7 @@ void prune(
  *      1: the scale factor for row i is sum (abs (A (i,:)))
  *      2 or more: the scale factor for row i is max (abs (A (i,:)))
  */
-
-int KLU_scale /* return TRUE if successful, FALSE otherwise */
+static int KLU_scale /* return TRUE if successful, FALSE otherwise */
     (
         /* inputs, not modified */
         int scale, /* 0: none, 1: sum, 2: max */
@@ -600,50 +596,11 @@ int KLU_scale /* return TRUE if successful, FALSE otherwise */
         /* --------------- */
         KLU_common *Common)
 {
-    double a;
-    double *Az;
-    int row, col, p, pend, check_duplicates;
-
-    /* ---------------------------------------------------------------------- */
-    /* check inputs */
-    /* ---------------------------------------------------------------------- */
-
-    if (Common == NULL)
-    {
-        return (FALSE);
-    }
-    Common->status = KLU_OK;
-
     if (scale < 0)
     {
         /* return without checking anything and without computing the
          * scale factors */
         return (TRUE);
-    }
-
-    Az = (double *)Ax;
-
-    if (n <= 0 || Ap == NULL || Ai == NULL || Az == NULL ||
-        (scale > 0 && Rs == NULL))
-    {
-        /* Ap, Ai, Ax and Rs must be present, and n must be > 0 */
-        Common->status = KLU_INVALID;
-        return (FALSE);
-    }
-    if (Ap[0] != 0 || Ap[n] < 0)
-    {
-        /* nz = Ap [n] must be >= 0 and Ap [0] must equal zero */
-        Common->status = KLU_INVALID;
-        return (FALSE);
-    }
-    for (col = 0; col < n; col++)
-    {
-        if (Ap[col] > Ap[col + 1])
-        {
-            /* column pointers must be non-decreasing */
-            Common->status = KLU_INVALID;
-            return (FALSE);
-        }
     }
 
     /* ---------------------------------------------------------------------- */
@@ -653,28 +610,28 @@ int KLU_scale /* return TRUE if successful, FALSE otherwise */
     if (scale > 0)
     {
         /* initialize row sum or row max */
-        for (row = 0; row < n; row++)
+        for (int row = 0; row < n; row++)
         {
             Rs[row] = 0;
         }
     }
 
     /* check for duplicates only if W is present */
-    check_duplicates = (W != (int *)NULL);
+    int check_duplicates = (W != (int *)NULL);
     if (check_duplicates)
     {
-        for (row = 0; row < n; row++)
+        for (int row = 0; row < n; row++)
         {
             W[row] = EMPTY;
         }
     }
 
-    for (col = 0; col < n; col++)
+    for (int col = 0; col < n; col++)
     {
-        pend = Ap[col + 1];
-        for (p = Ap[col]; p < pend; p++)
+        int pend = Ap[col + 1];
+        for (int p = Ap[col]; p < pend; p++)
         {
-            row = Ai[p];
+            int row = Ai[p];
             if (row < 0 || row >= n)
             {
                 /* row index out of range, or duplicate entry */
@@ -693,7 +650,8 @@ int KLU_scale /* return TRUE if successful, FALSE otherwise */
                 W[row] = col;
             }
             /* a = ABS (Az [p]) ;*/
-            ABS(a, Az[p]);
+            double a;
+            ABS(a, Ax[p]);
             if (scale == 1)
             {
                 /* accumulate the abs. row sum */
@@ -710,7 +668,7 @@ int KLU_scale /* return TRUE if successful, FALSE otherwise */
     if (scale > 0)
     {
         /* do not scale empty rows */
-        for (row = 0; row < n; row++)
+        for (int row = 0; row < n; row++)
         {
             /* matrix is singular */
             PRINTF(("Rs [%d] = %g\n", row, Rs[row]));
@@ -730,7 +688,7 @@ int KLU_scale /* return TRUE if successful, FALSE otherwise */
 /* === KLU_kernel =========================================================== */
 /* ========================================================================== */
 
-int KLU_kernel /* final size of LU on output */
+static int KLU_kernel /* final size of LU on output */
     (
         /* input, not modified */
         int n,       /* A is n-by-n */
@@ -780,7 +738,7 @@ int KLU_kernel /* final size of LU on output */
     double *Ux;
     int *Li, *Ui;
     double *LU; /* LU factors (pattern and values) */
-    int pivrow = 0, diagrow, firstrow = 0, lup = 0, top, len, newlusize;
+    int pivrow = 0, diagrow, firstrow = 0, lup = 0, len, newlusize;
 
     ASSERT(Common != NULL);
     *lnz = 0;
@@ -827,8 +785,7 @@ int KLU_kernel /* final size of LU on output */
     /* ---------------------------------------------------------------------- */
     /* factorize */
     /* ---------------------------------------------------------------------- */
-    // for (int i = 0; i < n; i++)
-    //     printf("Pinv[%d]=%d,Stack[%d]=%d,Flag[%d]=%d,Lpend[%d]=%d,Ap_pos[%d]=%d,Llen[%d]=%d,Lip[%d]=%d\n", i, Pinv[i], i, Stack[i], i, Flag[i], i, Lpend[i], i, Ap_pos[i], i, Llen[i], i, Lip[i]);
+klu_kernel_factor_loop:
     for (int k = 0; k < n; k++)
     {
 
@@ -845,30 +802,6 @@ int KLU_kernel /* final size of LU on output */
         /* LU can grow by at most 'nunits' entries if the column is dense */
         PRINTF(("lup %d lusize %g lup+nunits: %g\n", lup, (double)lusize,
                 lup + nunits));
-        // xsize = ((double)lup) + nunits;
-        // if (xsize > (double)lusize)
-        // {
-        //     /* check here how much to grow */
-        //     xsize = (memgrow * ((double)lusize) + 4 * n + 1);
-        //     if (INT_OVERFLOW(xsize))
-        //     {
-        //         PRINTF(("Matrix is too large (int overflow)\n"));
-        //         Common->status = KLU_TOO_LARGE;
-        //         return (lusize);
-        //     }
-        //     newlusize = memgrow * lusize + 2 * n + 1;
-        //     /* Future work: retry mechanism in case of malloc failure */
-        //     LU = KLU_realloc(newlusize, lusize, sizeof(double), LU, Common);
-        //     Common->nrealloc++;
-        //     p_LU = LU;
-        //     if (Common->status == KLU_OUT_OF_MEMORY)
-        //     {
-        //         PRINTF(("Matrix is too large (LU)\n"));
-        //         return (lusize);
-        //     }
-        //     lusize = newlusize;
-        //     PRINTF(("inc LU to %d done\n", lusize));
-        // }
 
         /* ------------------------------------------------------------------ */
         /* start the kth column of L and U */
@@ -880,9 +813,7 @@ int KLU_kernel /* final size of LU on output */
         /* compute the nonzero pattern of the kth column of L and U */
         /* ------------------------------------------------------------------ */
 
-        top = lsolve_symbolic(n, k, Ap, Ai, Q, Pinv, Stack, Flag, Lpend, Ap_pos, LU, lup, Llen, Lip, k1, PSinv);
-        // for (int i = 0; i < n; i++)
-        //     printf("Pinv[%d]=%d,Stack[%d]=%d,Flag[%d]=%d,Lpend[%d]=%d,Ap_pos[%d]=%d,Llen[%d]=%d,Lip[%d]=%d\n", i, Pinv[i], i, Stack[i], i, Flag[i], i, Lpend[i], i, Ap_pos[i], i, Llen[i], i, Lip[i]);
+        int top = lsolve_symbolic(n, k, Ap, Ai, Q, Pinv, Stack, Flag, Lpend, Ap_pos, LU, lup, Llen, Lip, k1, PSinv);
         /* ------------------------------------------------------------------ */
         /* get the column of the matrix to factorize and scatter into X */
         /* ------------------------------------------------------------------ */
@@ -1013,12 +944,11 @@ int KLU_kernel /* final size of LU on output */
     /* this cannot fail, since the block is descreasing in size */
     // LU = KLU_realloc(newlusize, lusize, sizeof(double), LU, Common);
     p_LU = LU;
-    // for (int i = 0; i < newlusize; i++)
-    //     printf("LU[%d]=%lf", i, LU[i]);
+
     return (newlusize);
 }
 
-void factor2(
+void KLU_factor(
     /* inputs, not modified */
     int Ap[], /* size n+1, column pointers */
     int Ai[], /* size nz, row indices */
@@ -1029,8 +959,7 @@ void factor2(
     KLU_numeric *Numeric,
     KLU_common *Common)
 {
-    int k1, k2, nk, oldcol, pend, oldrow, lnz = 0, unz = 0, newrow, poff, max_lnz_block = 1, max_unz_block = 1;
-    double s;
+    int oldcol, pend, oldrow, lnz = 0, unz = 0, newrow, poff, max_lnz_block = 1, max_unz_block = 1;
 
     Numeric->lusize_sum = 0;
     /* ---------------------------------------------------------------------- */
@@ -1039,18 +968,15 @@ void factor2(
 
     // Iwork = Numeric->Iwork; /* 5*maxblock for KLU_factor */
     //                         /* 1*maxblock for Pblock */
-    int Pblock[MAX_SIZE];
 
     /* compute the inverse of P from symbolic analysis.  Will be updated to
      * become the inverse of the numerical factorization when the factorization
      * is done, for use in KLU_refactor */
-
     for (int k = 0; k < Symbolic->n; k++)
     {
         ASSERT(Symbolic->P[k] >= 0 && Symbolic->P[k] < Symbolic->n);
         Numeric->Pinv[Symbolic->P[k]] = k;
     }
-
     Common->noffdiag = 0;
     Numeric->Offp[0] = 0;
 
@@ -1067,7 +993,7 @@ void factor2(
          * the scale factors are permuted according to the final pivot row
          * permutation, so that Rs [k] is the scale factor for the kth row of
          * A(p,q) where p and q are the final row and column permutations. */
-        KLU_scale(Common->scale, Symbolic->n, Ap, Ai, (double *)Ax, Numeric->Rs, Numeric->Pnum, Common);
+        KLU_scale(Common->scale, Symbolic->n, Ap, Ai, Ax, Numeric->Rs, Numeric->Pnum, Common);
         if (Common->status < KLU_OK)
         {
             /* matrix is invalid */
@@ -1078,7 +1004,7 @@ void factor2(
     /* ---------------------------------------------------------------------- */
     /* factor each block using klu */
     /* ---------------------------------------------------------------------- */
-
+klu_factor_loop:
     for (int block = 0; block < Symbolic->nblocks; block++)
     {
 
@@ -1086,9 +1012,9 @@ void factor2(
         /* the block is from rows/columns k1 to k2-1 */
         /* ------------------------------------------------------------------ */
 
-        k1 = Symbolic->R[block];
-        k2 = Symbolic->R[block + 1];
-        nk = k2 - k1;
+        int k1 = Symbolic->R[block];
+        int k2 = Symbolic->R[block + 1];
+        int nk = k2 - k1;
         PRINTF(("FACTOR BLOCK %d, k1 %d k2-1 %d nk %d\n", block, k1, k2 - 1, nk));
 
         if (nk == 1)
@@ -1101,7 +1027,7 @@ void factor2(
             poff = Numeric->Offp[k1];
             oldcol = Symbolic->Q[k1];
             pend = Ap[oldcol + 1];
-            CLEAR(s);
+            double s = 0;
 
             if (Common->scale <= 0)
             {
@@ -1232,7 +1158,7 @@ void factor2(
             // Ap_pos = (int *)W;
             // W += nk;
 
-            int pinv[MAX_SIZE], Stack[MAX_SIZE], Flag[MAX_SIZE], Ap_pos[MAX_SIZE], Lpend[MAX_SIZE];
+            int pinv[MAX_SIZE], Stack[MAX_SIZE], Flag[MAX_SIZE], Ap_pos[MAX_SIZE], Lpend[MAX_SIZE], Pblock[MAX_SIZE];
 
             Numeric->LUsize[block] = KLU_kernel(nk, Ap, Ai, Ax, Symbolic->Q, lusize, pinv, Pblock, &Numeric->LUbx[Numeric->lusize_sum], Numeric->Udiag + k1, Numeric->Llen + k1, Numeric->Ulen + k1, Numeric->Lip + k1, Numeric->Uip + k1, &lnz_block, &unz_block, Numeric->Xwork, Stack, Flag, Ap_pos, Lpend, k1, Numeric->Pinv, Numeric->Rs, Numeric->Offp, Numeric->Offi, Numeric->Offx, Common);
             if (Common->status < KLU_OK || (Common->status == KLU_SINGULAR && Common->halt_if_singular))
@@ -1242,6 +1168,8 @@ void factor2(
             }
 
             Numeric->lusize_sum += Numeric->LUsize[block];
+
+            Numeric->LUsize[block] = Numeric->lusize_sum - Numeric->LUsize[block];
 
             PRINTF(("\n----------------------- L %d:\n", block));
             ASSERT(KLU_valid_LU(nk, TRUE, Numeric->Lip + k1, Numeric->Llen + k1, Numeric->LUbx[block]));
@@ -1272,7 +1200,6 @@ void factor2(
             {
                 ASSERT(k + k1 < Symbolic->n);
                 ASSERT(Pblock[k] + k1 < Symbolic->n);
-                // printf("P[%d]=%d\n", k, P[k]);
                 Numeric->Pnum[k + k1] = Symbolic->P[Pblock[k] + k1];
                 PRINTF(("Pnum (%d + %d + 1 = %d) = %d + 1 = %d\n",
                         k, k1, k + k1 + 1, Numeric->Pnum[k + k1], Numeric->Pnum[k + k1] + 1));

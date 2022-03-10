@@ -609,7 +609,10 @@ int read_sparse(char *filename, int *n, std::vector<int, T> &Ap, std::vector<int
 	int M, N, nz;
 
 	if ((f = fopen(filename, "r")) == NULL)
+	{
+		printf("Fail to open file \"%s\"\n", filename);
 		return 1;
+	}
 
 	if (mm_read_banner(f, &matcode) != 0)
 	{
@@ -802,7 +805,10 @@ int read_bmatrix(char *filename, std::vector<double, T> &b)
 	int M, N;
 
 	if ((f = fopen(filename, "r")) == NULL)
+	{
+		printf("Fail to open file \"%s\"\n", filename);
 		return 1;
+	}
 
 	if (mm_read_banner(f, &matcode) != 0)
 	{
