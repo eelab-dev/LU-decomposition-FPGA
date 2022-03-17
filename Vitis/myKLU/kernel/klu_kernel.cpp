@@ -64,9 +64,32 @@ Input Vector 2 from Global Memory --->|             |      |__|
 #include "klu_factor.h"
 #include "klu_solve.h"
 
-void read(int *AP, int *AI, double *AX, int *P, int *Q, int *R, double *LNZ,double *B)
+void read_Ap(int *AP, int *P, int *Q, int *R, double *LNZ, double *B, int *Ap, double *b, klu_symbolic *Symbolic, int N)
 {
+Read_loop_1:
+        for (int i = 0; i < N; i++)
+        {
+#pragma HLS pipeline
+                Ap[i] = AP[i];
+                b[i] = B[i];
+                Symbolic->P[i] = P[i];
+                Symbolic->Q[i] = Q[i];
+                Symbolic->R[i] = R[i];
+                Symbolic->Lnz[i] = LNZ[i];
+        }
+        Ap[N] = AP[N];
+        Symbolic->R[N] = R[N];
+}
 
+void read_Ax(int *AI, double *AX, int *Ai, double *Ax, int NZ)
+{
+Read_loop_2:
+        for (int i = 0; i < NZ; i++)
+        {
+#pragma HLS pipeline
+                Ai[i] = AI[i];
+                Ax[i] = AX[i];
+        }
 }
 
 extern "C"
@@ -90,51 +113,34 @@ extern "C"
                 int Ap[MAX_SIZE], Ai[MAX_SIZE];
                 double Ax[MAX_SIZE], b[MAX_SIZE];
 
-        //#pragma HLS array_partition variable = Ap factor = 16
-        //#pragma HLS array_partition variable = Ai factor = 16
-        //#pragma HLS array_partition variable = Symbolic.P factor = 16
-        //#pragma HLS array_partition variable = q
-        //#pragma HLS array_partition variable = r
-        //#pragma HLS array_partition variable = Ax
-        //#pragma HLS array_partition variable = b factor = 16
-        //#pragma HLS array_partition variable = Lnz
-        //#pragma HLS array_partition variable = Pnum
-        //#pragma HLS array_partition variable = Offp
-        //#pragma HLS array_partition variable = Offi
-        //#pragma HLS array_partition variable = Lip
-        //#pragma HLS array_partition variable = Uip
-        //#pragma HLS array_partition variable = Llen
-        //#pragma HLS array_partition variable = Ulen
-        //#pragma HLS array_partition variable = Pinv
-        //#pragma HLS array_partition variable = LUsize
-        //#pragma HLS array_partition variable = Offx
-        //#pragma HLS array_partition variable = Udiag
-        //#pragma HLS array_partition variable = LUbx
-        //#pragma HLS array_partition variable = Rs
-        //#pragma HLS array_partition variable = Xwork
-        Read_loop_1:
-                for (int i = 0; i < N; i++)
                 {
-#pragma HLS pipeline
-                        Ap[i] = AP[i];
-                        //            Ai[i] = AI[i];
-                        //            Ax[i] = AX[i];
-                        b[i] = B[i];
-                        Symbolic.P[i] = P[i];
-                        Symbolic.Q[i] = Q[i];
-                        Symbolic.R[i] = R[i];
-                        Symbolic.Lnz[i] = LNZ[i];
+#pragma HLS dataflow
+                        read_Ap(AP, P, Q, R, LNZ, B, Ap, b, &Symbolic, N);
+                        read_Ax(AI, AX, Ai, Ax, NZ);
                 }
-                Ap[N] = AP[N];
-                Symbolic.R[N] = R[N];
 
-        Read_loop_2:
-                for (int i = 0; i < NZ; i++)
-                {
-#pragma HLS pipeline
-                        Ai[i] = AI[i];
-                        Ax[i] = AX[i];
-                }
+                //        #pragma HLS array_partition variable = Ap factor = 16
+                //        #pragma HLS array_partition variable = Ai factor = 16
+                //        #pragma HLS array_partition variable = Symbolic.P factor = 16
+                //        #pragma HLS array_partition variable = Symbolic.Q factor = 16
+                //        #pragma HLS array_partition variable = Symbolic.R factor = 16
+                //        #pragma HLS array_partition variable = Ax factor = 16
+                //        #pragma HLS array_partition variable = b factor = 16
+                //        #pragma HLS array_partition variable = Symbolic.Lnz factor = 16
+                //        #pragma HLS array_partition variable = Numeric.Pnum
+                //        #pragma HLS array_partition variable = Numeric.Offp
+                //        #pragma HLS array_partition variable = Numeric.Offi
+                //        #pragma HLS array_partition variable = Numeric.Lip
+                //        #pragma HLS array_partition variable = Numeric.Uip
+                //        #pragma HLS array_partition variable = Numeric.Llen
+                //        #pragma HLS array_partition variable = Numeric.Ulen
+                //        #pragma HLS array_partition variable = Numeric.Pinv
+                //        #pragma HLS array_partition variable = Numeric.LUsize
+                //        #pragma HLS array_partition variable = Numeric.Offx
+                //        #pragma HLS array_partition variable = Numeric.Udiag
+                //        #pragma HLS array_partition variable = Numeric.LUbx
+                //        #pragma HLS array_partition variable = Numeric.Rs
+                //        #pragma HLS array_partition variable = Numeric.Xwork
 
                 Symbolic.n = N;
                 Symbolic.nz = NZ;

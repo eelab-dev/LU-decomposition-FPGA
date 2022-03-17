@@ -38,7 +38,7 @@ int main(void)
     printf("nblocks=%d,nzoff=%d,maxblock=%d,nnz=%d\n", Symbolic.nblocks, Symbolic.nzoff, Symbolic.maxblock, Symbolic.nz);
 
     int nzoff1 = Symbolic.nzoff + 1, n1 = n + 1;
-    double lusize = Common.memgrow * (Symbolic.lnz + Symbolic.unz) + 4 * n + 1;
+    int lusize = Common.memgrow * (Symbolic.lnz + Symbolic.unz) + 4 * n + 1;
 
     Numeric.n = Symbolic.n;
     Numeric.nblocks = Symbolic.nblocks;

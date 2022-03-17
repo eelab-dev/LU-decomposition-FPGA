@@ -770,3 +770,46 @@ Place the pragma within the boundaries of the function where the dependence is d
 	- WAR (Write-After-Read - anti dependence): The read instruction gets a value that is
 	overwritten by the write instruction.
 	- WAW (Write-After-Write - output dependence): Two write instructions write to the same location, in a certain order.
+
+# 11/03/2022
+Move variables that is defined at the top of function to the local for loop.
+
+# 14/03/2022
+```tcl
+config_interface -m_axi_max_widen_bitwidth 512 -m_axi_min_bitwidth 512
+```
+
+## pragma HLS stream
+
+Description
+
+By default, array variables are implemented as RAM:
+
+- Top-level function array parameters are implemented as a RAM interface port.
+
+- General arrays are implemented as RAMs for read-write access.
+
+- Arrays involved in sub-functions, or loop-based DATAFLOW optimizations are implemented as a RAM ping pong buffer channel.
+
+If the data stored in the array is consumed or produced in a sequential manner, a more efficient communication mechanism is to use streaming data as specified by the STREAM pragma, where FIFOs are used instead of RAMs.
+
+**Syntax**
+
+Place the pragma in the C source within the boundaries of the required location.
+```c
+#pragma HLS stream variable=<variable> type=<type> depth=<int>
+```
+
+Where:
+
+- `variable=<variable>`: Specifies the name of the array to implement as a streaminginterface.
+
+- `depth=<int>`: Relevant only for array streaming in DATAFLOW channels. By default, the depth of the FIFO implemented in the RTL is the same size as the array specified in the C code. This option lets you modify the size of the FIFO to specify a different depth.
+
+- `type=<arg>`: Specify a mechanism to select between FIFO, PIPO, synchronized shared (shared), and un-synchronized shared (unsync). The supported types include:
+
+	- fifo: A FIFO buffer with the specified depth.
+
+	- pipo: A regular Ping-Pong buffer, with as many “banks” as the specified depth (default is	2).
+
+	- shared: A shared channel, synchronized like a regular Ping-Pong buffer, with depth, but without duplicating the array data. Consistency can be ensured by setting the depth small enough, which acts as the distance of synchronization between the producer and consumer.

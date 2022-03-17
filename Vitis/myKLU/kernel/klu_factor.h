@@ -213,8 +213,7 @@ static void construct_column(
     int Offi[],
     double Offx[])
 {
-    double aik;
-    int pend, oldcol, kglobal, poff, oldrow;
+    int pend, oldcol, kglobal, poff;
 
     /* ---------------------------------------------------------------------- */
     /* Scale and scatter the column into X. */
@@ -230,9 +229,9 @@ static void construct_column(
         /* no scaling */
         for (int p = Ap[oldcol]; p < pend; p++)
         {
-            oldrow = Ai[p];
+            int oldrow = Ai[p];
             int i = PSinv[oldrow] - k1;
-            aik = Ax[p];
+            double aik = Ax[p];
             if (i < 0)
             {
                 /* this is an entry in the off-diagonal part */
@@ -249,12 +248,14 @@ static void construct_column(
     }
     else
     {
-        /* row scaling */
+    /* row scaling */
+    construct_column_loop:
         for (int p = Ap[oldcol]; p < pend; p++)
         {
-            oldrow = Ai[p];
+            // #pragma HLS unroll
+            int oldrow = Ai[p];
             int i = PSinv[oldrow] - k1;
-            aik = Ax[p];
+            double aik = Ax[p];
             SCALE_DIV(aik, Rs[oldrow]);
             if (i < 0)
             {
@@ -301,13 +302,13 @@ static void lsolve_numeric(
 
 )
 {
-    double *Lx;
-    int *Li, len;
-
     /* solve Lx=b */
 lsolve_numeric_loop:
     for (int s = top; s < n; s++)
     {
+        // #pragma HLS unroll
+        double *Lx;
+        int *Li, len;
         /* forward solve with column j of L */
         int j = Stack[s];
         int jnew = Pinv[j];
@@ -736,7 +737,7 @@ static int KLU_kernel /* final size of LU on output */
 {
     double pivot = 0, abs_pivot, xsize, nunits;
     double *Ux;
-    int *Li, *Ui;
+    int *Ui;
     double *LU; /* LU factors (pattern and values) */
     int pivrow = 0, diagrow, firstrow = 0, lup = 0, len, newlusize;
 
@@ -927,7 +928,8 @@ klu_kernel_factor_loop:
 
     for (int p = 0; p < n; p++)
     {
-        Li = (int *)(LU + Lip[p]);
+        //#pragma HLS unroll
+        int *Li = (int *)(LU + Lip[p]);
         for (int i = 0; i < Llen[p]; i++)
         {
             Li[i] = Pinv[Li[i]];
