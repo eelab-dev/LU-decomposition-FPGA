@@ -1,15 +1,15 @@
 CC=clang-13
 CXX=clang++-13
 
-CLIB=-L../../KLU/lib -lklu -lbtf -lamd -lcolamd -lsuitesparseconfig -lccolamd -lcamd -lmetis -lm -lrt -lcholmod -llapack -lblas
+CLIB=-L../../../SuiteSparse/lib -lklu -lbtf -lamd -lcolamd -lsuitesparseconfig -lccolamd -lcamd -lmetis -lm -lrt -lcholmod -llapack -lblas
 
-CXLIB=-L../../KLU/lib -lklu
+CXLIB=-L../../../SuiteSparse/lib -lklu
 
-INCL=-I../../KLU/include
+INCL=-I../../../SuiteSparse/include
 
 STD=-std=c++17 -stdlib=libc++
 
-LIBS=-L../../KLU/lib -lumfpack
+LIBS=-L../../../SuiteSparse/lib -lumfpack
 
 umfpack_simple: umfpack_simple.c
 	$(CC) $(INCL) -o umfpack_simple umfpack_simple.c $(LIBS)

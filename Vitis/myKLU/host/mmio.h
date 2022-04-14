@@ -601,16 +601,16 @@ char *mm_typecode_to_str(MM_typecode matcode)
 }
 
 template <typename T, typename T2>
-int read_sparse(char *filename, int *n, std::vector<int, T> &Ap, std::vector<int, T> &Ai, std::vector<double, T2> &Ax)
+int read_sparse(std::string filename, int *n, std::vector<int, T> &Ap, std::vector<int, T> &Ai, std::vector<double, T2> &Ax)
 {
 	int ret_code;
 	MM_typecode matcode;
 	FILE *f;
 	int M, N, nz;
 
-	if ((f = fopen(filename, "r")) == NULL)
+	if ((f = fopen(filename.c_str(), "r")) == NULL)
 	{
-		printf("Fail to open file \"%s\"\n", filename);
+		std::cout << "Fail to open file \"" << filename << "\"" << std::endl;
 		return 1;
 	}
 
@@ -797,16 +797,16 @@ int mm_read_bmtx_crd_size(FILE *f, int *M, int *N)
 }
 
 template <typename T>
-int read_bmatrix(char *filename, std::vector<double, T> &b)
+int read_bmatrix(std::string filename, std::vector<double, T> &b, int *bsize)
 {
 	int ret_code;
 	MM_typecode matcode;
 	FILE *f;
 	int M, N;
 
-	if ((f = fopen(filename, "r")) == NULL)
+	if ((f = fopen(filename.c_str(), "r")) == NULL)
 	{
-		printf("Fail to open file \"%s\"\n", filename);
+		std::cout << "Fail to open file \"" << filename << "\"" << std::endl;
 		return 1;
 	}
 
@@ -832,13 +832,15 @@ int read_bmatrix(char *filename, std::vector<double, T> &b)
 	if ((ret_code = mm_read_bmtx_crd_size(f, &M, &N)) != 0)
 		return 1;
 
-	if (N != 1)
+	if (N < 1)
 	{
 		printf("Sorry, the bmatrix is invalid, N=%d\n", N);
 		return 1;
 	}
+	else
+		*bsize = N;
 
-	b.resize(M);
+	b.resize(M * N);
 
 	/* NOTE: when reading in doubles, ANSI C requires the use of the "l"  */
 	/*   specifier as in "%lg", "%lf", "%le", otherwise errors will occur */
@@ -853,11 +855,20 @@ int read_bmatrix(char *filename, std::vector<double, T> &b)
 			return 1;
 		}
 
-		if (!sscanf(num, "%lg\n", &b[i]))
+		char *pch;
+		pch = strtok(num, " ");
+		b[i] = atof(pch);
+		for (int j = 1; j < N; j++)
 		{
-			printf("No enough value\n");
-			return 1;
+			pch = strtok(NULL, " ");
+			b[i + M * j] = atof(pch);
 		}
+
+		// if (!sscanf(num, "%lg\n", &b[i]))
+		// {
+		// 	printf("No enough value\n");
+		// 	return 1;
+		// }
 	}
 
 	if (f != stdin)
@@ -869,7 +880,13 @@ int read_bmatrix(char *filename, std::vector<double, T> &b)
 	// mm_write_banner(stdout, matcode);
 	// mm_write_mtx_crd_size(stdout, M, N, nz);
 	// for (int i = 0; i < M; i++)
-	//     fprintf(stdout, "%d %20.19g\n", i + 1, b[i]);
+	// {
+	// 	std::cout << i << ": ";
+	// 	for (int j = 0; j < N; j++)
+	// 		std::cout << b[i + M * j] << "\t";
+
+	// 	std::cout << std::endl;
+	// }
 
 	return 0;
 }

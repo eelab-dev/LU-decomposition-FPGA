@@ -48,10 +48,20 @@ int main(int argc, char **argv)
     std::vector<int, aligned_allocator<int>> Ap, Ai;
     std::vector<double, aligned_allocator<double>> Ax, b;
 
-    char filename[] = "/home/ethan/beng-project/Matrix_Sample/host.mtx";
-    char bname[] = "/home/ethan/beng-project/Matrix_Sample/host_b.mtx";
+    std::string homeDir = getenv("HOME");
 
-    int n;
+    std::string filename, bmatrix;
+    std::cout << "Left matrix file path (default - " << homeDir << "/beng-project/Matrix_Sample/host.mtx): ";
+    std::getline(std::cin, filename);
+    if (filename.empty())
+        filename = homeDir + "/beng-project/Matrix_Sample/host.mtx";
+
+    std::cout << "B matrix file path (default - " << homeDir << "/beng-project/Matrix_Sample/host_b.mtx): ";
+    std::getline(std::cin, bmatrix);
+    if (bmatrix.empty())
+        bmatrix = homeDir + "/beng-project/Matrix_Sample/host_b.mtx";
+
+    int n,nrhs;
 
     if (read_sparse(filename, &n, Ap, Ai, Ax))
     {
@@ -59,11 +69,12 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    if (read_bmatrix(bname, b))
+    if (read_bmatrix(bmatrix, b,&nrhs))
     {
         printf("Error bmatrix\n");
         return 1;
     }
+//    printf("nrhs:%d\n",nrhs);
 
     std::vector<double> b2(b.begin(), b.begin() + n);
 
@@ -118,7 +129,7 @@ int main(int argc, char **argv)
     int i_size_bytes = sizeof(int) * Ai.size();
     int x_size_bytes = sizeof(double) * Ax.size();
     int pq_size_bytes = sizeof(int) * n;
-    int r_size_bytes = sizeof(int) * (n+1);
+    int r_size_bytes = sizeof(int) * (n + 1);
     int b_size_bytes = sizeof(double) * n;
 
     // Allocate Buffer in Global Memory
@@ -172,7 +183,7 @@ int main(int argc, char **argv)
         {
             std::cout << "Mismatched result x[" << i << "]: CPU x[" << i << "]=" << b2[i] << ", FPGA x[" << i << "]=" << b[i] << std::endl;
             match = false;
-//            break;
+            //            break;
         }
         else
             std::cout << "x[" << i << "]=" << b[i] << std::endl;

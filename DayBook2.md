@@ -813,3 +813,113 @@ Where:
 	- pipo: A regular Ping-Pong buffer, with as many “banks” as the specified depth (default is	2).
 
 	- shared: A shared channel, synchronized like a regular Ping-Pong buffer, with depth, but without duplicating the array data. Consistency can be ensured by setting the depth small enough, which acts as the distance of synchronization between the producer and consumer.
+
+
+# 08/04/2022
+```log
+[14:44:02] Block-level synthesis in progress, 0 of 9 jobs complete, 6 jobs running.
+[14:44:32] Block-level synthesis in progress, 0 of 9 jobs complete, 6 jobs running.
+[14:45:29] Block-level synthesis in progress, 0 of 9 jobs complete, 6 jobs running.
+[14:45:32] Block-level synthesis in progress, 0 of 9 jobs complete, 6 jobs running.
+[14:45:32] Run vpl: FINISHED. Run Status: synth ERROR
+WARNING: [VPL 60-732] Link warning: No monitor points found for BD automation.
+ERROR: [VPL 60-1328] Vpl run 'vpl' failed
+WARNING: [VPL 60-1142] Unable to read data from '/home/ethan/workspace/myklu_system_hw_link/Hardware/myklu.build/link/vivado/vpl/output/generated_reports.log', generated reports will not be copied.
+ERROR: [VPL 60-806] Failed to finish platform linker
+INFO: [v++ 60-1442] [14:45:40] Run run_link: Step vpl: Failed
+Time (s): cpu = 00:03:15 ; elapsed = 00:05:44 . Memory (MB): peak = 2059.449 ; gain = 0.000 ; free physical = 5267 ; free virtual = 6339
+ERROR: [v++ 60-661] v++ link run 'run_link' failed
+ERROR: [v++ 60-626] Kernel link failed to complete
+ERROR: [v++ 60-703] Failed to finish linking
+INFO: [v++ 60-1653] Closing dispatch client.
+make: *** [makefile:62: myklu.xclbin] Error 1
+```
+
+**Reason**: Running out of memory
+
+Migrate to native Ubuntu
+
+# 09/04/2022
+Using PLRAM as global memory and linking them from all over the chip, this is bad practice as the kernel will be placed in an SLR and to get to a particular memory you will have to cross SLR(s), which is very expensive in terms of resources and performance.
+
+![PLRAM](Resources/plram.png)
+
+## Reading multiple right hand side B matrix
+```c
+char *strtok(char *str, const char *delim)
+```
+
+`char *strtok(char *str, const char *delim)` breaks string **str** into a series of tokens using the delimiter **delim**.
+
+```c
+for (int i = 0; i < M; i++)
+{
+	if (fgets(num, 150, f) == NULL)
+	{
+		printf("Inconsistent line number\n");
+		return 1;
+	}
+
+	char *pch;
+	pch = strtok(num, " ");
+	b[i] = atof(pch);
+	for (int j = 1; j < N; j++)
+	{
+		pch = strtok(NULL, " ");
+		b[i + M * j] = atof(pch);
+	}
+}
+```
+
+`int nrhs`: number of right hand side
+`b` is  in column-oriented form, with leading dimension `n`.
+
+
+# 10/04/2022
+1. Generate bitsream
+
+## Benchmark on CPU
+| nrhs            | 1   | 5   | 10  | 15   | 20  | 25   |
+| --------------- | --- | --- | --- | ---- | --- | ---- |
+| Solving Time/us | 6.6 | 7.2 | 9.3 | 12.1 | 14  | 15.5 |
+
+
+# 12/04/2022
+Cannot login to ETH server, under maintaince
+
+# 13/04/2022
+## Run emulation in Command Line
+The executable file is at `myKLU/Emulation-SW/myKLU`.
+The **xclbin** is `myKLU/Emulation-SW/myKLU.xclbin`.
+
+1. Software Emulation
+```bash
+export XCL_EMULATION_MODE=sw_emu
+./myKLU myKLU.xclbin
+```
+It also requires a file called *emconfig.json* to configure the emulation.
+
+2. Hardware Emulation
+```bash
+export XCL_EMULATION_MODE=hw_emu
+./myKLU myKLU.xclbin
+```
+
+Require *emconfig.json* as well.
+
+3. Hardware Emulation
+First, unset the *XCL_EMULATION_MODE*
+Then run
+```bash
+./myKLU myKLU.xclbin
+```
+
+## [Profiling](https://xilinx.github.io/Vitis-Tutorials/2020-1/docs/Pathway3/ProfileAndTraceReports.html)
+First, create the `xrt.ini` file, and add the required options. The `xrt.ini` file configures Xilinx Runtime (XRT) to support a variety of features for debug, emulation, and reporting, that can be enabled at runtime. These features can be enabled when needed and disabled to improve performance and reduce application resource consumption.
+
+```cfg
+[Debug]
+profile=true
+timeline_trace=true
+data_transfer_trace=fine
+```

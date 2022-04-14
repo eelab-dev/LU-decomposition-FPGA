@@ -34,9 +34,10 @@ int main(void)
     long total[3] = {0};
     klu_symbolic *Symbolic;
     klu_numeric *Numeric;
+    int nrhs;
     for (int i = 0; i < runtime; i++)
     {
-        read_bmatrix(bmatrix, b);
+        read_bmatrix(bmatrix, b, &nrhs);
         // std::iota(b.begin(), b.end(), 10);
 
         begin[0] = std::chrono::steady_clock::now();
@@ -50,7 +51,7 @@ int main(void)
         total[1] += std::chrono::duration_cast<std::chrono::microseconds>(end[1] - begin[1]).count();
 
         begin[2] = std::chrono::steady_clock::now();
-        klu_solve(Symbolic, Numeric, n, 1, b.data(), &Common);
+        klu_solve(Symbolic, Numeric, n, nrhs, b.data(), &Common);
         end[2] = std::chrono::steady_clock::now();
         total[2] += std::chrono::duration_cast<std::chrono::microseconds>(end[2] - begin[2]).count();
 
@@ -59,7 +60,11 @@ int main(void)
     }
 
     for (int i = 0; i < n; i++)
-        printf("x [%d] = %g\n", i, b[i]);
+    {
+        for (int j = 0; j < nrhs - 1; j++)
+            printf("x [%d,%d] = %g\t", i, j, b[i + n * j]);
+        printf("x [%d,%d] = %g\n", i, nrhs - 1, b[i + n * (nrhs - 1)]);
+    }
 
     std::cout << "Analyze time: " << total[0] / (float)runtime << "µs\nFactorization time: " << total[1] / (float)runtime << "µs\nSolving time: " << total[2] / (float)runtime << "µs" << std::endl;
     return (0);

@@ -6,7 +6,7 @@ INCL=-I include
 
 STD=-std=c++20 -stdlib=libc++
 
-PRE?=TRUE
+SUF=-Wall -O3
 
 library:
 	(cd SuiteSparse_config ; $(MAKE))
@@ -15,5 +15,5 @@ library:
 	(cd KLU/Lib ; $(MAKE))
 
 klu_kernel: klu_kernel.cpp library
-	$(CXX) $(INCL) $(STD) klu_kernel.cpp -o klu_kernel $(CLIB) -O3
+	$(CXX) $(INCL) $(STD) klu_kernel.cpp -o klu_kernel $(CLIB) $(SUF)
 	./klu_kernel
