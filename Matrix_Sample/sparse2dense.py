@@ -26,7 +26,8 @@ F = csc_matrix((data, indices, indptr), shape=(5, 5)).toarray()
 print(F)
 """
 
-data = np.array(io.loadmat("matlab.mat")["A"])
+# data = np.array(io.loadmat("matlab.mat")["A"])
+data = np.array([[-7, 0, 0, 7, -8], [-10, 0, -7, 0, 0], [-1, -8, 1, 10, 0], [0, 9, -10, 0, 6], [2, 0, 6, -5, -9]])
 print(data)
 A = csc_matrix(data)
 print(repr(A.indptr), repr(A.indices), repr(A.data), sep='\n')

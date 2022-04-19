@@ -61,7 +61,7 @@ int main(int argc, char **argv)
     if (bmatrix.empty())
         bmatrix = homeDir + "/beng-project/Matrix_Sample/host_b.mtx";
 
-    int n,nrhs;
+    int n, nrhs;
 
     if (read_sparse(filename, &n, Ap, Ai, Ax))
     {
@@ -69,14 +69,15 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    if (read_bmatrix(bmatrix, b,&nrhs))
+    if (read_bmatrix(bmatrix, b, &nrhs))
     {
         printf("Error bmatrix\n");
         return 1;
     }
-//    printf("nrhs:%d\n",nrhs);
 
-    std::vector<double> b2(b.begin(), b.begin() + n);
+    printf("nrhs: %d, bnumber:%d\n", nrhs, b.size());
+
+    std::vector<double> b2(b.begin(), b.end());
 
     klu_symbolic Symbolic;
     klu_numeric *Numeric;
@@ -85,7 +86,14 @@ int main(int argc, char **argv)
     klu_defaults(&Common);
     Symbolic = *klu_analyze(n, Ap.data(), Ai.data(), &Common);
     Numeric = klu_factor(Ap.data(), Ai.data(), Ax.data(), &Symbolic, &Common);
-    klu_solve(&Symbolic, Numeric, n, 1, b2.data(), &Common);
+    klu_solve(&Symbolic, Numeric, n, nrhs, b2.data(), &Common);
+
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < nrhs - 1; j++)
+            printf("x [%d,%d] = %g\t", i, j, b2[i + n * j]);
+        printf("x [%d,%d] = %g\n", i, nrhs - 1, b2[i + n * (nrhs - 1)]);
+    }
 
     std::vector<int, aligned_allocator<int>> P(Symbolic.P, Symbolic.P + n), Q(Symbolic.Q, Symbolic.Q + n), R(Symbolic.R, Symbolic.R + n + 1);
     std::vector<double, aligned_allocator<double>> Lnz(Symbolic.Lnz, Symbolic.Lnz + n);
@@ -130,7 +138,8 @@ int main(int argc, char **argv)
     int x_size_bytes = sizeof(double) * Ax.size();
     int pq_size_bytes = sizeof(int) * n;
     int r_size_bytes = sizeof(int) * (n + 1);
-    int b_size_bytes = sizeof(double) * n;
+    int lnz_size_bytes = sizeof(double) * n;
+    int b_size_bytes = sizeof(double) * b.size();
 
     // Allocate Buffer in Global Memory
     // Buffers are allocated using CL_MEM_USE_HOST_PTR for efficient memory and
@@ -141,7 +150,7 @@ int main(int argc, char **argv)
     OCL_CHECK(err, cl::Buffer buffer_in3(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, pq_size_bytes, P.data(), &err));
     OCL_CHECK(err, cl::Buffer buffer_in4(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, pq_size_bytes, Q.data(), &err));
     OCL_CHECK(err, cl::Buffer buffer_in5(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, r_size_bytes, R.data(), &err));
-    OCL_CHECK(err, cl::Buffer buffer_in6(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, b_size_bytes, Lnz.data(), &err));
+    OCL_CHECK(err, cl::Buffer buffer_in6(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, lnz_size_bytes, Lnz.data(), &err));
 
     OCL_CHECK(err, cl::Buffer buffer_output(context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, b_size_bytes, b.data(), &err));
 
@@ -158,8 +167,9 @@ int main(int argc, char **argv)
     OCL_CHECK(err, err = krnl_vector_add.setArg(9, Symbolic.maxblock));
     OCL_CHECK(err, err = krnl_vector_add.setArg(10, Symbolic.nzoff));
     OCL_CHECK(err, err = krnl_vector_add.setArg(11, Symbolic.nz));
+    OCL_CHECK(err, err = krnl_vector_add.setArg(12, nrhs));
 
-    OCL_CHECK(err, err = krnl_vector_add.setArg(12, buffer_output));
+    OCL_CHECK(err, err = krnl_vector_add.setArg(13, buffer_output));
 
     // Copy input data to device global memory
     OCL_CHECK(err, err = q.enqueueMigrateMemObjects({buffer_in0, buffer_in1, buffer_in2, buffer_in3, buffer_in4, buffer_in5, buffer_in6, buffer_output}, 0 /* 0 means from host*/));
@@ -179,14 +189,22 @@ int main(int argc, char **argv)
     bool match = true;
     for (int i = 0; i < n; i++)
     {
-        if (std::abs(b2[i] - b[i]) > 1e-5)
+        for (int j = 0; j < nrhs; j++)
         {
-            std::cout << "Mismatched result x[" << i << "]: CPU x[" << i << "]=" << b2[i] << ", FPGA x[" << i << "]=" << b[i] << std::endl;
-            match = false;
-            //            break;
+            if (std::abs(b2[i + n * j] - b[i + n * j]) > 1e-5)
+            {
+                std::cout << "Mismatched result x[" << i << "][" << j << "]: CPU x[" << i << "][" << j << "]=" << b2[i + n * j] << ", FPGA x[" << i << "][" << j << "]=" << b[i + n * j] << std::endl;
+                match = false;
+                //            break;
+            }
+            else
+            {
+                if (j < nrhs - 1)
+                    printf("x[%d,%d] = %g\t", i, j, b[i + n * j]);
+                else
+                    printf("x[%d,%d] = %g\n", i, nrhs - 1, b[i + n * (nrhs - 1)]);
+            }
         }
-        else
-            std::cout << "x[" << i << "]=" << b[i] << std::endl;
     }
 
     std::cout << "TEST " << (match ? "PASSED" : "FAILED") << std::endl;

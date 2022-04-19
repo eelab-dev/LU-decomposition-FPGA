@@ -318,6 +318,7 @@ lsolve_numeric_loop:
         ASSERT(Lip[jnew] <= Lip[jnew + 1]);
         for (int p = 0; p < len; p++)
         {
+#pragma HLS pipeline
             /*X [Li [p]] -= Lx [p] * xj ; */
             MULT_SUB(X[Li[p]], Lx[p], xj);
         }
@@ -759,6 +760,7 @@ static int KLU_kernel /* final size of LU on output */
 
     for (int k = 0; k < n; k++)
     {
+#pragma HLS pipeline
         /* X [k] = 0 ; */
         CLEAR(X[k]);
         Flag[k] = EMPTY;
@@ -772,6 +774,7 @@ static int KLU_kernel /* final size of LU on output */
     /* PSinv does the symmetric permutation, so don't do it here */
     for (int k = 0; k < n; k++)
     {
+#pragma HLS pipeline
         P[k] = k;
         Pinv[k] = FLIP(k); /* mark all rows as non-pivotal */
     }
@@ -873,6 +876,7 @@ klu_kernel_factor_loop:
         GET_POINTER(LU, Uip, Ulen, Ui, Ux, k, len);
         for (int p = top, i = 0; p < n; p++, i++)
         {
+#pragma HLS pipeline
             int j = Stack[p];
             Ui[i] = Pinv[j];
             Ux[i] = X[j];
@@ -932,6 +936,7 @@ klu_kernel_factor_loop:
         int *Li = (int *)(LU + Lip[p]);
         for (int i = 0; i < Llen[p]; i++)
         {
+#pragma HLS pipeline
             Li[i] = Pinv[Li[i]];
         }
     }
@@ -1159,10 +1164,9 @@ klu_factor_loop:
             // W += nk;
             // Ap_pos = (int *)W;
             // W += nk;
+            // int pinv[MAX_SIZE], Symbolic->Stack[MAX_SIZE], Symbolic->Flag[MAX_SIZE], Ap_pos[MAX_SIZE], Lpend[MAX_SIZE], Pblock[MAX_SIZE];
 
-            int pinv[MAX_SIZE], Stack[MAX_SIZE], Flag[MAX_SIZE], Ap_pos[MAX_SIZE], Lpend[MAX_SIZE], Pblock[MAX_SIZE];
-
-            Numeric->LUsize[block] = KLU_kernel(nk, Ap, Ai, Ax, Symbolic->Q, lusize, pinv, Pblock, &Numeric->LUbx[Numeric->lusize_sum], Numeric->Udiag + k1, Numeric->Llen + k1, Numeric->Ulen + k1, Numeric->Lip + k1, Numeric->Uip + k1, &lnz_block, &unz_block, Numeric->Xwork, Stack, Flag, Ap_pos, Lpend, k1, Numeric->Pinv, Numeric->Rs, Numeric->Offp, Numeric->Offi, Numeric->Offx, Common);
+            Numeric->LUsize[block] = KLU_kernel(nk, Ap, Ai, Ax, Symbolic->Q, lusize, Symbolic->pinv, Symbolic->Pblock, &Numeric->LUbx[Numeric->lusize_sum], Numeric->Udiag + k1, Numeric->Llen + k1, Numeric->Ulen + k1, Numeric->Lip + k1, Numeric->Uip + k1, &lnz_block, &unz_block, Numeric->Xwork, Symbolic->Stack, Symbolic->Flag, Symbolic->Ap_pos, Symbolic->Lpend, k1, Numeric->Pinv, Numeric->Rs, Numeric->Offp, Numeric->Offi, Numeric->Offx, Common);
             if (Common->status < KLU_OK || (Common->status == KLU_SINGULAR && Common->halt_if_singular))
             {
                 /* out of memory, invalid inputs, or singular */
@@ -1201,8 +1205,8 @@ klu_factor_loop:
             for (int k = 0; k < nk; k++)
             {
                 ASSERT(k + k1 < Symbolic->n);
-                ASSERT(Pblock[k] + k1 < Symbolic->n);
-                Numeric->Pnum[k + k1] = Symbolic->P[Pblock[k] + k1];
+                ASSERT(Symbolic->Pblock[k] + k1 < Symbolic->n);
+                Numeric->Pnum[k + k1] = Symbolic->P[Symbolic->Pblock[k] + k1];
                 PRINTF(("Pnum (%d + %d + 1 = %d) = %d + 1 = %d\n",
                         k, k1, k + k1 + 1, Numeric->Pnum[k + k1], Numeric->Pnum[k + k1] + 1));
             }
@@ -1245,6 +1249,7 @@ klu_factor_loop:
     /* apply the pivot row permutations to the off-diagonal entries */
     for (int p = 0; p < Symbolic->nzoff; p++)
     {
+#pragma HLS pipeline
         ASSERT(Numeric->Offi[p] >= 0 && Numeric->Offi[p] < Symbolic->n);
         Numeric->Offi[p] = Numeric->Pinv[Numeric->Offi[p]];
     }

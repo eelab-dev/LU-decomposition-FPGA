@@ -13,7 +13,7 @@ static void KLU_lsolve(
 klu_lsolve_loop:
     for (int k = 0; k < n; k++)
     {
-        double x = X[k], *Lx;
+        double *Lx;
         int len, *Li;
         GET_POINTER(LU, Lip, Llen, Li, Lx, k, len);
         /* unit diagonal of L is not stored*/

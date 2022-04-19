@@ -3,14 +3,13 @@
 #include "klu_factor.h"
 #include "klu_solve.h"
 
-void read_Ap(int *AP, int *P, int *Q, int *R, double *LNZ, double *B, int *Ap, double *b, klu_symbolic *Symbolic, int N)
+void read_Ap(int *AP, int *P, int *Q, int *R, double *LNZ, int *Ap, klu_symbolic *Symbolic, int N)
 {
 Read_loop_1:
 	for (int i = 0; i < N; i++)
 	{
 #pragma HLS pipeline
 		Ap[i] = AP[i];
-		b[i] = B[i];
 		Symbolic->P[i] = P[i];
 		Symbolic->Q[i] = Q[i];
 		Symbolic->R[i] = R[i];
@@ -31,14 +30,14 @@ Read_loop_2:
 	}
 }
 
-void solve_b(klu_symbolic *Symbolic, klu_numeric *Numeric, int N, double *b, klu_common *Common)
+void solve_b(klu_symbolic *Symbolic, klu_numeric *Numeric, int N, int nrhs, double *b, klu_common *Common)
 {
-	klu_solve(Symbolic, Numeric, N, b, Common);
+	klu_solve(Symbolic, Numeric, N, nrhs, b, Common);
 }
 
 extern "C"
 {
-	void lu(int *AP, int *AI, double *AX, int *P, int *Q, int *R, double *LNZ, int N, int NBLOCKS, int MAXBLOCK, int NZOFF, int NZ, double *B)
+	void lu(int *AP, int *AI, double *AX, int *P, int *Q, int *R, double *LNZ, int N, int NBLOCKS, int MAXBLOCK, int NZOFF, int NZ, int nrhs, double *B)
 	{
 		klu_common Common;
 		klu_numeric Numeric;
@@ -54,12 +53,12 @@ extern "C"
 #pragma HLS INTERFACE m_axi depth = 2048 port = LNZ max_read_burst_length = 64 offset = slave bundle = gmem6
 #pragma HLS INTERFACE m_axi depth = 2048 port = B max_read_burst_length = 64 offset = slave bundle = gmem7
 
-		int Ap[MAX_SIZE], Ai[MAX_SIZE];
-		double Ax[MAX_SIZE], b[MAX_SIZE];
-
-		read_Ap(AP, P, Q, R, LNZ, B, Ap, b, &Symbolic, N);
+		int Ap[MAX_SIZE], Ai[MAX_NNZ];
+		double Ax[MAX_NNZ], b[MAX_SIZE];
+		read_Ap(AP, P, Q, R, LNZ, Ap, &Symbolic, N);
 		read_Ax(AI, AX, Ai, Ax, NZ);
-
+		for (int i = 0; i < N * nrhs; i++)
+			b[i] = B[i];
 		//        #pragma HLS array_partition variable = Ap factor = 16
 		//        #pragma HLS array_partition variable = Ai factor = 16
 		//        #pragma HLS array_partition variable = Symbolic.P factor = 16
@@ -92,13 +91,10 @@ extern "C"
 		Numeric.n = Symbolic.n;
 		Numeric.nblocks = Symbolic.nblocks;
 		Numeric.nzoff = Symbolic.nzoff;
-
 		klu_factor(Ap, Ai, Ax, &Symbolic, &Numeric, &Common);
-
-		klu_solve(&Symbolic, &Numeric, N, b, &Common);
-
+		klu_solve(&Symbolic, &Numeric, N, nrhs, b, &Common);
 	Write_loop:
-		for (int i = 0; i < N; i++)
+		for (int i = 0; i < N * nrhs; i++)
 		{
 #pragma HLS pipeline
 			B[i] = b[i];

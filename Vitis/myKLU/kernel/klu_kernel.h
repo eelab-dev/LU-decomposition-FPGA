@@ -11,7 +11,8 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define MAX_SIZE 2048
+#define MAX_SIZE 65536
+#define MAX_NNZ 131072
 
 #ifndef NDEBUG
 #define NDEBUG
@@ -281,6 +282,8 @@ typedef struct
                           * deficient.  -1 if not computed.  n if the matrix has
                           * full structural rank */
 
+    int pinv[MAX_SIZE], Stack[MAX_SIZE], Flag[MAX_SIZE], Ap_pos[MAX_SIZE], Lpend[MAX_SIZE], Pblock[MAX_SIZE];
+
 } klu_symbolic;
 
 typedef struct
@@ -302,7 +305,7 @@ typedef struct
     int Uip[MAX_SIZE];      /* size n. pointers into LUbx[block] for U */
     int Llen[MAX_SIZE];     /* size n. Llen [k] = # of entries in kth column of L */
     int Ulen[MAX_SIZE];     /* size n. Ulen [k] = # of entries in kth column of U */
-    double LUbx[MAX_SIZE];  /* L and U indices and entries (excl. diagonal of U) */
+    double LUbx[MAX_NNZ];   /* L and U indices and entries (excl. diagonal of U) */
     int LUsize[MAX_SIZE];   /* size of each LUbx [block], in sizeof (Unit) */
     double Udiag[MAX_SIZE]; /* diagonal of U */
 
@@ -312,14 +315,15 @@ typedef struct
     /* permanent workspace for factorization and solve */
     int worksize; /* size (in bytes) of Work */
     // void *Work;      /* workspace */
-    double Xwork[MAX_SIZE]; /* alias into Numeric->Work */
+    double Xwork[MAX_NNZ]; /* alias into Numeric->Work */
 
     /* off-diagonal entries in a conventional compressed-column sparse matrix */
-    int Offp[MAX_SIZE];    /* size n+1, column pointers */
-    int Offi[MAX_SIZE];    /* size nzoff, row indices */
-    double Offx[MAX_SIZE]; /* size nzoff, numerical values */
+    int Offp[MAX_SIZE];   /* size n+1, column pointers */
+    int Offi[MAX_NNZ];    /* size nzoff, row indices */
+    double Offx[MAX_NNZ]; /* size nzoff, numerical values */
     int nzoff;
 
+    double xusolve[MAX_SIZE];
     int lusize_sum;
 
 } klu_numeric;

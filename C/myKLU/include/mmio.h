@@ -847,7 +847,7 @@ int read_bmatrix(std::string filename, std::vector<double, T> &b, int *bsize)
 	/*  (ANSI C X3.159-1989, Sec. 4.9.6.2, p. 136 lines 13-15)            */
 
 	char num[150];
-	for (int i = 0; i < M; i++)
+	for (int i = 0; i < M * N; i++)
 	{
 		if (fgets(num, 150, f) == NULL)
 		{
@@ -855,13 +855,19 @@ int read_bmatrix(std::string filename, std::vector<double, T> &b, int *bsize)
 			return 1;
 		}
 
-		char *pch;
-		pch = strtok(num, " ");
-		b[i] = atof(pch);
-		for (int j = 1; j < N; j++)
+		// char *pch;
+		// pch = strtok(num, " ");
+		// b[i] = atof(pch);
+		// for (int j = 1; j < N; j++)
+		// {
+		// 	pch = strtok(NULL, " ");
+		// 	b[i + M * j] = atof(pch);
+		// }
+
+		if (!sscanf(num, "%lg\n", &b[i]))
 		{
-			pch = strtok(NULL, " ");
-			b[i + M * j] = atof(pch);
+			printf("No enough value\n");
+			return 1;
 		}
 	}
 

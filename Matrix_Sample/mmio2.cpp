@@ -39,24 +39,20 @@ int main(void)
 
     fclose(f);
 
-    int bsize;
+    int nrhs;
     std::cout << "B matrix size: ";
-    std::cin >> bsize;
-    std::cout << "Size: " << bsize << std::endl;
+    std::cin >> nrhs;
+    std::cout << "Size: " << nrhs << std::endl;
 
     if ((f = fopen(bname, "w")) == NULL)
         return -1;
 
     mm_write_banner(f, matcode);
 
-    fprintf(f, "%d %d\n", M, bsize);
-    for (int i = 0; i < M; i++)
-    {
-        for (int j = 0; j < bsize - 1; j++)
-            fprintf(f, "%d ", i + j);
-
-        fprintf(f, "%d\n", i + bsize - 1);
-    }
+    fprintf(f, "%d %d\n", M, nrhs);
+    for (int j = 0; j < nrhs; j++)
+        for (int i = 0; i < M; i++)
+            fprintf(f, "%d\n", i + j);
 
     fclose(f);
     return 0;
