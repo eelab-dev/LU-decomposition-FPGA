@@ -163,8 +163,10 @@ klu_solve_loop:
         {
             double s = Numeric->Udiag[k1];
             for (int j = 0; j < nrhs; j++)
+            {
 #pragma HLS pipeline
                 DIV(Numeric->Xwork[k1 * nrhs + j], Numeric->Xwork[k1 * nrhs + j], s);
+            }
         }
         else
         {

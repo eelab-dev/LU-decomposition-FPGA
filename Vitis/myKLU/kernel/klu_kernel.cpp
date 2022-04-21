@@ -54,7 +54,7 @@ extern "C"
 #pragma HLS INTERFACE m_axi depth = 2048 port = B max_read_burst_length = 64 offset = slave bundle = gmem7
 
 		int Ap[MAX_SIZE], Ai[MAX_NNZ];
-		double Ax[MAX_NNZ], b[MAX_SIZE];
+		double Ax[MAX_NNZ], b[MAX_NNZ];
 		read_Ap(AP, P, Q, R, LNZ, Ap, &Symbolic, N);
 		read_Ax(AI, AX, Ai, Ax, NZ);
 		for (int i = 0; i < N * nrhs; i++)
