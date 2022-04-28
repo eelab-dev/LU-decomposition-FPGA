@@ -29,7 +29,7 @@ int main(void)
     klu_common Common;
     klu_defaults(&Common);
 
-    const int runtime = 1000;
+    const int runtime = 10;
     std::chrono::steady_clock::time_point begin[3], end[3];
     long total[3] = {0};
     klu_symbolic *Symbolic;
@@ -64,6 +64,8 @@ int main(void)
         for (int j = 0; j < nrhs - 1; j++)
             printf("x [%d,%d] = %g\t", i, j, b[i + n * j]);
         printf("x [%d,%d] = %g\n", i, nrhs - 1, b[i + n * (nrhs - 1)]);
+        if (i > 100)
+            break;
     }
 
     std::cout << "Analyze time: " << total[0] / (float)runtime << "µs\nFactorization time: " << total[1] / (float)runtime << "µs\nSolving time: " << total[2] / (float)runtime << "µs" << std::endl;

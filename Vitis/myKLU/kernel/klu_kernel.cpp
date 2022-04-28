@@ -8,7 +8,6 @@ void read_Ap(int *AP, int *P, int *Q, int *R, double *LNZ, int *Ap, klu_symbolic
 Read_loop_1:
 	for (int i = 0; i < N; i++)
 	{
-#pragma HLS pipeline
 		Ap[i] = AP[i];
 		Symbolic->P[i] = P[i];
 		Symbolic->Q[i] = Q[i];
@@ -24,7 +23,6 @@ void read_Ax(int *AI, double *AX, int *Ai, double *Ax, int NZ)
 Read_loop_2:
 	for (int i = 0; i < NZ; i++)
 	{
-#pragma HLS pipeline
 		Ai[i] = AI[i];
 		Ax[i] = AX[i];
 	}
@@ -80,7 +78,7 @@ extern "C"
 		//        #pragma HLS array_partition variable = Numeric.Udiag
 		//        #pragma HLS array_partition variable = Numeric.LUbx
 		//        #pragma HLS array_partition variable = Numeric.Rs
-		//        #pragma HLS array_partition variable = Numeric.Xwork
+//		        #pragma HLS array_partition variable = Numeric.Xwork
 
 		Symbolic.n = N;
 		Symbolic.nz = NZ;

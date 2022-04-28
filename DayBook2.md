@@ -923,3 +923,7 @@ profile=true
 timeline_trace=true
 data_transfer_trace=fine
 ```
+
+
+#
+![critical](Resources/critical.png)

@@ -71,7 +71,8 @@
         "stdio.h": "c",
         "mutex": "cpp",
         "klu_internal.h": "c",
-        "klu_kernel.h": "c"
+        "klu_kernel.h": "c",
+        "valarray": "cpp"
     },
     "editor.formatOnSave": true,
     "code-runner.runInTerminal": true,

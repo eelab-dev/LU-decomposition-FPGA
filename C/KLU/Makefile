@@ -53,4 +53,4 @@ klu_solve: klu_solve.c Makefile
 
 btf: btf.c Makefile
 	$(CC) $(INCL) btf.c -o btf $(CLIB)
-	./btf < ../../Matrix_Sample/test.mtx
+	# ./btf < ../../Matrix_Sample/test.mtx

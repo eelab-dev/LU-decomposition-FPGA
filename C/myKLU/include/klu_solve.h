@@ -19,9 +19,11 @@ klu_lsolve_loop:
         /* unit diagonal of L is not stored*/
         for (int p = 0; p < len; p++)
         {
+            int r = Li[p] * nrhs, s = k * nrhs;
+            double lik = Lx[p];
             /* X [Li [p]] -= Lx [p] * x [0] ; */
             for (int j = 0; j < nrhs; j++)
-                MULT_SUB(X[Li[p] * nrhs + j], Lx[p], X[k * nrhs + j]);
+                MULT_SUB(X[r + j], lik, X[s + j]);
         }
     }
 }
@@ -52,19 +54,22 @@ klu_usolve_loop:
     {
         double *Ux;
         int *Ui, len;
+        int r = k * nrhs;
         GET_POINTER(LU, Uip, Ulen, Ui, Ux, k, len);
         /* x [0] = X [k] / Udiag [k] ; */
         for (int j = 0; j < nrhs; j++)
         {
-            DIV(x[j], X[k * nrhs + j], Udiag[k]);
-            X[k * nrhs + j] = x[j];
+            DIV(x[j], X[r + j], Udiag[k]);
+            X[r + j] = x[j];
         }
 
         for (int p = 0; p < len; p++)
         {
+            int s = Ui[p] * nrhs;
+            double uik = Ux[p];
             /* X [Ui [p]] -= Ux [p] * x [0] ; */
             for (int j = 0; j < nrhs; j++)
-                MULT_SUB(X[Ui[p] * nrhs + j], Ux[p], x[j]);
+                MULT_SUB(X[s + j], uik, x[j]);
         }
     }
 }
@@ -152,9 +157,10 @@ klu_solve_loop:
         /* solve the block system */
         if (nk == 1)
         {
+            int r = k1 * nrhs;
             double s = Numeric->Udiag[k1];
             for (int j = 0; j < nrhs; j++)
-                DIV(Numeric->Xwork[k1 * nrhs + j], Numeric->Xwork[k1 * nrhs + j], s);
+                DIV(Numeric->Xwork[r + j], Numeric->Xwork[r + j], s);
         }
         else
         {

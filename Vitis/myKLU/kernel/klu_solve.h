@@ -8,23 +8,32 @@ static void KLU_lsolve(
     double LU[],
     int nrhs,
     /* right-hand-side on input, solution to Lx=b on output */
-    double X[])
+    double X[],
+    double x[])
 {
+	int r,s,len, *Li;
+	double lik,*Lx;
 klu_lsolve_loop:
     for (int k = 0; k < n; k++)
     {
-#pragma HLS pipeline
-        double x = X[k], *Lx;
-        int len, *Li;
         GET_POINTER(LU, Lip, Llen, Li, Lx, k, len);
         /* unit diagonal of L is not stored*/
         for (int p = 0; p < len; p++)
         {
-#pragma HLS pipeline
             /* X [Li [p]] -= Lx [p] * x [0] ; */
+            r = Li[p] * nrhs;
+            s = k * nrhs;
+            lik = Lx[p];
             for (int j = 0; j < nrhs; j++)
-#pragma HLS pipeline
-                MULT_SUB(X[Li[p] * nrhs + j], Lx[p], X[k * nrhs + j]);
+            {
+#pragma HLS unroll = 10
+                x[j] = X[s + j];
+            }
+            for (int j = 0; j < nrhs; j++)
+            {
+#pragma HLS unroll = 10
+                X[r + j] -= lik * x[j];
+            }
         }
     }
 }
@@ -50,28 +59,32 @@ static void KLU_usolve(
     double X[],
     double x[])
 {
-    // double x[MAX_SIZE];
+	double *Ux;
+	int *Ui, len;
 klu_usolve_loop:
     for (int k = n - 1; k >= 0; k--)
     {
-#pragma HLS pipeline
-        double *Ux;
-        int *Ui, len;
         GET_POINTER(LU, Uip, Ulen, Ui, Ux, k, len);
         /* x [0] = X [k] / Udiag [k] ; */
+        int r = k * nrhs;
         for (int j = 0; j < nrhs; j++)
         {
-#pragma HLS pipeline
-            DIV(x[j], X[k * nrhs + j], Udiag[k]);
-            X[k * nrhs + j] = x[j];
+#pragma HLS unroll = 10
+            x[j] = X[r + j] / Udiag[k];
+            X[r + j] = x[j];
         }
         for (int p = 0; p < len; p++)
         {
-#pragma HLS pipeline
+#pragma HLS pipeline off
+            int s = Ui[p] * nrhs;
+            double uik = Ux[p];
             /* X [Ui [p]] -= Ux [p] * x [0] ; */
             for (int j = 0; j < nrhs; j++)
-#pragma HLS pipeline
-                MULT_SUB(X[Ui[p] * nrhs + j], Ux[p], x[j]);
+#pragma HLS pipeline off
+            {
+#pragma HLS unroll = 10
+                X[s + j] -= uik * x[j];
+            }
         }
     }
 }
@@ -127,8 +140,10 @@ int KLU_solve(
         for (int k = 0; k < Symbolic->n; k++)
         {
             for (int j = 0; j < nrhs; j++)
-#pragma HLS pipeline
+            {
+#pragma HLS unroll = 10
                 Numeric->Xwork[k * nrhs + j] = B[Numeric->Pnum[k] + n * j];
+            }
         }
     }
     else
@@ -136,8 +151,10 @@ int KLU_solve(
         for (int k = 0; k < Symbolic->n; k++)
         {
             for (int j = 0; j < nrhs; j++)
-#pragma HLS pipeline
-                SCALE_DIV_ASSIGN(Numeric->Xwork[k * nrhs + j], B[Numeric->Pnum[k] + n * j], Numeric->Rs[k]);
+            {
+#pragma HLS unroll = 10
+                Numeric->Xwork[k * nrhs + j] = B[Numeric->Pnum[k] + n * j] / Numeric->Rs[k];
+            }
         }
     }
 
@@ -164,13 +181,13 @@ klu_solve_loop:
             double s = Numeric->Udiag[k1];
             for (int j = 0; j < nrhs; j++)
             {
-#pragma HLS pipeline
-                DIV(Numeric->Xwork[k1 * nrhs + j], Numeric->Xwork[k1 * nrhs + j], s);
+#pragma HLS unroll = 10
+                Numeric->Xwork[k1 * nrhs + j] /= s;
             }
         }
         else
         {
-            KLU_lsolve(nk, Numeric->Lip + k1, Numeric->Llen + k1, &Numeric->LUbx[Numeric->LUsize[block]], nrhs, Numeric->Xwork + nrhs * k1);
+            KLU_lsolve(nk, Numeric->Lip + k1, Numeric->Llen + k1, &Numeric->LUbx[Numeric->LUsize[block]], nrhs, Numeric->Xwork + nrhs * k1, Numeric->xusolve);
             KLU_usolve(nk, Numeric->Uip + k1, Numeric->Ulen + k1, &Numeric->LUbx[Numeric->LUsize[block]], Numeric->Udiag + k1, nrhs, Numeric->Xwork + nrhs * k1, Numeric->xusolve);
         }
 
@@ -186,9 +203,12 @@ klu_solve_loop:
                 // double x = Numeric->Xwork[k];
                 for (int p = Numeric->Offp[k]; p < pend; p++)
                 {
+                    int r = Numeric->Offi[p] * nrhs, s = k * nrhs;
                     for (int j = 0; j < nrhs; j++)
-#pragma HLS pipeline
-                        MULT_SUB(Numeric->Xwork[Numeric->Offi[p] * nrhs + j], Numeric->Offx[p], Numeric->Xwork[k * nrhs + j]);
+                    {
+#pragma HLS unroll = 10
+                        Numeric->Xwork[r + j] -= Numeric->Offx[p] * Numeric->Xwork[s + j];
+                    }
                 }
             }
         }
@@ -201,8 +221,10 @@ klu_solve_loop:
     for (int k = 0; k < Symbolic->n; k++)
     {
         for (int j = 0; j < nrhs; j++)
-#pragma HLS pipeline
+        {
+#pragma HLS unroll = 10
             B[Symbolic->Q[k] + n * j] = Numeric->Xwork[k * nrhs + j];
+        }
     }
 
     /* ------------------------------------------------------------------ */

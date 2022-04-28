@@ -1003,6 +1003,14 @@ void KLU_factor(
         }
     }
 
+    int *pinv, *Stack, *Flag, *Ap_pos, *Lpend, *Pblock;
+    pinv = (int *)malloc(Symbolic->maxblock * sizeof(int));
+    Stack = (int *)malloc(Symbolic->maxblock * sizeof(int));
+    Flag = (int *)malloc(Symbolic->maxblock * sizeof(int));
+    Ap_pos = (int *)malloc(Symbolic->maxblock * sizeof(int));
+    Lpend = (int *)malloc(Symbolic->maxblock * sizeof(int));
+    Pblock = (int *)malloc(Symbolic->maxblock * sizeof(int));
+
     /* ---------------------------------------------------------------------- */
     /* factor each block using klu */
     /* ---------------------------------------------------------------------- */
@@ -1149,19 +1157,13 @@ klu_factor_loop:
                          DUNITS(int, Usize) + DUNITS(double, Usize);
 
             int lnz_block, unz_block;
-            // W = Numeric->Iwork;
-            // pinv = (int *)W;
-            // W += nk;
-            // Stack = (int *)W;
-            // W += nk;
-            // Flag = (int *)W;
-            // W += nk;
-            // Lpend = (int *)W;
-            // W += nk;
-            // Ap_pos = (int *)W;
-            // W += nk;
 
-            int pinv[Symbolic->maxblock], Stack[Symbolic->maxblock], Flag[Symbolic->maxblock], Ap_pos[Symbolic->maxblock], Lpend[Symbolic->maxblock], Pblock[Symbolic->maxblock];
+            // int pinv[Symbolic->maxblock];
+            // int Stack[Symbolic->maxblock];
+            // int Flag[Symbolic->maxblock];
+            // int Ap_pos[Symbolic->maxblock];
+            // int Lpend[Symbolic->maxblock];
+            // int Pblock[Symbolic->maxblock];
 
             Numeric->LUsize[block] = KLU_kernel(nk, Ap, Ai, Ax, Symbolic->Q, lusize, pinv, Pblock, &Numeric->LUbx[Numeric->lusize_sum], Numeric->Udiag + k1, Numeric->Llen + k1, Numeric->Ulen + k1, Numeric->Lip + k1, Numeric->Uip + k1, &lnz_block, &unz_block, Numeric->Xwork, Stack, Flag, Ap_pos, Lpend, k1, Numeric->Pinv, Numeric->Rs, Numeric->Offp, Numeric->Offi, Numeric->Offx, Common);
             if (Common->status < KLU_OK || (Common->status == KLU_SINGULAR && Common->halt_if_singular))

@@ -12,7 +12,7 @@
 #include <math.h>
 
 #define MAX_SIZE 4096
-#define MAX_NNZ 16384
+#define MAX_NNZ 32768
 
 #ifndef NDEBUG
 #define NDEBUG

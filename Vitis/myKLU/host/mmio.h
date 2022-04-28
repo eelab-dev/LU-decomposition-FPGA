@@ -879,14 +879,14 @@ int read_bmatrix(std::string filename, std::vector<double, T> &b, int *bsize)
 	/************************/
 	// mm_write_banner(stdout, matcode);
 	// mm_write_mtx_crd_size(stdout, M, N, nz);
-	for (int i = 0; i < M; i++)
-	{
-		std::cout << i << ": ";
-		for (int j = 0; j < N; j++)
-			std::cout << b[i + M * j] << "\t";
-
-		std::cout << std::endl;
-	}
+//	for (int i = 0; i < M; i++)
+//	{
+//		std::cout << i << ": ";
+//		for (int j = 0; j < N; j++)
+//			std::cout << b[i + M * j] << "\t";
+//
+//		std::cout << std::endl;
+//	}
 
 	return 0;
 }

@@ -318,7 +318,7 @@ lsolve_numeric_loop:
         ASSERT(Lip[jnew] <= Lip[jnew + 1]);
         for (int p = 0; p < len; p++)
         {
-#pragma HLS pipeline
+
             /*X [Li [p]] -= Lx [p] * xj ; */
             MULT_SUB(X[Li[p]], Lx[p], xj);
         }
@@ -760,7 +760,7 @@ static int KLU_kernel /* final size of LU on output */
 
     for (int k = 0; k < n; k++)
     {
-#pragma HLS pipeline
+
         /* X [k] = 0 ; */
         CLEAR(X[k]);
         Flag[k] = EMPTY;
@@ -774,7 +774,7 @@ static int KLU_kernel /* final size of LU on output */
     /* PSinv does the symmetric permutation, so don't do it here */
     for (int k = 0; k < n; k++)
     {
-#pragma HLS pipeline
+
         P[k] = k;
         Pinv[k] = FLIP(k); /* mark all rows as non-pivotal */
     }
@@ -876,7 +876,7 @@ klu_kernel_factor_loop:
         GET_POINTER(LU, Uip, Ulen, Ui, Ux, k, len);
         for (int p = top, i = 0; p < n; p++, i++)
         {
-#pragma HLS pipeline
+
             int j = Stack[p];
             Ui[i] = Pinv[j];
             Ux[i] = X[j];
@@ -936,7 +936,7 @@ klu_kernel_factor_loop:
         int *Li = (int *)(LU + Lip[p]);
         for (int i = 0; i < Llen[p]; i++)
         {
-#pragma HLS pipeline
+
             Li[i] = Pinv[Li[i]];
         }
     }
@@ -1249,7 +1249,7 @@ klu_factor_loop:
     /* apply the pivot row permutations to the off-diagonal entries */
     for (int p = 0; p < Symbolic->nzoff; p++)
     {
-#pragma HLS pipeline
+
         ASSERT(Numeric->Offi[p] >= 0 && Numeric->Offi[p] < Symbolic->n);
         Numeric->Offi[p] = Numeric->Pinv[Numeric->Offi[p]];
     }
