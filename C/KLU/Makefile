@@ -54,3 +54,11 @@ klu_solve: klu_solve.c Makefile
 btf: btf.c Makefile
 	$(CC) $(INCL) btf.c -o btf $(CLIB)
 	# ./btf < ../../Matrix_Sample/test.mtx
+
+klu_bench: klu_bench.cpp Makefile
+	$(CXX) $(INCL) $(STD) klu_bench.cpp -o klu_bench $(CXLIB)
+	./klu_bench
+
+umfpack_bench: umfpack_bench.cpp
+	$(CXX) $(INCL) -o umfpack_bench umfpack_bench.cpp $(LIBS)
+	./umfpack_bench

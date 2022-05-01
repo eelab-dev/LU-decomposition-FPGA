@@ -11,8 +11,8 @@ static void KLU_lsolve(
     double X[],
     double x[])
 {
-	int r,s,len, *Li;
-	double lik,*Lx;
+    int r, s, len, *Li;
+    double lik, *Lx;
 klu_lsolve_loop:
     for (int k = 0; k < n; k++)
     {
@@ -26,12 +26,12 @@ klu_lsolve_loop:
             lik = Lx[p];
             for (int j = 0; j < nrhs; j++)
             {
-#pragma HLS unroll = 10
+#pragma HLS unroll = 50
                 x[j] = X[s + j];
             }
             for (int j = 0; j < nrhs; j++)
             {
-#pragma HLS unroll = 10
+#pragma HLS unroll = 50
                 X[r + j] -= lik * x[j];
             }
         }
@@ -59,8 +59,8 @@ static void KLU_usolve(
     double X[],
     double x[])
 {
-	double *Ux;
-	int *Ui, len;
+    double *Ux;
+    int *Ui, len;
 klu_usolve_loop:
     for (int k = n - 1; k >= 0; k--)
     {
@@ -69,7 +69,7 @@ klu_usolve_loop:
         int r = k * nrhs;
         for (int j = 0; j < nrhs; j++)
         {
-#pragma HLS unroll = 10
+#pragma HLS unroll = 50
             x[j] = X[r + j] / Udiag[k];
             X[r + j] = x[j];
         }
@@ -82,7 +82,7 @@ klu_usolve_loop:
             for (int j = 0; j < nrhs; j++)
 #pragma HLS pipeline off
             {
-#pragma HLS unroll = 10
+#pragma HLS unroll = 50
                 X[s + j] -= uik * x[j];
             }
         }
@@ -141,7 +141,7 @@ int KLU_solve(
         {
             for (int j = 0; j < nrhs; j++)
             {
-#pragma HLS unroll = 10
+#pragma HLS unroll = 50
                 Numeric->Xwork[k * nrhs + j] = B[Numeric->Pnum[k] + n * j];
             }
         }
@@ -152,7 +152,7 @@ int KLU_solve(
         {
             for (int j = 0; j < nrhs; j++)
             {
-#pragma HLS unroll = 10
+#pragma HLS unroll = 50
                 Numeric->Xwork[k * nrhs + j] = B[Numeric->Pnum[k] + n * j] / Numeric->Rs[k];
             }
         }
@@ -181,7 +181,7 @@ klu_solve_loop:
             double s = Numeric->Udiag[k1];
             for (int j = 0; j < nrhs; j++)
             {
-#pragma HLS unroll = 10
+#pragma HLS unroll = 50
                 Numeric->Xwork[k1 * nrhs + j] /= s;
             }
         }
@@ -206,7 +206,7 @@ klu_solve_loop:
                     int r = Numeric->Offi[p] * nrhs, s = k * nrhs;
                     for (int j = 0; j < nrhs; j++)
                     {
-#pragma HLS unroll = 10
+#pragma HLS unroll = 50
                         Numeric->Xwork[r + j] -= Numeric->Offx[p] * Numeric->Xwork[s + j];
                     }
                 }
@@ -222,7 +222,7 @@ klu_solve_loop:
     {
         for (int j = 0; j < nrhs; j++)
         {
-#pragma HLS unroll = 10
+#pragma HLS unroll = 50
             B[Symbolic->Q[k] + n * j] = Numeric->Xwork[k * nrhs + j];
         }
     }

@@ -11,8 +11,8 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define MAX_SIZE 4096
-#define MAX_NNZ 32768
+#define MAX_SIZE 1024
+#define MAX_NNZ 8192
 
 #ifndef NDEBUG
 #define NDEBUG

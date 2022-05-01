@@ -855,15 +855,6 @@ int read_bmatrix(std::string filename, std::vector<double, T> &b, int *bsize)
 			return 1;
 		}
 
-		// char *pch;
-		// pch = strtok(num, " ");
-		// b[i] = atof(pch);
-		// for (int j = 1; j < N; j++)
-		// {
-		// 	pch = strtok(NULL, " ");
-		// 	b[i + M * j] = atof(pch);
-		// }
-
 		if (!sscanf(num, "%lg\n", &b[i]))
 		{
 			printf("No enough value\n");

@@ -37,6 +37,9 @@ extern "C"
 {
 	void lu(int *AP, int *AI, double *AX, int *P, int *Q, int *R, double *LNZ, int N, int NBLOCKS, int MAXBLOCK, int NZOFF, int NZ, int nrhs, double *B)
 	{
+		if(N>MAX_SIZE || NZ>MAX_NNZ)
+			return;
+
 		klu_common Common;
 		klu_numeric Numeric;
 		klu_symbolic Symbolic;

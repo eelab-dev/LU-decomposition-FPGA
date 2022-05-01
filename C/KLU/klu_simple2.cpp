@@ -29,7 +29,7 @@ int main(void)
     klu_common Common;
     klu_defaults(&Common);
 
-    const int runtime = 10;
+    const int runtime = 1000;
     std::chrono::steady_clock::time_point begin[3], end[3];
     long total[3] = {0};
     klu_symbolic *Symbolic;

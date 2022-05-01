@@ -17,3 +17,7 @@ library:
 klu_kernel: klu_kernel.cpp library
 	$(CXX) $(INCL) $(STD) klu_kernel.cpp -o klu_kernel $(CLIB) $(SUF)
 	./klu_kernel
+
+klu_bench: klu_bench.cpp library
+	$(CXX) $(INCL) $(STD) klu_bench.cpp -o klu_bench $(CLIB) $(SUF)
+	./klu_bench
