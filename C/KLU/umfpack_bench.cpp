@@ -10,17 +10,25 @@ int main(void)
 {
     double *null = (double *)NULL;
 
-    std::vector<std::string> filename = {"../../Matrix_Sample/host.mtx", "../../Matrix_Sample/rajat14.mtx"};
+    std::vector<std::string> filename = {"rajat11.mtx", "rajat14.mtx"};
+    std::string prefix = "../../Matrix_Sample/Bench/";
 
     std::vector<int> Ap, Ai;
     std::vector<double> Ax, b, x;
-    int n;
+    int n, nrhs = 1;
     const int runtime = 1000;
+
+    std::ofstream data("Bench_UMF_Data.csv");
+
+    data << "Matrix,";
+    data << "Symbolic Average,Numeric Average,Solving Average (nrhs=" << nrhs << ")" << std::endl;
 
     for (int k = 0; k < filename.size(); k++)
     {
-        if (read_sparse(filename[k], &n, Ap, Ai, Ax))
+        if (read_sparse(prefix + filename[k], &n, Ap, Ai, Ax))
             return 1;
+
+        data << filename[k] << ",";
 
         b.resize(n);
         x.resize(n);
@@ -60,6 +68,8 @@ int main(void)
         }
 
         std::cout << "Analyze time: " << total[0] / (float)runtime << "µs\nFactorization time: " << total[1] / (float)runtime << "µs\nSolving time: " << total[2] / (float)runtime << "µs" << std::endl;
+
+        data << total[0] / (float)runtime << "," << total[1] / (float)runtime << "," << total[2] / (float)runtime << std::endl;
     }
 
     return (0);
