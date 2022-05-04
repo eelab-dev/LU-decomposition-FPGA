@@ -17,7 +17,8 @@ klu_lsolve_loop:
     for (int k = 0; k < n; k++)
     {
         GET_POINTER(LU, Lip, Llen, Li, Lx, k, len);
-        /* unit diagonal of L is not stored*/
+    /* unit diagonal of L is not stored*/
+    klu_lsolve_loop_2:
         for (int p = 0; p < len; p++)
         {
             /* X [Li [p]] -= Lx [p] * x [0] ; */
@@ -26,12 +27,13 @@ klu_lsolve_loop:
             lik = Lx[p];
             for (int j = 0; j < nrhs; j++)
             {
-#pragma HLS unroll = 50
+#pragma HLS unroll factor = 50
                 x[j] = X[s + j];
             }
             for (int j = 0; j < nrhs; j++)
             {
-#pragma HLS unroll = 50
+#pragma HLS DEPENDENCE variable = X type = inter dependent = false
+#pragma HLS unroll factor = 50
                 X[r + j] -= lik * x[j];
             }
         }
@@ -44,9 +46,7 @@ klu_lsolve_loop:
 
 /* Solve Ux=b.  Assumes U is non-unit upper triangular and where the diagonal
  * entry is NOT stored.  Overwrites B with the solution X.  B is n-by-nrhs
- * and is stored in ROW form with row dimension nrhs.  nrhs must be in the
- * range 1 to 4. */
-
+ * and is stored in ROW form with row dimension nrhs. */
 static void KLU_usolve(
     /* inputs, not modified: */
     int n,
@@ -69,20 +69,21 @@ klu_usolve_loop:
         int r = k * nrhs;
         for (int j = 0; j < nrhs; j++)
         {
-#pragma HLS unroll = 50
+#pragma HLS unroll factor = 50
             x[j] = X[r + j] / Udiag[k];
             X[r + j] = x[j];
         }
+    klu_usolve_loop_2:
         for (int p = 0; p < len; p++)
         {
-#pragma HLS pipeline off
+            //#pragma HLS pipeline off
             int s = Ui[p] * nrhs;
             double uik = Ux[p];
             /* X [Ui [p]] -= Ux [p] * x [0] ; */
             for (int j = 0; j < nrhs; j++)
-#pragma HLS pipeline off
             {
-#pragma HLS unroll = 50
+#pragma HLS DEPENDENCE variable = X type = inter dependent = false
+#pragma HLS unroll factor = 50
                 X[s + j] -= uik * x[j];
             }
         }
@@ -141,7 +142,8 @@ int KLU_solve(
         {
             for (int j = 0; j < nrhs; j++)
             {
-#pragma HLS unroll = 50
+#pragma HLS DEPENDENCE variable = Numeric->Xwork type = inter dependent = false
+#pragma HLS unroll factor = 50
                 Numeric->Xwork[k * nrhs + j] = B[Numeric->Pnum[k] + n * j];
             }
         }
@@ -152,7 +154,8 @@ int KLU_solve(
         {
             for (int j = 0; j < nrhs; j++)
             {
-#pragma HLS unroll = 50
+#pragma HLS DEPENDENCE variable = Numeric->Xwork type = inter dependent = false
+#pragma HLS unroll factor = 50
                 Numeric->Xwork[k * nrhs + j] = B[Numeric->Pnum[k] + n * j] / Numeric->Rs[k];
             }
         }
@@ -181,7 +184,8 @@ klu_solve_loop:
             double s = Numeric->Udiag[k1];
             for (int j = 0; j < nrhs; j++)
             {
-#pragma HLS unroll = 50
+#pragma HLS DEPENDENCE variable = Numeric->Xwork type = inter dependent = false
+#pragma HLS unroll factor = 50
                 Numeric->Xwork[k1 * nrhs + j] /= s;
             }
         }
@@ -206,7 +210,8 @@ klu_solve_loop:
                     int r = Numeric->Offi[p] * nrhs, s = k * nrhs;
                     for (int j = 0; j < nrhs; j++)
                     {
-#pragma HLS unroll = 50
+#pragma HLS DEPENDENCE variable = Numeric->Xwork type = inter dependent = false
+#pragma HLS unroll factor = 50
                         Numeric->Xwork[r + j] -= Numeric->Offx[p] * Numeric->Xwork[s + j];
                     }
                 }
@@ -222,7 +227,8 @@ klu_solve_loop:
     {
         for (int j = 0; j < nrhs; j++)
         {
-#pragma HLS unroll = 50
+#pragma HLS DEPENDENCE variable = Numeric->Xwork type = inter dependent = false
+#pragma HLS unroll factor = 50
             B[Symbolic->Q[k] + n * j] = Numeric->Xwork[k * nrhs + j];
         }
     }

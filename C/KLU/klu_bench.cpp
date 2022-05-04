@@ -9,16 +9,16 @@
 
 int main(void)
 {
-    std::vector<std::string> filename = {"rajat11.mtx", "rajat14.mtx"};
+    std::vector<std::string> filename = {"rajat11.mtx", "rajat14.mtx", "rajat05.mtx", "oscil_dcop_01.mtx", "fpga_dcop_01.mtx"};
     // std::vector<std::string> bmatrix = {"../../Matrix_Sample/host_b.mtx"};
     std::string prefix = "../../Matrix_Sample/Bench/";
 
     std::vector<int> Ap, Ai;
     std::vector<double> Ax, b;
-    int n, nrhs = 1;
-    const int runtime = 1000;
+    int n, nrhs = 10;
+    const int runtime = 10;
     klu_common Common;
-    std::ofstream data("Bench_KLU_Data.csv");
+    std::ofstream data("Bench_KLU_Data_10.csv");
 
     data << "Matrix,";
     data << "Symbolic Average,Numeric Average,Solving Average (nrhs=" << nrhs << ")" << std::endl;

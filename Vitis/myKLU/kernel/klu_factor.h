@@ -316,11 +316,14 @@ lsolve_numeric_loop:
         double xj = X[j];
         GET_POINTER(LU, Lip, Llen, Li, Lx, jnew, len);
         ASSERT(Lip[jnew] <= Lip[jnew + 1]);
+
+lsolve_numeric_loop_2:
         for (int p = 0; p < len; p++)
         {
-
+#pragma HLS unroll factor=10
+#pragma HLS DEPENDENCE variable=X type=inter dependent=false
             /*X [Li [p]] -= Lx [p] * xj ; */
-            MULT_SUB(X[Li[p]], Lx[p], xj);
+        	X[Li[p]] -= Lx[p] * xj;
         }
     }
 }
@@ -478,6 +481,7 @@ lpivot_loop:
     /* divide L by the pivot value */
     for (int p = 0; p < Llen[k]; p++)
     {
+#pragma HLS unroll = 10
         /* Lx [p] /= pivot ; */
         DIV(Lx[p], Lx[p], pivot);
     }
@@ -1153,17 +1157,6 @@ klu_factor_loop:
                          DUNITS(int, Usize) + DUNITS(double, Usize);
 
             int lnz_block, unz_block;
-            // W = Numeric->Iwork;
-            // pinv = (int *)W;
-            // W += nk;
-            // Stack = (int *)W;
-            // W += nk;
-            // Flag = (int *)W;
-            // W += nk;
-            // Lpend = (int *)W;
-            // W += nk;
-            // Ap_pos = (int *)W;
-            // W += nk;
             // int pinv[MAX_SIZE], Symbolic->Stack[MAX_SIZE], Symbolic->Flag[MAX_SIZE], Ap_pos[MAX_SIZE], Lpend[MAX_SIZE], Pblock[MAX_SIZE];
 
             Numeric->LUsize[block] = KLU_kernel(nk, Ap, Ai, Ax, Symbolic->Q, lusize, Symbolic->pinv, Symbolic->Pblock, &Numeric->LUbx[Numeric->lusize_sum], Numeric->Udiag + k1, Numeric->Llen + k1, Numeric->Ulen + k1, Numeric->Lip + k1, Numeric->Uip + k1, &lnz_block, &unz_block, Numeric->Xwork, Symbolic->Stack, Symbolic->Flag, Symbolic->Ap_pos, Symbolic->Lpend, k1, Numeric->Pinv, Numeric->Rs, Numeric->Offp, Numeric->Offi, Numeric->Offx, Common);

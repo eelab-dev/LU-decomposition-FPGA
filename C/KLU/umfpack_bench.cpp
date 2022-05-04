@@ -10,15 +10,15 @@ int main(void)
 {
     double *null = (double *)NULL;
 
-    std::vector<std::string> filename = {"rajat11.mtx", "rajat14.mtx"};
+    std::vector<std::string> filename = {"rajat11.mtx", "rajat14.mtx", "rajat05.mtx", "oscil_dcop_01.mtx", "fpga_dcop_01.mtx"};
     std::string prefix = "../../Matrix_Sample/Bench/";
 
     std::vector<int> Ap, Ai;
     std::vector<double> Ax, b, x;
-    int n, nrhs = 1;
-    const int runtime = 1000;
+    int n, nrhs = 10;
+    const int runtime = 100;
 
-    std::ofstream data("Bench_UMF_Data.csv");
+    std::ofstream data("Bench_UMF_Data_10.csv");
 
     data << "Matrix,";
     data << "Symbolic Average,Numeric Average,Solving Average (nrhs=" << nrhs << ")" << std::endl;
@@ -30,7 +30,7 @@ int main(void)
 
         data << filename[k] << ",";
 
-        b.resize(n);
+        b.resize(n * nrhs);
         x.resize(n);
         std::iota(b.begin(), b.end(), 0);
 
@@ -54,7 +54,8 @@ int main(void)
             umfpack_di_free_symbolic(&Symbolic);
 
             begin[2] = std::chrono::steady_clock::now();
-            (void)umfpack_di_solve(UMFPACK_A, Ap.data(), Ai.data(), Ax.data(), x.data(), b.data(), Numeric, null, null);
+            for (int j = 0; j < nrhs; j++)
+                (void)umfpack_di_solve(UMFPACK_A, Ap.data(), Ai.data(), Ax.data(), x.data(), b.data() + j * n, Numeric, null, null);
             end[2] = std::chrono::steady_clock::now();
             total[2] += std::chrono::duration_cast<std::chrono::microseconds>(end[2] - begin[2]).count();
 

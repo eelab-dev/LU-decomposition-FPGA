@@ -97,3 +97,6 @@ int main(void)
     printf("lusize=%d\n", Numeric.lusize_sum);
     return 0;
 }
+
+// lu_1          lu           lu                                                     41210  72203  0    472   0
+// lu_1          lu           lu                                                     43353  82288  0    472   0
