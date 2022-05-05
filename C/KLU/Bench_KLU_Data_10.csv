@@ -1,6 +1,6 @@
 Matrix,Symbolic Average,Numeric Average,Solving Average (nrhs=10)
-rajat11.mtx,43.9,38.7,13
-rajat14.mtx,86.9,72.1,23.4
-rajat05.mtx,107.3,72.9,27.4
-oscil_dcop_01.mtx,177.1,138.9,41.6
-fpga_dcop_01.mtx,422.4,306.4,156.5
+rajat11.mtx,30,28.1,9.2
+rajat14.mtx,62.4,55.8,17.6
+rajat05.mtx,75.6,53.1,20.4
+oscil_dcop_01.mtx,189.3,145.5,48
+fpga_dcop_01.mtx,241.1,173.5,99.1

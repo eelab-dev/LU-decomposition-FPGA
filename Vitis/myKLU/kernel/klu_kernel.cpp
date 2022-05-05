@@ -8,7 +8,7 @@ void read_Ap(int *AP, int *P, int *Q, int *R, int *Ap, klu_symbolic *Symbolic, i
 Read_loop_1:
 	for (int i = 0; i < N; i++)
 	{
-#pragma HLS unroll factor=16
+//#pragma HLS unroll factor=16
 		Ap[i] = AP[i];
 		Symbolic->P[i] = P[i];
 		Symbolic->Q[i] = Q[i];
@@ -22,18 +22,18 @@ void read_Ax(int *AI, double *AX, double *LNZ, double *B, int *Ai, double *Ax, d
 {
 Read_loop_2:
 for (int i = 0; i < N; i++)
-#pragma HLS unroll factor=8
+//#pragma HLS unroll factor=8
 	Symbolic->Lnz[i] = LNZ[i];
 
 	for (int i = 0; i < NZ; i++)
 	{
-#pragma HLS unroll factor=8
+//#pragma HLS unroll factor=8
 		Ai[i] = AI[i];
 		Ax[i] = AX[i];
 	}
 
 	for (int i = 0; i < N * nrhs; i++)
-#pragma HLS unroll factor=8
+//#pragma HLS unroll factor=8
 		b[i] = B[i];
 }
 

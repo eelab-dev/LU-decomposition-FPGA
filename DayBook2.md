@@ -815,6 +815,34 @@ Where:
 	- shared: A shared channel, synchronized like a regular Ping-Pong buffer, with depth, but without duplicating the array data. Consistency can be ensured by setting the depth small enough, which acts as the distance of synchronization between the producer and consumer.
 
 
+# 17/03/2022
+## Interfaces for Vitis Kernel Flow
+The Vitis kernel flow provides support for compiled kernel objects (.xo) for software control from a host application and by the Xilinx Run Time (XRT). As described in Kernel Properties in the Vitis Unified Software Platform Documentation , this flow has very specific interface requirements that Vitis HLS must meet.
+
+Vitis HLS supports memory, stream, and register interface paradigms where each paradigm follows a certain interface protocol and uses the adapter to communicate with the external world.
+
+- Memory Paradigm (m_axi): the data is accessed by the kernel through memory such as DDR, HBM, PLRAM/BRAM/URAM
+
+- Stream Paradigm (axis): the data is streamed into the kernel from another streaming source, such as video processor or another kernel, and can also be streamed out of the kernel.
+
+- Register Paradigm (s_axilite): The data is accessed by the kernel through register interfaces and accessed by software as register reads/writes.
+
+# 20/03/2022
+## Loop Flatten
+In the RTL implementation, it costs a clock cycle to move between loops in the loop hierarchy. Flattening nested loops allows them to be optimized as a single loop. This saves clock cycles, potentially allowing for greater optimization of the loop body logic.
+
+- Perfect loop nests
+	- Only the innermost loop has loop body content.
+	- There is no logic specified between the loop statements.
+	- All loop bounds are constant.
+
+- Semi-perfect loop nests
+	- Only the innermost loop has loop body content.
+	- There is no logic specified between the loop statements.
+	- The outermost loop bound can be a variable.
+- Imperfect loop nests
+	-	When the inner loop has variables bounds (or the loop body is not exclusively inside the inner loop), try to restructure the code, or unroll the loops in the loop body to create a perfect loop nest.
+
 # 08/04/2022
 ```log
 [14:44:02] Block-level synthesis in progress, 0 of 9 jobs complete, 6 jobs running.
@@ -925,5 +953,5 @@ data_transfer_trace=fine
 ```
 
 
-#
+# 20/04/2022
 ![critical](Resources/critical.png)
