@@ -83,8 +83,8 @@ extern "C"
 		//        #pragma HLS array_partition variable = Numeric.Udiag
 		//        #pragma HLS array_partition variable = Numeric.LUbx
 		//        #pragma HLS array_partition variable = Numeric.Rs
-		#pragma HLS array_partition variable = Numeric.Xwork type=cyclic factor=16 dim=1
-		#pragma HLS array_partition variable = Numeric.xusolve type=cyclic factor=16 dim=1
+//		#pragma HLS array_partition variable = Numeric.Xwork type=cyclic factor=16 dim=1
+//		#pragma HLS array_partition variable = Numeric.xusolve type=cyclic factor=16 dim=1
 
 		Symbolic.n = N;
 		Symbolic.nz = NZ;

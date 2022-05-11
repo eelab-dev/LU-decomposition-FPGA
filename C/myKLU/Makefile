@@ -1,5 +1,5 @@
-CC=clang-13
-CXX=clang++-13
+CC=clang
+CXX=clang++
 
 CLIB=-L lib -lklu -lamd -lbtf -lsuitesparseconfig -lm
 INCL=-I include

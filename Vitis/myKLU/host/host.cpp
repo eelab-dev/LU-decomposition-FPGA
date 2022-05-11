@@ -199,7 +199,9 @@ int main(int argc, char **argv)
             }
             else
             {
-                if (j < nrhs - 1)
+            	if (i > 10)
+            		continue;
+            	else if (j < nrhs - 1)
                     printf("x[%d,%d] = %g\t", i, j, b[i + n * j]);
                 else
                     printf("x[%d,%d] = %g\n", i, nrhs - 1, b[i + n * (nrhs - 1)]);
