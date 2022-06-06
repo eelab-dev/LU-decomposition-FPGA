@@ -158,6 +158,7 @@ int KLU_solve(
             for (int j = 0; j < nrhs; j++)
             {
 #pragma HLS DEPENDENCE variable = Numeric->Xwork type = intra dependent = false
+#pragma HLS DEPENDENCE variable = Numeric->Xwork type = inter dependent = false
 #pragma HLS unroll factor = 16
                 Numeric->Xwork[k * nrhs + j] = B[Numeric->Pnum[k] + n * j] / Numeric->Rs[k];
             }

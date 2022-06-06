@@ -1,5 +1,5 @@
-CC=clang-13
-CXX=clang++-13
+CC=clang
+CXX=clang++
 
 CLIB=-L../../../SuiteSparse/lib -lklu -lbtf -lamd -lcolamd -lsuitesparseconfig -lccolamd -lcamd -lmetis -lm -lrt -lcholmod -llapack -lblas
 

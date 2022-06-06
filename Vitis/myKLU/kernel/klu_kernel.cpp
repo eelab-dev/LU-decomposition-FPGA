@@ -77,14 +77,14 @@ extern "C"
 		//        #pragma HLS array_partition variable = Numeric.Uip
 		//        #pragma HLS array_partition variable = Numeric.Llen
 		//        #pragma HLS array_partition variable = Numeric.Ulen
-		//        #pragma HLS array_partition variable = Numeric.Pinv
+		//      `  #pragma HLS array_partition variable = Numeric.Pinv
 		//        #pragma HLS array_partition variable = Numeric.LUsize
 		//        #pragma HLS array_partition variable = Numeric.Offx
 		//        #pragma HLS array_partition variable = Numeric.Udiag
-		//        #pragma HLS array_partition variable = Numeric.LUbx
+//		        #pragma HLS array_partition variable = Numeric.LUbx type=cyclic factor=16
 		//        #pragma HLS array_partition variable = Numeric.Rs
-//		#pragma HLS array_partition variable = Numeric.Xwork type=cyclic factor=16 dim=1
-//		#pragma HLS array_partition variable = Numeric.xusolve type=cyclic factor=16 dim=1
+		#pragma HLS array_partition variable = Numeric.Xwork type=cyclic factor=16 dim=1
+		#pragma HLS array_partition variable = Numeric.xusolve type=cyclic factor=16 dim=1
 
 		Symbolic.n = N;
 		Symbolic.nz = NZ;
