@@ -28,15 +28,17 @@ klu_lsolve_loop:
             for (int j = 0; j < nrhs; j++)
             {
 #pragma HLS LOOP_TRIPCOUNT max = 16
-                // #pragma HLS unroll factor = 16
+#pragma HLS DEPENDENCE variable = X type = intra false
+#pragma HLS DEPENDENCE variable = X type = inter false
+#pragma HLS unroll factor = 16
                 x[j] = X[s + j];
             }
             for (int j = 0; j < nrhs; j++)
             {
 #pragma HLS LOOP_TRIPCOUNT max = 16
-                // #pragma HLS DEPENDENCE variable = X type = intra dependent = false
-                // #pragma HLS DEPENDENCE variable = X type = inter dependent = false
-                // #pragma HLS unroll factor = 16
+#pragma HLS DEPENDENCE variable = X type = intra false
+#pragma HLS DEPENDENCE variable = X type = inter false
+#pragma HLS unroll factor = 16
                 X[r + j] -= lik * x[j];
             }
         }
@@ -73,6 +75,8 @@ klu_usolve_loop:
         for (int j = 0; j < nrhs; j++)
         {
 #pragma HLS LOOP_TRIPCOUNT max = 16
+#pragma HLS DEPENDENCE variable = X type = intra false
+#pragma HLS DEPENDENCE variable = X type = inter false
             // #pragma HLS unroll factor = 16
             x[j] = X[r + j] / Udiag[k];
             X[r + j] = x[j];
@@ -86,8 +90,8 @@ klu_usolve_loop:
             for (int j = 0; j < nrhs; j++)
             {
 #pragma HLS LOOP_TRIPCOUNT max = 16
-                // #pragma HLS DEPENDENCE variable = X type = intra dependent = false
-                // #pragma HLS DEPENDENCE variable = X type = inter dependent = false
+#pragma HLS DEPENDENCE variable = X type = intra false
+#pragma HLS DEPENDENCE variable = X type = inter false
                 // #pragma HLS unroll factor = 16
                 X[s + j] -= uik * x[j];
             }
@@ -96,18 +100,34 @@ klu_usolve_loop:
 }
 
 int KLU_solve(
-    /* inputs, not modified */
-    KLU_symbolic *Symbolic,
-    KLU_numeric *Numeric,
+    int *R,
+    int *Q,
+    int *Pnum,
+    double *Rs,
+    int *Lip,
+    int *Llen,
+    double *LUbx,
+    int *LUsize,
+    int *Uip,
+    int *Ulen,
+    double *Udiag,
+    int *Offp,
+    int *Offi,
+    double *Offx,
     int n,    /* leading dimension of B */
     int nrhs, /* number of right-hand-sides */
-
+    int nblocks,
     /* right-hand-side on input, overwritten with solution to Ax=b on output */
-    double B[], /* size n*nrhs, in column-oriented form, with
-                 * leading dimension d. */
+    double B[] /* size n*nrhs, in column-oriented form, with
+                * leading dimension d. */
     /* --------------- */
-    KLU_common *Common)
+)
 {
+    double Xwork[MAX_NNZ], xusolve[MAX_SIZE];
+
+#pragma HLS ARRAY_PARTITION variable=Xwork type=cyclic factor=16
+#pragma HLS ARRAY_PARTITION variable=xusolve type=cyclic factor=16
+
 
     for (int chunk = 0; chunk < nrhs; chunk += 16)
     {
@@ -117,14 +137,17 @@ int KLU_solve(
         /* scale and permute the right hand side, X = P*(R\B) */
         /* ------------------------------------------------------------------ */
 
-        for (int k = 0; k < Symbolic->n; k++)
+        for (int k = 0; k < n; k++)
         {
             for (int j = 0; j < nr; j++)
             {
 #pragma HLS LOOP_TRIPCOUNT max = 16
-                // #pragma HLS DEPENDENCE variable = Numeric->Xwork type = intra dependent = false
+#pragma HLS DEPENDENCE variable = Xwork type = intra false
+#pragma HLS DEPENDENCE variable = Xwork type = inter false
+#pragma HLS DEPENDENCE variable = B type = intra false
+#pragma HLS DEPENDENCE variable = B type = inter false
                 // #pragma HLS unroll factor = 16
-                Numeric->Xwork[k * nr + j] = B[Numeric->Pnum[k] + n * j] / Numeric->Rs[k];
+                Xwork[k * nr + j] = B[Pnum[k] + n * j] / Rs[k];
             }
         }
 
@@ -133,35 +156,35 @@ int KLU_solve(
         /* ------------------------------------------------------------------ */
 
     klu_solve_loop:
-        for (int block = Symbolic->nblocks - 1; block >= 0; block--)
+        for (int block = nblocks - 1; block >= 0; block--)
         {
 
             /* -------------------------------------------------------------- */
             /* the block of size nk is from rows/columns k1 to k2-1 */
             /* -------------------------------------------------------------- */
 
-            int k1 = Symbolic->R[block];
-            int k2 = Symbolic->R[block + 1];
+            int k1 = R[block];
+            int k2 = R[block + 1];
             int nk = k2 - k1;
             PRINTF(("solve %d, k1 %d k2-1 %d nk %d\n", block, k1, k2 - 1, nk));
 
             /* solve the block system */
             if (nk == 1)
             {
-                double s = Numeric->Udiag[k1];
+                double s = Udiag[k1];
                 for (int j = 0; j < nr; j++)
                 {
 #pragma HLS LOOP_TRIPCOUNT max = 16
-                    // #pragma HLS DEPENDENCE variable = Numeric->Xwork type = intra dependent = false
-                    // #pragma HLS DEPENDENCE variable = Numeric->Xwork type = inter dependent = false
+#pragma HLS DEPENDENCE variable = Xwork type = intra false
+#pragma HLS DEPENDENCE variable = Xwork type = inter false
                     // #pragma HLS unroll factor = 16
-                    Numeric->Xwork[k1 * nr + j] /= s;
+                    Xwork[k1 * nr + j] /= s;
                 }
             }
             else
             {
-                KLU_lsolve(nk, Numeric->Lip + k1, Numeric->Llen + k1, &Numeric->LUbx[Numeric->LUsize[block]], nr, Numeric->Xwork + nr * k1, Numeric->xusolve);
-                KLU_usolve(nk, Numeric->Uip + k1, Numeric->Ulen + k1, &Numeric->LUbx[Numeric->LUsize[block]], Numeric->Udiag + k1, nr, Numeric->Xwork + nr * k1, Numeric->xusolve);
+                KLU_lsolve(nk, Lip + k1, Llen + k1, &LUbx[LUsize[block]], nr, Xwork + nr * k1, xusolve);
+                KLU_usolve(nk, Uip + k1, Ulen + k1, &LUbx[LUsize[block]], Udiag + k1, nr, Xwork + nr * k1, xusolve);
             }
 
             /* -------------------------------------------------------------- */
@@ -172,18 +195,18 @@ int KLU_solve(
             {
                 for (int k = k1; k < k2; k++)
                 {
-                    int pend = Numeric->Offp[k + 1];
-                    // double x = Numeric->Xwork[k];
-                    for (int p = Numeric->Offp[k]; p < pend; p++)
+                    int pend = Offp[k + 1];
+                    // double x = Xwork[k];
+                    for (int p = Offp[k]; p < pend; p++)
                     {
-                        int r = Numeric->Offi[p] * nr, s = k * nr;
+                        int r = Offi[p] * nr, s = k * nr;
                         for (int j = 0; j < nr; j++)
                         {
 #pragma HLS LOOP_TRIPCOUNT max = 16
-                            // #pragma HLS DEPENDENCE variable = Numeric->Xwork type = intra dependent = false
-                            // #pragma HLS DEPENDENCE variable = Numeric->Xwork type = inter dependent = false
-                            // #pragma HLS unroll factor = 16
-                            Numeric->Xwork[r + j] -= Numeric->Offx[p] * Numeric->Xwork[s + j];
+#pragma HLS DEPENDENCE variable = Xwork type = intra false
+#pragma HLS DEPENDENCE variable = Xwork type = inter false
+                             #pragma HLS unroll factor = 16
+                            Xwork[r + j] -= Offx[p] * Xwork[s + j];
                         }
                     }
                 }
@@ -194,15 +217,17 @@ int KLU_solve(
         /* permute the result, Bz  = Q*X */
         /* ------------------------------------------------------------------ */
 
-        for (int k = 0; k < Symbolic->n; k++)
+        for (int k = 0; k < n; k++)
         {
             for (int j = 0; j < nr; j++)
             {
 #pragma HLS LOOP_TRIPCOUNT max = 16
-                // #pragma HLS DEPENDENCE variable = Numeric->Xwork type = intra dependent = false
-                // #pragma HLS DEPENDENCE variable = Numeric->Xwork type = inter dependent = false
+#pragma HLS DEPENDENCE variable = Xwork type = intra false
+#pragma HLS DEPENDENCE variable = Xwork type = inter false
+#pragma HLS DEPENDENCE variable = B type = intra false
+#pragma HLS DEPENDENCE variable = B type = inter false
                 // #pragma HLS unroll factor = 16
-                B[Symbolic->Q[k] + n * j] = Numeric->Xwork[k * nr + j];
+                B[Q[k] + n * j] = Xwork[k * nr + j];
             }
         }
 
