@@ -42,27 +42,7 @@ int main(void)
     //     printf("P[%d]=%d,Q[%d]=%d,R[%d]=%d,Lnz[%d]=%lf\n", i, Symbolic.P[i], i, Symbolic.Q[i], i, Symbolic.R[i], i, Symbolic.Lnz[i]);
     printf("nblocks=%d,nzoff=%d,maxblock=%d,nnz=%d\n", Symbolic.nblocks, Symbolic.nzoff, Symbolic.maxblock, Symbolic.nz);
 
-    int nzoff1 = Symbolic.nzoff + 1, n1 = n + 1;
-    int lusize = n * n;
-
-    Numeric.n = Symbolic.n;
-    Numeric.nblocks = Symbolic.nblocks;
-    Numeric.nzoff = Symbolic.nzoff;
-    Numeric.Pnum = (int *)malloc(n * sizeof(int));
-    Numeric.Offp = (int *)malloc(n1 * sizeof(int));
-    Numeric.Offi = (int *)malloc(nzoff1 * sizeof(int));
-    Numeric.Offx = (double *)malloc(nzoff1 * sizeof(double));
-    Numeric.Lip = (int *)calloc(n, sizeof(int));
-    Numeric.Uip = (int *)malloc(n * sizeof(int));
-    Numeric.Llen = (int *)malloc(n * sizeof(int));
-    Numeric.Ulen = (int *)malloc(n * sizeof(int));
-    Numeric.LUsize = (int *)calloc(Symbolic.nblocks, sizeof(int));
-    Numeric.LUbx = (double *)calloc(lusize * 2, sizeof(double));
-    Numeric.Udiag = (double *)malloc(n * sizeof(double));
-    Numeric.Rs = (double *)malloc(n * sizeof(double));
-    Numeric.Pinv = (int *)malloc(n * sizeof(int));
-    Numeric.worksize = n * sizeof(double) + MAX(n * 3 * sizeof(double), Symbolic.maxblock * 6 * sizeof(int));
-    Numeric.Xwork = (double *)calloc(n * nrhs, sizeof(double));
+    Numeric.Xwork = (double *)malloc(n * nrhs * sizeof(double));
 
     const int runtime = 10;
     std::chrono::steady_clock::time_point begin[3], end[3];

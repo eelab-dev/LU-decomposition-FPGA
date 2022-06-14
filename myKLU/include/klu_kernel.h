@@ -171,6 +171,7 @@
 #define KLU_symbolic klu_symbolic
 #define KLU_numeric klu_numeric
 #define KLU_common klu_common
+#define KLU_realloc klu_realloc
 
 #define BTF_order btf_order
 #define BTF_strongcomp btf_strongcomp
@@ -371,6 +372,17 @@ extern "C"
 
     int klu_defaults(
         klu_common *Common);
+
+    void *klu_realloc /* returns pointer to reallocated block */
+        (
+            /* ---- input ---- */
+            size_t nnew, /* requested # of items in reallocated block */
+            size_t nold, /* current size of block, in # of items */
+            size_t size, /* size of each item */
+            /* ---- in/out --- */
+            void *p, /* block of memory to realloc */
+            /* --------------- */
+            klu_common *Common);
 
 #ifdef __cplusplus
 }

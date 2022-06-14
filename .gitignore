@@ -6,6 +6,7 @@
 !thesis/ee4thesis.pdf
 
 Matrix_Sample/*.mtx
+note.ipynb
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/c,c++,visualstudiocode,latex

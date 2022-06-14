@@ -8,7 +8,7 @@ static void KLU_lsolve(
     double LU[],
     int nrhs,
     /* right-hand-side on input, solution to Lx=b on output */
-    double X[][16])
+    double X[])
 {
 klu_lsolve_loop:
     for (int k = 0; k < n; k++)
@@ -23,7 +23,7 @@ klu_lsolve_loop:
             double lik = Lx[p];
             /* X [Li [p]] -= Lx [p] * x [0] ; */
             for (int j = 0; j < nrhs; j++)
-                MULT_SUB(X[r][j], lik, X[s][j]);
+                MULT_SUB(X[r + j], lik, X[s + j]);
         }
     }
 }
@@ -46,7 +46,7 @@ static void KLU_usolve(
     double Udiag[],
     int nrhs,
     /* right-hand-side on input, solution to Ux=b on output */
-    double X[][16])
+    double X[])
 {
     double x[nrhs];
 klu_usolve_loop:
@@ -59,8 +59,8 @@ klu_usolve_loop:
         /* x [0] = X [k] / Udiag [k] ; */
         for (int j = 0; j < nrhs; j++)
         {
-            DIV(x[j], X[r][j], Udiag[k]);
-            X[r][j] = x[j];
+            DIV(x[j], X[r + j], Udiag[k]);
+            X[r + j] = x[j];
         }
 
         for (int p = 0; p < len; p++)
@@ -69,7 +69,7 @@ klu_usolve_loop:
             double uik = Ux[p];
             /* X [Ui [p]] -= Ux [p] * x [0] ; */
             for (int j = 0; j < nrhs; j++)
-                MULT_SUB(X[s][j], uik, x[j]);
+                MULT_SUB(X[s + j], uik, x[j]);
         }
     }
 }
@@ -87,8 +87,6 @@ int KLU_solve(
     /* --------------- */
     KLU_common *Common)
 {
-    printf("Here\n");
-    auto Xwork2 = new double[65536][16];
     /* ---------------------------------------------------------------------- */
     /* check inputs */
     /* ---------------------------------------------------------------------- */
@@ -127,7 +125,7 @@ int KLU_solve(
         for (int k = 0; k < Symbolic->n; k++)
         {
             for (int j = 0; j < nrhs; j++)
-                Xwork2[k * nrhs][j] = B[Numeric->Pnum[k] + n * j];
+                Numeric->Xwork[k * nrhs + j] = B[Numeric->Pnum[k] + n * j];
         }
     }
     else
@@ -135,7 +133,7 @@ int KLU_solve(
         for (int k = 0; k < Symbolic->n; k++)
         {
             for (int j = 0; j < nrhs; j++)
-                SCALE_DIV_ASSIGN(Xwork2[k * nrhs][j], B[Numeric->Pnum[k] + n * j], Numeric->Rs[k]);
+                SCALE_DIV_ASSIGN(Numeric->Xwork[k * nrhs + j], B[Numeric->Pnum[k] + n * j], Numeric->Rs[k]);
         }
     }
 
@@ -162,12 +160,12 @@ klu_solve_loop:
             int r = k1 * nrhs;
             double s = Numeric->Udiag[k1];
             for (int j = 0; j < nrhs; j++)
-                DIV(Xwork2[r][j], Xwork2[r][j], s);
+                DIV(Numeric->Xwork[r + j], Numeric->Xwork[r + j], s);
         }
         else
         {
-            KLU_lsolve(nk, Numeric->Lip + k1, Numeric->Llen + k1, &Numeric->LUbx[Numeric->LUsize[block]], nrhs, Xwork2 + k1);
-            KLU_usolve(nk, Numeric->Uip + k1, Numeric->Ulen + k1, &Numeric->LUbx[Numeric->LUsize[block]], Numeric->Udiag + k1, nrhs, Xwork2 + k1);
+            KLU_lsolve(nk, Numeric->Lip + k1, Numeric->Llen + k1, &Numeric->LUbx[Numeric->LUsize[block]], nrhs, Numeric->Xwork + nrhs * k1);
+            KLU_usolve(nk, Numeric->Uip + k1, Numeric->Ulen + k1, &Numeric->LUbx[Numeric->LUsize[block]], Numeric->Udiag + k1, nrhs, Numeric->Xwork + nrhs * k1);
         }
 
         /* -------------------------------------------------------------- */
@@ -183,7 +181,7 @@ klu_solve_loop:
                 for (int p = Numeric->Offp[k]; p < pend; p++)
                 {
                     for (int j = 0; j < nrhs; j++)
-                        MULT_SUB(Xwork2[Numeric->Offi[p] * nrhs][j], Numeric->Offx[p], Xwork2[k * nrhs][j]);
+                        MULT_SUB(Numeric->Xwork[Numeric->Offi[p] * nrhs + j], Numeric->Offx[p], Numeric->Xwork[k * nrhs + j]);
                 }
             }
         }
@@ -196,7 +194,7 @@ klu_solve_loop:
     for (int k = 0; k < Symbolic->n; k++)
     {
         for (int j = 0; j < nrhs; j++)
-            B[Symbolic->Q[k] + n * j] = Xwork2[k * nrhs][j];
+            B[Symbolic->Q[k] + n * j] = Numeric->Xwork[k * nrhs + j];
     }
 
     /* ------------------------------------------------------------------ */
