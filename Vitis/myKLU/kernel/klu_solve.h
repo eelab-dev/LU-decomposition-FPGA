@@ -26,10 +26,10 @@ klu_lsolve_loop:
             double lik = Lx[p];
             for (int j = 0; j < nrhs; j++)
             {
-#pragma HLS LOOP_TRIPCOUNT max = 64
+#pragma HLS LOOP_TRIPCOUNT max = 32
 #pragma HLS DEPENDENCE variable = X type = intra false
 #pragma HLS DEPENDENCE variable = X type = inter false
-#pragma HLS UNROLL factor = 64
+#pragma HLS UNROLL factor = 32
                 X[r][j] -= lik * X[k][j];
             }
         }
@@ -67,10 +67,10 @@ klu_usolve_loop:
         double r = Udiag[k];
         for (int j = 0; j < nrhs; j++)
         {
-#pragma HLS LOOP_TRIPCOUNT max = 64
+#pragma HLS LOOP_TRIPCOUNT max = 32
 #pragma HLS DEPENDENCE variable = X type = intra false
 #pragma HLS DEPENDENCE variable = X type = inter false
-#pragma HLS UNROLL factor = 64
+#pragma HLS UNROLL factor = 32
             X[k][j] /= X[MAX_SIZE - 1 - k1][j] * r;
         }
 
@@ -82,10 +82,10 @@ klu_usolve_loop:
             /* X [Ui [p]] -= Ux [p] * x [0] ; */
             for (int j = 0; j < nrhs; j++)
             {
-#pragma HLS LOOP_TRIPCOUNT max = 64
+#pragma HLS LOOP_TRIPCOUNT max = 32
 #pragma HLS DEPENDENCE variable = X type = intra false
 #pragma HLS DEPENDENCE variable = X type = inter false
-#pragma HLS UNROLL factor = 64
+#pragma HLS UNROLL factor = 32
                 X[s][j] -= uik * X[k][j];
             }
         }
@@ -117,7 +117,7 @@ int KLU_solve(
 )
 {
     double Xwork[MAX_SIZE][MAX_RHS];
-#pragma HLS ARRAY_PARTITION variable = Xwork type = block factor = 64 dim = 2
+#pragma HLS ARRAY_PARTITION variable = Xwork type = block factor = 32 dim = 2
 
     for (int i = 0; i < MAX_RHS; i++)
     {
@@ -137,7 +137,7 @@ int KLU_solve(
         {
             for (int j = 0; j < nr; j++)
             {
-#pragma HLS LOOP_TRIPCOUNT max = 64
+#pragma HLS LOOP_TRIPCOUNT max = 32
                 Xwork[k][j] = B[Pnum[k] + n * j] / Rs[k];
             }
         }
@@ -164,10 +164,10 @@ int KLU_solve(
                 double s = Udiag[k1];
                 for (int j = 0; j < nr; j++)
                 {
-#pragma HLS LOOP_TRIPCOUNT max = 64
+#pragma HLS LOOP_TRIPCOUNT max = 32
 #pragma HLS DEPENDENCE variable = Xwork type = intra false
 #pragma HLS DEPENDENCE variable = Xwork type = inter false
-#pragma HLS UNROLL factor = 64
+#pragma HLS UNROLL factor = 32
                     Xwork[k1][j] /= Xwork[MAX_SIZE - 1][j] * s;
                 }
             }
@@ -191,10 +191,10 @@ int KLU_solve(
                         int r = Offi[p];
                         for (int j = 0; j < nr; j++)
                         {
-#pragma HLS LOOP_TRIPCOUNT max = 64
+#pragma HLS LOOP_TRIPCOUNT max = 32
 #pragma HLS DEPENDENCE variable = Xwork type = intra false
 #pragma HLS DEPENDENCE variable = Xwork type = inter false
-#pragma HLS UNROLL factor = 64
+#pragma HLS UNROLL factor = 32
                             Xwork[r][j] -= Offx[p] * Xwork[k][j];
                         }
                     }
@@ -210,7 +210,7 @@ int KLU_solve(
         {
             for (int j = 0; j < nr; j++)
             {
-#pragma HLS LOOP_TRIPCOUNT max = 64
+#pragma HLS LOOP_TRIPCOUNT max = 32
                 B[Q[k] + n * j] = Xwork[k][j];
             }
         }

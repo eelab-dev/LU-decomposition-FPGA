@@ -13,13 +13,15 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-
+#include <iostream>
 #include "xcl2.hpp"
 #include <algorithm>
 #include <vector>
 #include "klu_factor.h"
 #include "klu_solve.h"
 #include "mmio.h"
+
+auto constexpr num_cu = 2;
 
 int main(int argc, char **argv)
 {
@@ -33,7 +35,7 @@ int main(int argc, char **argv)
 
     cl_int err;
     cl::Context context;
-    cl::Kernel krnl_vector_add;
+    std::vector<cl::Kernel> krnl_lu(num_cu);
     cl::CommandQueue q;
     // Allocate Memory in Host Memory
     // When creating a buffer with user pointer (CL_MEM_USE_HOST_PTR), under the
@@ -66,48 +68,27 @@ int main(int argc, char **argv)
 
     if (read_sparse(filename, &n, Ap, Ai, Ax))
     {
-        printf("Error\n");
+        std::cout << "Error reading matrix file" << std::endl;
         return 1;
     }
 
     if (read_bmatrix(bmatrix, b, &nrhs))
     {
-        printf("Error bmatrix\n");
+        std::cout << "Error reading bmatrix file" << std::endl;
         return 1;
     }
 
-    printf("nrhs: %d, bnumber:%d\n", nrhs, b.size());
+    std::cout << "nrhs: " << nrhs << ", bnumber: " << b.size() << std::endl;
 
     std::vector<double> b2(b.begin(), b.end());
 
     klu_symbolic Symbolic;
     klu_numeric Numeric;
     klu_common Common;
-
     klu_defaults(&Common);
     Symbolic = *klu_analyze(n, Ap.data(), Ai.data(), &Common);
 
-    int nzoff1 = Symbolic.nzoff + 1, n1 = n + 1;
-    int lusize = n * n;
-
-    Numeric.n = Symbolic.n;
-    Numeric.nblocks = Symbolic.nblocks;
-    Numeric.nzoff = Symbolic.nzoff;
-    Numeric.Pnum = (int *)malloc(n * sizeof(int));
-    Numeric.Offp = (int *)malloc(n1 * sizeof(int));
-    Numeric.Offi = (int *)malloc(nzoff1 * sizeof(int));
-    Numeric.Offx = (double *)malloc(nzoff1 * sizeof(double));
-    Numeric.Lip = (int *)calloc(n, sizeof(int));
-    Numeric.Uip = (int *)malloc(n * sizeof(int));
-    Numeric.Llen = (int *)malloc(n * sizeof(int));
-    Numeric.Ulen = (int *)malloc(n * sizeof(int));
-    Numeric.LUsize = (int *)calloc(Symbolic.nblocks, sizeof(int));
-    Numeric.LUbx = (double *)calloc(lusize * 2, sizeof(double));
-    Numeric.Udiag = (double *)malloc(n * sizeof(double));
-    Numeric.Rs = (double *)malloc(n * sizeof(double));
-    Numeric.Pinv = (int *)malloc(n * sizeof(int));
-    Numeric.worksize = n * sizeof(double) + MAX(n * 3 * sizeof(double), Symbolic.maxblock * 6 * sizeof(int));
-    Numeric.Xwork = (double *)calloc(n * nrhs, sizeof(double));
+    Numeric.Xwork = (double *)malloc(n * nrhs * sizeof(double));
 
     klu_factor(Ap.data(), Ai.data(), Ax.data(), &Symbolic, &Numeric, &Common);
     klu_solve(&Symbolic, &Numeric, n, nrhs, b2.data(), &Common);
@@ -115,10 +96,14 @@ int main(int argc, char **argv)
     for (int i = 0; i < n; i++)
     {
         for (int j = 0; j < nrhs - 1; j++)
-            printf("x [%d,%d] = %g\t", i, j, b2[i + n * j]);
-        printf("x [%d,%d] = %g\n", i, nrhs - 1, b2[i + n * (nrhs - 1)]);
+            std::cout << "x [" << i << "," << j << "] = " << b2[i + n * j] << " ";
+
+        std::cout << "x [" << i << "," << nrhs - 1 << "] = " << b2[i + n * (nrhs - 1)] << std::endl;
+        if (i > 10)
+            break;
     }
 
+    // I/O data vectors
     std::vector<int, aligned_allocator<int>> R(Symbolic.R, Symbolic.R + n + 1),
         Q(Symbolic.Q, Symbolic.Q + n),
         Pnum(Numeric.Pnum, Numeric.Pnum + n),
@@ -138,6 +123,7 @@ int main(int argc, char **argv)
     // get_xil_devices() is a utility API which will find the xilinx
     // platforms and will return list of devices connected to Xilinx platform
     auto devices = xcl::get_xil_devices();
+
     // read_binary_file() is a utility API which will load the binaryFile
     // and will return the pointer to file buffer.
     auto fileBuf = xcl::read_binary_file(binaryFile);
@@ -148,7 +134,8 @@ int main(int argc, char **argv)
         auto device = devices[i];
         // Creating Context and Command Queue for selected Device
         OCL_CHECK(err, context = cl::Context(device, nullptr, nullptr, nullptr, &err));
-        OCL_CHECK(err, q = cl::CommandQueue(context, device, CL_QUEUE_PROFILING_ENABLE, &err));
+        OCL_CHECK(err, q = cl::CommandQueue(context, device, CL_QUEUE_PROFILING_ENABLE | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, &err));
+
         std::cout << "Trying to program device[" << i << "]: " << device.getInfo<CL_DEVICE_NAME>() << std::endl;
         cl::Program program(context, {device}, bins, nullptr, &err);
         if (err != CL_SUCCESS)
@@ -158,7 +145,11 @@ int main(int argc, char **argv)
         else
         {
             std::cout << "Device[" << i << "]: program successful!\n";
-            OCL_CHECK(err, krnl_vector_add = cl::Kernel(program, "lu", &err));
+            // Creating Kernel objects
+            for (int i = 0; i < num_cu; i++)
+            {
+                OCL_CHECK(err, krnl_lu[i] = cl::Kernel(program, "lu", &err));
+            }
             valid_device = true;
             break; // we break because we found a valid device
         }
@@ -169,60 +160,105 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
+    std::vector<cl::Buffer> buffer_in0(num_cu), buffer_in1(num_cu), buffer_in2(num_cu), buffer_in3(num_cu), buffer_in4(num_cu), buffer_in5(num_cu), buffer_in6(num_cu), buffer_in7(num_cu), buffer_in8(num_cu), buffer_in9(num_cu), buffer_in10(num_cu), buffer_in11(num_cu), buffer_in12(num_cu), buffer_in13(num_cu);
+    std::vector<cl::Buffer> buffer_inout(num_cu);
+
     // Allocate Buffer in Global Memory
     // Buffers are allocated using CL_MEM_USE_HOST_PTR for efficient memory and
     // Device-to-host communication
-    OCL_CHECK(err, cl::Buffer buffer_in0(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * R.size(), R.data(), &err));
-    OCL_CHECK(err, cl::Buffer buffer_in1(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Q.size(), Q.data(), &err));
-    OCL_CHECK(err, cl::Buffer buffer_in2(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Pnum.size(), Pnum.data(), &err));
-    OCL_CHECK(err, cl::Buffer buffer_in3(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(double) * Rs.size(), Rs.data(), &err));
-    OCL_CHECK(err, cl::Buffer buffer_in4(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Lip.size(), Lip.data(), &err));
-    OCL_CHECK(err, cl::Buffer buffer_in5(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Llen.size(), Llen.data(), &err));
-    OCL_CHECK(err, cl::Buffer buffer_in6(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(double) * LUbx.size(), LUbx.data(), &err));
-    OCL_CHECK(err, cl::Buffer buffer_in7(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * LUsize.size(), LUsize.data(), &err));
-    OCL_CHECK(err, cl::Buffer buffer_in8(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Uip.size(), Uip.data(), &err));
-    OCL_CHECK(err, cl::Buffer buffer_in9(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Ulen.size(), Ulen.data(), &err));
-    OCL_CHECK(err, cl::Buffer buffer_in10(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(double) * Udiag.size(), Udiag.data(), &err));
-    OCL_CHECK(err, cl::Buffer buffer_in11(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Offp.size(), Offp.data(), &err));
-    OCL_CHECK(err, cl::Buffer buffer_in12(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Offi.size(), Offi.data(), &err));
-    OCL_CHECK(err, cl::Buffer buffer_in13(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(double) * Offx.size(), Offx.data(), &err));
 
-    OCL_CHECK(err, cl::Buffer buffer_output(context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(double) * b.size(), b.data(), &err));
+    int chunk_size = 1;
+    if (nrhs > 1)
+        chunk_size = nrhs / num_cu;
 
-    OCL_CHECK(err, err = krnl_vector_add.setArg(0, buffer_in0));
-    OCL_CHECK(err, err = krnl_vector_add.setArg(1, buffer_in1));
-    OCL_CHECK(err, err = krnl_vector_add.setArg(2, buffer_in2));
-    OCL_CHECK(err, err = krnl_vector_add.setArg(3, buffer_in3));
-    OCL_CHECK(err, err = krnl_vector_add.setArg(4, buffer_in4));
-    OCL_CHECK(err, err = krnl_vector_add.setArg(5, buffer_in5));
-    OCL_CHECK(err, err = krnl_vector_add.setArg(6, buffer_in6));
-    OCL_CHECK(err, err = krnl_vector_add.setArg(7, buffer_in7));
-    OCL_CHECK(err, err = krnl_vector_add.setArg(8, buffer_in8));
-    OCL_CHECK(err, err = krnl_vector_add.setArg(9, buffer_in9));
-    OCL_CHECK(err, err = krnl_vector_add.setArg(10, buffer_in10));
-    OCL_CHECK(err, err = krnl_vector_add.setArg(11, buffer_in11));
-    OCL_CHECK(err, err = krnl_vector_add.setArg(12, buffer_in12));
-    OCL_CHECK(err, err = krnl_vector_add.setArg(13, buffer_in13));
+    std::cout << "chunk_size: " << chunk_size << std::endl;
 
-    OCL_CHECK(err, err = krnl_vector_add.setArg(14, n));
-    OCL_CHECK(err, err = krnl_vector_add.setArg(15, Numeric.lusize_sum));
-    OCL_CHECK(err, err = krnl_vector_add.setArg(16, Symbolic.nblocks));
-    OCL_CHECK(err, err = krnl_vector_add.setArg(17, nrhs));
+    for (int i = 0; i < num_cu; i++)
+    {
+        OCL_CHECK(err, buffer_in0[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * R.size(), R.data(), &err));
+        OCL_CHECK(err, buffer_in1[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Q.size(), Q.data(), &err));
+        OCL_CHECK(err, buffer_in2[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Pnum.size(), Pnum.data(), &err));
+        OCL_CHECK(err, buffer_in3[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(double) * Rs.size(), Rs.data(), &err));
+        OCL_CHECK(err, buffer_in4[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Lip.size(), Lip.data(), &err));
+        OCL_CHECK(err, buffer_in5[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Llen.size(), Llen.data(), &err));
+        OCL_CHECK(err, buffer_in6[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(double) * LUbx.size(), LUbx.data(), &err));
+        OCL_CHECK(err, buffer_in7[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * LUsize.size(), LUsize.data(), &err));
+        OCL_CHECK(err, buffer_in8[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Uip.size(), Uip.data(), &err));
+        OCL_CHECK(err, buffer_in9[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Ulen.size(), Ulen.data(), &err));
+        OCL_CHECK(err, buffer_in10[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(double) * Udiag.size(), Udiag.data(), &err));
+        OCL_CHECK(err, buffer_in11[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Offp.size(), Offp.data(), &err));
+        OCL_CHECK(err, buffer_in12[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Offi.size(), Offi.data(), &err));
+        OCL_CHECK(err, buffer_in13[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(double) * Offx.size(), Offx.data(), &err));
 
-    OCL_CHECK(err, err = krnl_vector_add.setArg(18, buffer_output));
+        if (nrhs > 1)
+        {
+            if (i == num_cu - 1)
+            {
+                OCL_CHECK(err, buffer_inout[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(double) * n * (nrhs - i * chunk_size), b.data() + i * n * chunk_size, &err));
+                OCL_CHECK(err, err = krnl_lu[i].setArg(17, nrhs - i * chunk_size));
+            }
+            else
+            {
+                OCL_CHECK(err, buffer_inout[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(double) * n * chunk_size, b.data() + i * n * chunk_size, &err));
+                OCL_CHECK(err, err = krnl_lu[i].setArg(17, chunk_size));
+            }
+        }
+        else
+        {
+            if (i)
+            {
+                OCL_CHECK(err, buffer_inout[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(double) * b.size(), b.data(), &err));
+                OCL_CHECK(err, err = krnl_lu[i].setArg(17, 0));
+            }
+            else
+            {
+                OCL_CHECK(err, buffer_inout[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(double) * b.size(), b.data(), &err));
+                OCL_CHECK(err, err = krnl_lu[i].setArg(17, 1));
+            }
+        }
+    }
 
-    // Copy input data to device global memory
-    OCL_CHECK(err, err = q.enqueueMigrateMemObjects({buffer_in0, buffer_in1, buffer_in2, buffer_in3, buffer_in4, buffer_in5, buffer_in6, buffer_in7, buffer_in8, buffer_in9, buffer_in10, buffer_in11, buffer_in12, buffer_in13, buffer_output}, 0 /* 0 means from host*/));
+    for (int i = 0; i < num_cu; i++)
+    {
+        OCL_CHECK(err, err = krnl_lu[i].setArg(0, buffer_in0[i]));
+        OCL_CHECK(err, err = krnl_lu[i].setArg(1, buffer_in1[i]));
+        OCL_CHECK(err, err = krnl_lu[i].setArg(2, buffer_in2[i]));
+        OCL_CHECK(err, err = krnl_lu[i].setArg(3, buffer_in3[i]));
+        OCL_CHECK(err, err = krnl_lu[i].setArg(4, buffer_in4[i]));
+        OCL_CHECK(err, err = krnl_lu[i].setArg(5, buffer_in5[i]));
+        OCL_CHECK(err, err = krnl_lu[i].setArg(6, buffer_in6[i]));
+        OCL_CHECK(err, err = krnl_lu[i].setArg(7, buffer_in7[i]));
+        OCL_CHECK(err, err = krnl_lu[i].setArg(8, buffer_in8[i]));
+        OCL_CHECK(err, err = krnl_lu[i].setArg(9, buffer_in9[i]));
+        OCL_CHECK(err, err = krnl_lu[i].setArg(10, buffer_in10[i]));
+        OCL_CHECK(err, err = krnl_lu[i].setArg(11, buffer_in11[i]));
+        OCL_CHECK(err, err = krnl_lu[i].setArg(12, buffer_in12[i]));
+        OCL_CHECK(err, err = krnl_lu[i].setArg(13, buffer_in13[i]));
 
-    // Launch the Kernel
-    // For HLS kernels global and local size is always (1,1,1). So, it is
-    // recommended
-    // to always use enqueueTask() for invoking HLS kernel
-    OCL_CHECK(err, err = q.enqueueTask(krnl_vector_add));
+        OCL_CHECK(err, err = krnl_lu[i].setArg(14, n));
+        OCL_CHECK(err, err = krnl_lu[i].setArg(15, Numeric.lusize_sum));
+        OCL_CHECK(err, err = krnl_lu[i].setArg(16, Symbolic.nblocks));
+
+        OCL_CHECK(err, err = krnl_lu[i].setArg(18, buffer_inout[i]));
+
+        // Copy input data to device global memory
+        OCL_CHECK(err, err = q.enqueueMigrateMemObjects({buffer_in0[i], buffer_in1[i], buffer_in2[i], buffer_in3[i], buffer_in4[i], buffer_in5[i], buffer_in6[i], buffer_in7[i], buffer_in8[i], buffer_in9[i], buffer_in10[i], buffer_in11[i], buffer_in12[i], buffer_in13[i], buffer_inout[i]}, 0)); /* 0 means from host*/
+    }
+    OCL_CHECK(err, err = q.finish());
+
+    for (int i = 0; i < num_cu; i++)
+    {
+        // Launch the kernel
+        OCL_CHECK(err, err = q.enqueueTask(krnl_lu[i]));
+    }
+    OCL_CHECK(err, err = q.finish());
 
     // Copy Result from Device Global Memory to Host Local Memory
-    OCL_CHECK(err, err = q.enqueueMigrateMemObjects({buffer_output}, CL_MIGRATE_MEM_OBJECT_HOST));
-    q.finish();
+    for (int i = 0; i < num_cu; i++)
+    {
+        OCL_CHECK(err, err = q.enqueueMigrateMemObjects({buffer_inout[i]}, CL_MIGRATE_MEM_OBJECT_HOST));
+    }
+    OCL_CHECK(err, err = q.finish());
     // OPENCL HOST CODE AREA END
 
     // Compare the results of the Device to the simulation
@@ -235,16 +271,15 @@ int main(int argc, char **argv)
             {
                 std::cout << "Mismatched result x[" << i << "][" << j << "]: CPU x[" << i << "][" << j << "]=" << b2[i + n * j] << ", FPGA x[" << i << "][" << j << "]=" << b[i + n * j] << std::endl;
                 match = false;
-                //            break;
             }
             else
             {
                 if (i > 10)
                     continue;
                 else if (j < nrhs - 1)
-                    printf("x[%d,%d] = %g\t", i, j, b[i + n * j]);
+                    std::cout << "x[" << i << "," << j << "] = " << b[i + n * j] << " ";
                 else
-                    printf("x[%d,%d] = %g\n", i, nrhs - 1, b[i + n * (nrhs - 1)]);
+                    std::cout << "x[" << i << "," << j << "] = " << b[i + n * j] << std::endl;
             }
         }
     }

@@ -961,6 +961,25 @@ void KLU_factor(
 {
     int oldcol, pend, oldrow, lnz = 0, unz = 0, newrow, poff, max_lnz_block = 1, max_unz_block = 1;
 
+    int nzoff1 = Symbolic->nzoff + 1;
+
+    Numeric->n = Symbolic->n;
+    Numeric->nblocks = Symbolic->nblocks;
+    Numeric->nzoff = Symbolic->nzoff;
+    Numeric->Pnum = (int *)malloc(Numeric->n * sizeof(int));
+    Numeric->Offp = (int *)malloc((Numeric->n + 1) * sizeof(int));
+    Numeric->Offi = (int *)malloc(nzoff1 * sizeof(int));
+    Numeric->Offx = (double *)malloc(nzoff1 * sizeof(double));
+    Numeric->Lip = (int *)malloc(Numeric->n * sizeof(int));
+    Numeric->Uip = (int *)malloc(Numeric->n * sizeof(int));
+    Numeric->Llen = (int *)malloc(Numeric->n * sizeof(int));
+    Numeric->Ulen = (int *)malloc(Numeric->n * sizeof(int));
+    Numeric->LUsize = (int *)calloc(Symbolic->nblocks, sizeof(int));
+    Numeric->LUbx = (double *)malloc(Numeric->n * Numeric->n * sizeof(double));
+    Numeric->Udiag = (double *)malloc(Numeric->n * sizeof(double));
+    Numeric->Rs = (double *)malloc(Numeric->n * sizeof(double));
+    Numeric->Pinv = (int *)malloc(Numeric->n * sizeof(int));
+
     Numeric->lusize_sum = 0;
     /* ---------------------------------------------------------------------- */
     /* initializations */
@@ -1157,13 +1176,6 @@ klu_factor_loop:
                          DUNITS(int, Usize) + DUNITS(double, Usize);
 
             int lnz_block, unz_block;
-
-            // int pinv[Symbolic->maxblock];
-            // int Stack[Symbolic->maxblock];
-            // int Flag[Symbolic->maxblock];
-            // int Ap_pos[Symbolic->maxblock];
-            // int Lpend[Symbolic->maxblock];
-            // int Pblock[Symbolic->maxblock];
 
             Numeric->LUsize[block] = KLU_kernel(nk, Ap, Ai, Ax, Symbolic->Q, lusize, pinv, Pblock, &Numeric->LUbx[Numeric->lusize_sum], Numeric->Udiag + k1, Numeric->Llen + k1, Numeric->Ulen + k1, Numeric->Lip + k1, Numeric->Uip + k1, &lnz_block, &unz_block, Numeric->Xwork, Stack, Flag, Ap_pos, Lpend, k1, Numeric->Pinv, Numeric->Rs, Numeric->Offp, Numeric->Offi, Numeric->Offx, Common);
             if (Common->status < KLU_OK || (Common->status == KLU_SINGULAR && Common->halt_if_singular))

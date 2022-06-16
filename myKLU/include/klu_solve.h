@@ -130,10 +130,21 @@ int KLU_solve(
     }
     else
     {
+        // for (int k = 0; k < Symbolic->n; k++)
+        // {
+        //     for (int j = 0; j < nrhs; j++)
+        //     {
+        //         std::swap(B[k * nrhs + j], B[Numeric->Pnum[k] + n * j]);
+        //     }
+        // }
+
         for (int k = 0; k < Symbolic->n; k++)
         {
             for (int j = 0; j < nrhs; j++)
+            {
                 SCALE_DIV_ASSIGN(Numeric->Xwork[k * nrhs + j], B[Numeric->Pnum[k] + n * j], Numeric->Rs[k]);
+                // printf("Xwork[%d] = %f\n", k * nrhs + j, Numeric->Xwork[k * nrhs + j]);
+            }
         }
     }
 
