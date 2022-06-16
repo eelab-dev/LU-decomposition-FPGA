@@ -55,13 +55,13 @@ The factorisation phase of the LU decomposition is implemented on the CPU and th
 
 \subsection{HLS Configuration}
 \begin{itemize}
-    \item \textit{#pragma HLS ARRAY_PARTITION variable = Xwork type = block factor = 32 dim = 2}\\
+    \item \textit{\# pragma HLS ARRAY\textunderscore PARTITION variable = Xwork type = block factor = 32 dim = 2}\\
     An array that is implemented in the BRAM may subject to the limit port access, which prevent the parallel access to the same array. A dual-port RAM can also allow two simultaneous access in one clock cycle.Therefore, arrays which are implemented as memory or memory ports can frequently create performance bottlenecks.
 
     With array partition, it is easier to implement the vectorisation optimisation, which typically requires parallel access to the same array.
 
-    \item \textit{#pragma HLS UNROLL factor = 32}\\
-    Loop unrolling can create multiple separate operations instead of a single set of operations. The \emph{UNROLL} pragma changes loops by duplicating the loop body in the \acrshort{RTL} design, allowing part of or entire loop iterations to run in parallel. By default, loops in C/C++ functions are kept rolled.  Synthesis builds the logic for one iteration of the loop when loops are rolled, and the RTL design executes this logic in order for each iteration of the loop. The loop induction variable specifies the number of iterations for which the loop should be run. Logic inside the loop body, such as break conditions or changes to a loop exit variable, can also affect the number of iterations. The \emph{UNROLL} pragma can be used to increase data access and throughput.
+    \item \textit{\# pragma HLS UNROLL factor = 32}\\
+    Loop unrolling can create multiple separate operations instead of a single set of operations. The \emph{UNROLL} pragma changes loops by duplicating the loop body in the RTL design, allowing part of or entire loop iterations to run in parallel. By default, loops in C/C++ functions are kept rolled.  Synthesis builds the logic for one iteration of the loop when loops are rolled, and the RTL design executes this logic in order for each iteration of the loop. The loop induction variable specifies the number of iterations for which the loop should be run. Logic inside the loop body, such as break conditions or changes to a loop exit variable, can also affect the number of iterations. The \emph{UNROLL} pragma can be used to increase data access and throughput.
 \end{itemize}
 
 \section{Results}
