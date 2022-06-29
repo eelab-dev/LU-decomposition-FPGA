@@ -694,14 +694,13 @@ int read_sparse(std::string filename, int *n, std::vector<int, T> &Ap, std::vect
 	{
 		Ap[i] = temp2;
 		temp2 += temp[i];
-		temp[i] = Ap[i]; /* also copy p[0..n-1] back into c[0..n-1]*/
+		temp[i] = Ap[i];
 	}
 	Ap[M] = nz;
 
 	for (int k = 0, p; k < nz; k++)
 	{
-		Ai[p = temp[J[k]]++] = I[k]; /* A(i,j) is the pth entry in C */
-									 // if (mtx->Ax)
+		Ai[p = temp[J[k]]++] = I[k];
 		Ax[p] = val[k];
 	}
 
@@ -728,7 +727,6 @@ int read_sparse(std::string filename, int *n, std::vector<int, T> &Ap, std::vect
 		}
 
 		nz = I.size();
-		// printf("nz=%d\n", nz);
 		std::fill(temp.begin(), temp.end(), 0);
 		Ai.resize(nz);
 		Ax.resize(nz);
@@ -739,29 +737,16 @@ int read_sparse(std::string filename, int *n, std::vector<int, T> &Ap, std::vect
 		{
 			Ap[i] = temp2;
 			temp2 += temp[i];
-			temp[i] = Ap[i]; /* also copy p[0..n-1] back into c[0..n-1]*/
+			temp[i] = Ap[i];
 		}
 		Ap[M] = nz;
 
 		for (int k = 0, p; k < nz; k++)
 		{
-			Ai[p = temp[J[k]]++] = I[k]; /* A(i,j) is the pth entry in C */
-										 // if (mtx->Ax)
+			Ai[p = temp[J[k]]++] = I[k];
 			Ax[p] = val[k];
 		}
 	}
-
-	/************************/
-	/* now write out matrix */
-	/************************/
-	// mm_write_banner(stdout, matcode);
-	// mm_write_mtx_crd_size(stdout, M, N, nz);
-	// for (int i = 0; i < nz; i++)
-	// 	fprintf(stdout, "%d %d %20.19g\n", I[i] + 1, J[i] + 1, val[i]);
-	// for (int i = 0; i <= M; i++)
-	// 	printf("Ap[%d]=%d\n", i, Ap[i]);
-	// for (int i = 0; i < nz; i++)
-	// 	printf("Ai[%d]=%d\tAx[%d]=%lf\n", i, Ai[i], i, Ax[i]);
 
 	return 0;
 }
@@ -864,20 +849,6 @@ int read_bmatrix(std::string filename, std::vector<double, T> &b, int *bsize)
 
 	if (f != stdin)
 		fclose(f);
-
-	/************************/
-	/* now write out matrix */
-	/************************/
-	// mm_write_banner(stdout, matcode);
-	// mm_write_mtx_crd_size(stdout, M, N, nz);
-	// for (int i = 0; i < M; i++)
-	// {
-	// 	std::cout << i << ": ";
-	// 	for (int j = 0; j < N; j++)
-	// 		std::cout << b[i + M * j] << "\t";
-
-	// 	std::cout << std::endl;
-	// }
 
 	return 0;
 }

@@ -16,7 +16,7 @@
 #endif
 
 #define MAX_SIZE 2048
-#define MAX_RHS 32
+#define MAX_RHS 16
 #define MAX_NNZ 16384
 
 #ifndef NPRINT

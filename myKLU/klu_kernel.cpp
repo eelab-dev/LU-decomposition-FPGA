@@ -9,6 +9,8 @@
 #include <chrono>
 #include <numeric>
 
+const int runtime = 10;
+
 int main(void)
 {
     std::string homeDir = getenv("HOME");
@@ -38,19 +40,15 @@ int main(void)
     klu_defaults(&Common);
     Symbolic = *klu_analyze(n, Ap.data(), Ai.data(), &Common);
 
-    // for (int i = 0; i < n; i++)
-    //     printf("P[%d]=%d,Q[%d]=%d,R[%d]=%d,Lnz[%d]=%lf\n", i, Symbolic.P[i], i, Symbolic.Q[i], i, Symbolic.R[i], i, Symbolic.Lnz[i]);
-    printf("nblocks=%d,nzoff=%d,maxblock=%d,nnz=%d\n", Symbolic.nblocks, Symbolic.nzoff, Symbolic.maxblock, Symbolic.nz);
+    std::cout << "nblocks=" << Symbolic.nblocks << ",nzoff=" << Symbolic.nzoff << ",maxblock=" << Symbolic.maxblock << ",nnz=" << Symbolic.nz << std::endl;
 
     Numeric.Xwork = (double *)malloc(n * nrhs * sizeof(double));
 
-    const int runtime = 10;
     std::chrono::steady_clock::time_point begin[3], end[3];
-    long total[3] = {0};
+    long total[3] = {0, 0, 0};
 
     for (int i = 0; i < runtime; i++)
     {
-        // std::iota(b.begin(), b.end(), 0);
         read_bmatrix(bmatrix, b, &nrhs);
 
         begin[1] = std::chrono::steady_clock::now();
@@ -67,13 +65,13 @@ int main(void)
     for (int i = 0; i < n; i++)
     {
         for (int j = 0; j < nrhs - 1; j++)
-            printf("x[%d,%d] = %g\t", i, j, b[i + n * j]);
-        printf("x[%d,%d] = %g\n", i, nrhs - 1, b[i + n * (nrhs - 1)]);
+            std::cout << "x[" << i << "," << j << "] = " << b[i + n * j] << "\t";
+        std::cout << "x[" << i << "," << nrhs - 1 << "] = " << b[i + n * (nrhs - 1)] << std::endl;
         if (i > 10)
             break;
     }
 
     std::cout << "Analyze time: " << total[0] / (float)runtime << "µs\nFactorization time: " << total[1] / (float)runtime << "µs\nSolving time: " << total[2] / (float)runtime << "µs" << std::endl;
-    printf("lusize=%d\n", Numeric.lusize_sum);
+
     return 0;
 }

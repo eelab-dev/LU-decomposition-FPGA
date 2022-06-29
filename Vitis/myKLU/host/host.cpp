@@ -21,7 +21,7 @@
 #include "klu_solve.h"
 #include "mmio.h"
 
-auto constexpr num_cu = 2;
+auto constexpr num_cu = 3;
 
 int main(int argc, char **argv)
 {
@@ -49,7 +49,7 @@ int main(int argc, char **argv)
     // ensure that user buffer is used when user create Buffer/Mem object with
     // CL_MEM_USE_HOST_PTR
     std::vector<int, aligned_allocator<int>> Ap, Ai;
-    std::vector<double, aligned_allocator<double>> Ax, b;
+    std::vector<double, aligned_allocator<double>> Ax, b_cpu;
 
     std::string homeDir = getenv("HOME");
 
@@ -72,15 +72,14 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    if (read_bmatrix(bmatrix, b, &nrhs))
+    if (read_bmatrix(bmatrix, b_cpu, &nrhs))
     {
         std::cout << "Error reading bmatrix file" << std::endl;
         return 1;
     }
 
-    std::cout << "nrhs: " << nrhs << ", bnumber: " << b.size() << std::endl;
-
-    std::vector<double> b2(b.begin(), b.end());
+    std::vector<double, aligned_allocator<double>> b2(b_cpu.begin(), b_cpu.end());
+    std::cout << "nrhs: " << nrhs << ", bnumber: " << b_cpu.size() << std::endl;
 
     klu_symbolic Symbolic;
     klu_numeric Numeric;
@@ -91,33 +90,54 @@ int main(int argc, char **argv)
     Numeric.Xwork = (double *)malloc(n * nrhs * sizeof(double));
 
     klu_factor(Ap.data(), Ai.data(), Ax.data(), &Symbolic, &Numeric, &Common);
-    klu_solve(&Symbolic, &Numeric, n, nrhs, b2.data(), &Common);
+    klu_solve(&Symbolic, &Numeric, n, nrhs, b_cpu.data(), &Common);
 
     for (int i = 0; i < n; i++)
     {
         for (int j = 0; j < nrhs - 1; j++)
-            std::cout << "x [" << i << "," << j << "] = " << b2[i + n * j] << " ";
+            std::cout << "x [" << i << "," << j << "] = " << b_cpu[i + n * j] << " ";
 
-        std::cout << "x [" << i << "," << nrhs - 1 << "] = " << b2[i + n * (nrhs - 1)] << std::endl;
+        std::cout << "x [" << i << "," << nrhs - 1 << "] = " << b_cpu[i + n * (nrhs - 1)] << std::endl;
         if (i > 10)
             break;
     }
 
+    // std::vector<int, aligned_allocator<int>> R(Symbolic.R, Symbolic.R + n + 1),
+    //     Q(Symbolic.Q, Symbolic.Q + n),
+    //     Pnum(Numeric.Pnum, Numeric.Pnum + n),
+    //     Lip(Numeric.Lip, Numeric.Lip + n),
+    //     Llen(Numeric.Llen, Numeric.Llen + n),
+    //     LUsize(Numeric.LUsize, Numeric.LUsize + n),
+    //     Uip(Numeric.Uip, Numeric.Uip + n),
+    //     Ulen(Numeric.Ulen, Numeric.Ulen + n),
+    //     Offp(Numeric.Offp, Numeric.Offp + n + 1),
+    //     Offi(Numeric.Offi, Numeric.Offi + Symbolic.nzoff);
+    // std::vector<double, aligned_allocator<double>> Rs(Numeric.Rs, Numeric.Rs + n),
+    //     LUbx(Numeric.LUbx, Numeric.LUbx + Numeric.lusize_sum),
+    //     Udiag(Numeric.Udiag, Numeric.Udiag + n),
+    //     Offx(Numeric.Offx, Numeric.Offx + Symbolic.nzoff);
+
     // I/O data vectors
-    std::vector<int, aligned_allocator<int>> R(Symbolic.R, Symbolic.R + n + 1),
-        Q(Symbolic.Q, Symbolic.Q + n),
-        Pnum(Numeric.Pnum, Numeric.Pnum + n),
-        Lip(Numeric.Lip, Numeric.Lip + n),
-        Llen(Numeric.Llen, Numeric.Llen + n),
-        LUsize(Numeric.LUsize, Numeric.LUsize + n),
-        Uip(Numeric.Uip, Numeric.Uip + n),
-        Ulen(Numeric.Ulen, Numeric.Ulen + n),
-        Offp(Numeric.Offp, Numeric.Offp + n + 1),
-        Offi(Numeric.Offi, Numeric.Offi + Symbolic.nzoff);
-    std::vector<double, aligned_allocator<double>> Rs(Numeric.Rs, Numeric.Rs + n),
-        LUbx(Numeric.LUbx, Numeric.LUbx + Numeric.lusize_sum),
-        Udiag(Numeric.Udiag, Numeric.Udiag + n),
-        Offx(Numeric.Offx, Numeric.Offx + Symbolic.nzoff);
+    std::vector<int, aligned_allocator<int>> int_lu;
+    std::vector<double, aligned_allocator<double>> double_lu;
+
+    int_lu.reserve(n * 9 + Symbolic.nzoff + 2);
+    int_lu.insert(int_lu.end(), Symbolic.Q, Symbolic.Q + n);
+    int_lu.insert(int_lu.end(), Numeric.Pnum, Numeric.Pnum + n);
+    int_lu.insert(int_lu.end(), Numeric.Lip, Numeric.Lip + n);
+    int_lu.insert(int_lu.end(), Numeric.Llen, Numeric.Llen + n);
+    int_lu.insert(int_lu.end(), Numeric.LUsize, Numeric.LUsize + n);
+    int_lu.insert(int_lu.end(), Numeric.Uip, Numeric.Uip + n);
+    int_lu.insert(int_lu.end(), Numeric.Ulen, Numeric.Ulen + n);
+    int_lu.insert(int_lu.end(), Symbolic.R, Symbolic.R + n + 1);
+    int_lu.insert(int_lu.end(), Numeric.Offp, Numeric.Offp + n + 1);
+    int_lu.insert(int_lu.end(), Numeric.Offi, Numeric.Offi + Symbolic.nzoff);
+
+    double_lu.reserve(n * 2 + Numeric.lusize_sum + Symbolic.nzoff);
+    double_lu.insert(double_lu.end(), Numeric.Rs, Numeric.Rs + n);
+    double_lu.insert(double_lu.end(), Numeric.Udiag, Numeric.Udiag + n);
+    double_lu.insert(double_lu.end(), Numeric.LUbx, Numeric.LUbx + Numeric.lusize_sum);
+    double_lu.insert(double_lu.end(), Numeric.Offx, Numeric.Offx + Symbolic.nzoff);
 
     // OPENCL HOST CODE AREA START
     // get_xil_devices() is a utility API which will find the xilinx
@@ -160,96 +180,119 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    std::vector<cl::Buffer> buffer_in0(num_cu), buffer_in1(num_cu), buffer_in2(num_cu), buffer_in3(num_cu), buffer_in4(num_cu), buffer_in5(num_cu), buffer_in6(num_cu), buffer_in7(num_cu), buffer_in8(num_cu), buffer_in9(num_cu), buffer_in10(num_cu), buffer_in11(num_cu), buffer_in12(num_cu), buffer_in13(num_cu);
+    OCL_CHECK(err, cl::Buffer buffer_in0(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * int_lu.size(), int_lu.data(), &err));
+    OCL_CHECK(err, cl::Buffer buffer_in1(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(double) * double_lu.size(), double_lu.data(), &err));
+    // OCL_CHECK(err, cl::Buffer buffer_in2(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Pnum.size(), Pnum.data(), &err));
+    // OCL_CHECK(err, cl::Buffer buffer_in3(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(double) * Rs.size(), Rs.data(), &err));
+    // OCL_CHECK(err, cl::Buffer buffer_in4(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Lip.size(), Lip.data(), &err));
+    // OCL_CHECK(err, cl::Buffer buffer_in5(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Llen.size(), Llen.data(), &err));
+    // OCL_CHECK(err, cl::Buffer buffer_in6(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(double) * LUbx.size(), LUbx.data(), &err));
+    // OCL_CHECK(err, cl::Buffer buffer_in7(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * LUsize.size(), LUsize.data(), &err));
+    // OCL_CHECK(err, cl::Buffer buffer_in8(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Uip.size(), Uip.data(), &err));
+    // OCL_CHECK(err, cl::Buffer buffer_in9(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Ulen.size(), Ulen.data(), &err));
+    // OCL_CHECK(err, cl::Buffer buffer_in10(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(double) * Udiag.size(), Udiag.data(), &err));
+    // OCL_CHECK(err, cl::Buffer buffer_in11(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Offp.size(), Offp.data(), &err));
+    // OCL_CHECK(err, cl::Buffer buffer_in12(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Offi.size(), Offi.data(), &err));
+    // OCL_CHECK(err, cl::Buffer buffer_in13(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(double) * Offx.size(), Offx.data(), &err));
+
     std::vector<cl::Buffer> buffer_inout(num_cu);
 
     // Allocate Buffer in Global Memory
     // Buffers are allocated using CL_MEM_USE_HOST_PTR for efficient memory and
     // Device-to-host communication
 
-    int chunk_size = 1;
-    if (nrhs > 1)
+    bool single_krnl;
+    int chunk_size;
+    std::vector<double, aligned_allocator<double>> b[num_cu];
+    if (nrhs >= num_cu)
+    {
         chunk_size = nrhs / num_cu;
+        single_krnl = false;
+        for (int i = 0; i < num_cu; i++)
+        {
+            if (i == num_cu - 1)
+            {
+                b[i].resize((nrhs - i * chunk_size) * n);
+                std::copy(b2.begin() + i * chunk_size * n, b2.end(), b[i].begin());
+            }
+            else
+            {
+                b[i].resize(chunk_size * n);
+                std::copy(b2.begin() + i * chunk_size * n, b2.begin() + (i + 1) * chunk_size * n, b[i].begin());
+            }
+        }
+    }
+    else
+    {
+        chunk_size = nrhs;
+        single_krnl = true;
+        b[0].resize(nrhs * n);
+        std::copy(b2.begin(), b2.end(), b[0].begin());
+    }
 
     std::cout << "chunk_size: " << chunk_size << std::endl;
 
     for (int i = 0; i < num_cu; i++)
     {
-        OCL_CHECK(err, buffer_in0[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * R.size(), R.data(), &err));
-        OCL_CHECK(err, buffer_in1[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Q.size(), Q.data(), &err));
-        OCL_CHECK(err, buffer_in2[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Pnum.size(), Pnum.data(), &err));
-        OCL_CHECK(err, buffer_in3[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(double) * Rs.size(), Rs.data(), &err));
-        OCL_CHECK(err, buffer_in4[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Lip.size(), Lip.data(), &err));
-        OCL_CHECK(err, buffer_in5[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Llen.size(), Llen.data(), &err));
-        OCL_CHECK(err, buffer_in6[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(double) * LUbx.size(), LUbx.data(), &err));
-        OCL_CHECK(err, buffer_in7[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * LUsize.size(), LUsize.data(), &err));
-        OCL_CHECK(err, buffer_in8[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Uip.size(), Uip.data(), &err));
-        OCL_CHECK(err, buffer_in9[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Ulen.size(), Ulen.data(), &err));
-        OCL_CHECK(err, buffer_in10[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(double) * Udiag.size(), Udiag.data(), &err));
-        OCL_CHECK(err, buffer_in11[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Offp.size(), Offp.data(), &err));
-        OCL_CHECK(err, buffer_in12[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Offi.size(), Offi.data(), &err));
-        OCL_CHECK(err, buffer_in13[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(double) * Offx.size(), Offx.data(), &err));
-
-        if (nrhs > 1)
+        if (!single_krnl)
         {
+            OCL_CHECK(err, buffer_inout[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(double) * b[i].size(), b[i].data(), &err));
+
             if (i == num_cu - 1)
             {
-                OCL_CHECK(err, buffer_inout[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(double) * n * (nrhs - i * chunk_size), b.data() + i * n * chunk_size, &err));
-                OCL_CHECK(err, err = krnl_lu[i].setArg(17, nrhs - i * chunk_size));
+                OCL_CHECK(err, err = krnl_lu[i].setArg(5, nrhs - i * chunk_size));
             }
             else
             {
-                OCL_CHECK(err, buffer_inout[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(double) * n * chunk_size, b.data() + i * n * chunk_size, &err));
-                OCL_CHECK(err, err = krnl_lu[i].setArg(17, chunk_size));
+                OCL_CHECK(err, err = krnl_lu[i].setArg(5, chunk_size));
             }
         }
         else
         {
-            if (i)
-            {
-                OCL_CHECK(err, buffer_inout[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(double) * b.size(), b.data(), &err));
-                OCL_CHECK(err, err = krnl_lu[i].setArg(17, 0));
-            }
-            else
-            {
-                OCL_CHECK(err, buffer_inout[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(double) * b.size(), b.data(), &err));
-                OCL_CHECK(err, err = krnl_lu[i].setArg(17, 1));
-            }
+            OCL_CHECK(err, buffer_inout[i] = cl::Buffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(double) * b[i].size(), b[i].data(), &err));
+            OCL_CHECK(err, err = krnl_lu[i].setArg(5, nrhs));
+            break;
         }
     }
 
     for (int i = 0; i < num_cu; i++)
     {
-        OCL_CHECK(err, err = krnl_lu[i].setArg(0, buffer_in0[i]));
-        OCL_CHECK(err, err = krnl_lu[i].setArg(1, buffer_in1[i]));
-        OCL_CHECK(err, err = krnl_lu[i].setArg(2, buffer_in2[i]));
-        OCL_CHECK(err, err = krnl_lu[i].setArg(3, buffer_in3[i]));
-        OCL_CHECK(err, err = krnl_lu[i].setArg(4, buffer_in4[i]));
-        OCL_CHECK(err, err = krnl_lu[i].setArg(5, buffer_in5[i]));
-        OCL_CHECK(err, err = krnl_lu[i].setArg(6, buffer_in6[i]));
-        OCL_CHECK(err, err = krnl_lu[i].setArg(7, buffer_in7[i]));
-        OCL_CHECK(err, err = krnl_lu[i].setArg(8, buffer_in8[i]));
-        OCL_CHECK(err, err = krnl_lu[i].setArg(9, buffer_in9[i]));
-        OCL_CHECK(err, err = krnl_lu[i].setArg(10, buffer_in10[i]));
-        OCL_CHECK(err, err = krnl_lu[i].setArg(11, buffer_in11[i]));
-        OCL_CHECK(err, err = krnl_lu[i].setArg(12, buffer_in12[i]));
-        OCL_CHECK(err, err = krnl_lu[i].setArg(13, buffer_in13[i]));
+        OCL_CHECK(err, err = krnl_lu[i].setArg(0, buffer_in0));
+        OCL_CHECK(err, err = krnl_lu[i].setArg(1, buffer_in1));
+        // OCL_CHECK(err, err = krnl_lu[i].setArg(2, buffer_in2));
+        // OCL_CHECK(err, err = krnl_lu[i].setArg(3, buffer_in3));
+        // OCL_CHECK(err, err = krnl_lu[i].setArg(4, buffer_in4));
+        // OCL_CHECK(err, err = krnl_lu[i].setArg(5, buffer_in5));
+        // OCL_CHECK(err, err = krnl_lu[i].setArg(6, buffer_in6));
+        // OCL_CHECK(err, err = krnl_lu[i].setArg(7, buffer_in7));
+        // OCL_CHECK(err, err = krnl_lu[i].setArg(8, buffer_in8));
+        // OCL_CHECK(err, err = krnl_lu[i].setArg(9, buffer_in9));
+        // OCL_CHECK(err, err = krnl_lu[i].setArg(10, buffer_in10));
+        // OCL_CHECK(err, err = krnl_lu[i].setArg(11, buffer_in11));
+        // OCL_CHECK(err, err = krnl_lu[i].setArg(12, buffer_in12));
+        // OCL_CHECK(err, err = krnl_lu[i].setArg(13, buffer_in13));
 
-        OCL_CHECK(err, err = krnl_lu[i].setArg(14, n));
-        OCL_CHECK(err, err = krnl_lu[i].setArg(15, Numeric.lusize_sum));
-        OCL_CHECK(err, err = krnl_lu[i].setArg(16, Symbolic.nblocks));
+        OCL_CHECK(err, err = krnl_lu[i].setArg(2, n));
+        OCL_CHECK(err, err = krnl_lu[i].setArg(3, Numeric.lusize_sum));
+        OCL_CHECK(err, err = krnl_lu[i].setArg(4, Symbolic.nblocks));
 
-        OCL_CHECK(err, err = krnl_lu[i].setArg(18, buffer_inout[i]));
+        OCL_CHECK(err, err = krnl_lu[i].setArg(6, buffer_inout[i]));
 
         // Copy input data to device global memory
-        OCL_CHECK(err, err = q.enqueueMigrateMemObjects({buffer_in0[i], buffer_in1[i], buffer_in2[i], buffer_in3[i], buffer_in4[i], buffer_in5[i], buffer_in6[i], buffer_in7[i], buffer_in8[i], buffer_in9[i], buffer_in10[i], buffer_in11[i], buffer_in12[i], buffer_in13[i], buffer_inout[i]}, 0)); /* 0 means from host*/
+        OCL_CHECK(err, err = q.enqueueMigrateMemObjects({buffer_inout[i]}, 0)); /* 0 means from host*/
+
+        if (single_krnl)
+            break;
     }
+    OCL_CHECK(err, err = q.enqueueMigrateMemObjects({buffer_in0, buffer_in1}, 0));
     OCL_CHECK(err, err = q.finish());
 
     for (int i = 0; i < num_cu; i++)
     {
         // Launch the kernel
         OCL_CHECK(err, err = q.enqueueTask(krnl_lu[i]));
+        if (single_krnl)
+            break;
     }
     OCL_CHECK(err, err = q.finish());
 
@@ -257,6 +300,8 @@ int main(int argc, char **argv)
     for (int i = 0; i < num_cu; i++)
     {
         OCL_CHECK(err, err = q.enqueueMigrateMemObjects({buffer_inout[i]}, CL_MIGRATE_MEM_OBJECT_HOST));
+        if (single_krnl)
+            break;
     }
     OCL_CHECK(err, err = q.finish());
     // OPENCL HOST CODE AREA END
@@ -267,9 +312,11 @@ int main(int argc, char **argv)
     {
         for (int j = 0; j < nrhs; j++)
         {
-            if (std::abs(b2[i + n * j] - b[i + n * j]) > 1e-5)
+            int idx = j / chunk_size < num_cu ? j / chunk_size : num_cu - 1;
+            int idy = i + n * (j / chunk_size < num_cu ? j % chunk_size : j + 1 - chunk_size * num_cu);
+            if (std::abs(b_cpu[i + n * j] - b[idx][idy]) > 1e-5)
             {
-                std::cout << "Mismatched result x[" << i << "][" << j << "]: CPU x[" << i << "][" << j << "]=" << b2[i + n * j] << ", FPGA x[" << i << "][" << j << "]=" << b[i + n * j] << std::endl;
+                std::cout << "Mismatched result x[" << i << "][" << j << "]: CPU x[" << i << "][" << j << "]=" << b_cpu[i + n * j] << ", FPGA x[" << idx << "][" << idy << "]=" << b[idx][idy] << std::endl;
                 match = false;
             }
             else
@@ -277,9 +324,9 @@ int main(int argc, char **argv)
                 if (i > 10)
                     continue;
                 else if (j < nrhs - 1)
-                    std::cout << "x[" << i << "," << j << "] = " << b[i + n * j] << " ";
+                    std::cout << "x[" << i << "," << j << "] = " << b[idx][idy] << " ";
                 else
-                    std::cout << "x[" << i << "," << j << "] = " << b[i + n * j] << std::endl;
+                    std::cout << "x[" << i << "," << j << "] = " << b[idx][idy] << std::endl;
             }
         }
     }

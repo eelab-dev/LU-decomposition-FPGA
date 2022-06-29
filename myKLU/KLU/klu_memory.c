@@ -6,7 +6,6 @@
  *
  * KLU_malloc                   malloc wrapper
  * KLU_free                     free wrapper
- * KLU_realloc                  realloc wrapper
  */
 
 #include "klu_kernel.h"
@@ -104,80 +103,4 @@ void *KLU_free /* always returns NULL */
     /* return NULL, and the caller should assign this to p.  This avoids
      * freeing the same pointer twice. */
     return (NULL);
-}
-
-/* ========================================================================== */
-/* === KLU_realloc ========================================================== */
-/* ========================================================================== */
-
-/* Wrapper around realloc routine (mxRealloc for a mexFunction).  Given a
- * pointer p to a block allocated by KLU_malloc, it changes the size of the
- * block pointed to by p to be MAX(1,nnew)*size in size.  It may return a
- * pointer different than p.  This should be used as (for a pointer to Int):
- *
- *      p = KLU_realloc (nnew, nold, sizeof (Int), p, Common) ;
- *
- * If p is NULL, this is the same as p = KLU_malloc (...).
- * A size of nnew=0 is treated as nnew=1.
- *
- * If the realloc fails, p is returned unchanged and Common->status is set
- * to KLU_OUT_OF_MEMORY.  If successful, Common->status is not modified,
- * and p is returned (possibly changed) and pointing to a large block of memory.
- *
- * Uses a pointer to the realloc routine (or its equivalent) defined in Common.
- */
-
-void *KLU_realloc /* returns pointer to reallocated block */
-    (
-        /* ---- input ---- */
-        size_t nnew, /* requested # of items in reallocated block */
-        size_t nold, /* old # of items */
-        size_t size, /* size of each item */
-        /* ---- in/out --- */
-        void *p, /* block of memory to realloc */
-        /* --------------- */
-        KLU_common *Common)
-{
-    void *pnew;
-    int ok = TRUE;
-
-    if (Common == NULL)
-    {
-        p = NULL;
-    }
-    else if (size == 0)
-    {
-        /* size must be > 0 */
-        Common->status = KLU_INVALID;
-        p = NULL;
-    }
-    else if (p == NULL)
-    {
-        /* A fresh object is being allocated. */
-        p = KLU_malloc(nnew, size, Common);
-    }
-    else if (nnew >= Int_MAX)
-    {
-        /* failure: nnew is too big.  Do not change p */
-        Common->status = KLU_TOO_LARGE;
-    }
-    else
-    {
-        /* The object exists, and is changing to some other nonzero size. */
-        /* call realloc, or its equivalent */
-        pnew = SuiteSparse_realloc(nnew, nold, size, p, &ok);
-        if (ok)
-        {
-            /* success: return the new p and change the size of the block */
-            Common->memusage += ((nnew - nold) * size);
-            Common->mempeak = MAX(Common->mempeak, Common->memusage);
-            p = pnew;
-        }
-        else
-        {
-            /* Do not change p, since it still points to allocated memory */
-            Common->status = KLU_OUT_OF_MEMORY;
-        }
-    }
-    return (p);
 }

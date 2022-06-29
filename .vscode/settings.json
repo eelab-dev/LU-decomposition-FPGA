@@ -74,7 +74,9 @@
         "klu_kernel.h": "c",
         "valarray": "cpp"
     },
-    "editor.formatOnSave": true,
+    "[cpp][c]": {
+        "editor.formatOnSave": true,
+    },
     "code-runner.runInTerminal": true,
     "code-runner.executorMap": {
         "cpp": "clang++ -std=c++17 -stdlib=libc++ -g '$fileName' -o '$fileNameWithoutExt' && ./'$fileNameWithoutExt'",

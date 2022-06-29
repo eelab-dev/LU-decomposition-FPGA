@@ -941,8 +941,6 @@ klu_kernel_factor_loop:
     newlusize = lup;
     ASSERT((int)newlusize <= lusize);
 
-    /* this cannot fail, since the block is descreasing in size */
-    // LU = KLU_realloc(newlusize, lusize, sizeof(double), LU, Common);
     p_LU = LU;
 
     return (newlusize);

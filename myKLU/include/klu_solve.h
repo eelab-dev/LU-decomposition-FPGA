@@ -34,8 +34,7 @@ klu_lsolve_loop:
 
 /* Solve Ux=b.  Assumes U is non-unit upper triangular and where the diagonal
  * entry is NOT stored.  Overwrites B with the solution X.  B is n-by-nrhs
- * and is stored in ROW form with row dimension nrhs.  nrhs must be in the
- * range 1 to 4. */
+ * and is stored in ROW form with row dimension nrhs. */
 
 static void KLU_usolve(
     /* inputs, not modified: */
@@ -82,9 +81,7 @@ int KLU_solve(
     int nrhs, /* number of right-hand-sides */
 
     /* right-hand-side on input, overwritten with solution to Ax=b on output */
-    double B[], /* size n*nrhs, in column-oriented form, with
-                 * leading dimension d. */
-    /* --------------- */
+    double B[], /* size n*nrhs, in column-oriented form */
     KLU_common *Common)
 {
     /* ---------------------------------------------------------------------- */
@@ -97,23 +94,7 @@ int KLU_solve(
     }
     Common->status = KLU_OK;
 
-    /* ---------------------------------------------------------------------- */
-    /* get the contents of the Symbolic object */
-    /* ---------------------------------------------------------------------- */
-
-    /* ---------------------------------------------------------------------- */
-    /* get the contents of the Numeric object */
-    /* ---------------------------------------------------------------------- */
-
     ASSERT(KLU_valid(Symbolic->n, Numeric->Offp, Numeric->Offi, Numeric->Offx));
-
-    /* ---------------------------------------------------------------------- */
-    /* solve in chunks of 4 columns at a time */
-    /* ---------------------------------------------------------------------- */
-
-    /* ------------------------------------------------------------------ */
-    /* get the size of the current chunk */
-    /* ------------------------------------------------------------------ */
 
     /* ------------------------------------------------------------------ */
     /* scale and permute the right hand side, X = P*(R\B) */
@@ -130,20 +111,11 @@ int KLU_solve(
     }
     else
     {
-        // for (int k = 0; k < Symbolic->n; k++)
-        // {
-        //     for (int j = 0; j < nrhs; j++)
-        //     {
-        //         std::swap(B[k * nrhs + j], B[Numeric->Pnum[k] + n * j]);
-        //     }
-        // }
-
         for (int k = 0; k < Symbolic->n; k++)
         {
             for (int j = 0; j < nrhs; j++)
             {
                 SCALE_DIV_ASSIGN(Numeric->Xwork[k * nrhs + j], B[Numeric->Pnum[k] + n * j], Numeric->Rs[k]);
-                // printf("Xwork[%d] = %f\n", k * nrhs + j, Numeric->Xwork[k * nrhs + j]);
             }
         }
     }
@@ -207,10 +179,6 @@ klu_solve_loop:
         for (int j = 0; j < nrhs; j++)
             B[Symbolic->Q[k] + n * j] = Numeric->Xwork[k * nrhs + j];
     }
-
-    /* ------------------------------------------------------------------ */
-    /* go to the next chunk of B */
-    /* ------------------------------------------------------------------ */
 
     return (TRUE);
 }
