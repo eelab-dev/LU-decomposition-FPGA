@@ -3,7 +3,6 @@
 !*.*
 !Makefile
 !latexmkrc
-!thesis/ee4thesis.pdf
 
 Matrix_Sample/*.mtx
 note.ipynb

@@ -72,6 +72,6 @@ int main(void)
     }
 
     std::cout << "Analyze time: " << total[0] / (float)runtime << "µs\nFactorization time: " << total[1] / (float)runtime << "µs\nSolving time: " << total[2] / (float)runtime << "µs" << std::endl;
-
+    std::cout << "nnz: " << Numeric.lusize_sum << std::endl;
     return 0;
 }

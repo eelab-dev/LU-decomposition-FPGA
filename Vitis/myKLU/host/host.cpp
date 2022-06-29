@@ -182,18 +182,6 @@ int main(int argc, char **argv)
 
     OCL_CHECK(err, cl::Buffer buffer_in0(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * int_lu.size(), int_lu.data(), &err));
     OCL_CHECK(err, cl::Buffer buffer_in1(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(double) * double_lu.size(), double_lu.data(), &err));
-    // OCL_CHECK(err, cl::Buffer buffer_in2(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Pnum.size(), Pnum.data(), &err));
-    // OCL_CHECK(err, cl::Buffer buffer_in3(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(double) * Rs.size(), Rs.data(), &err));
-    // OCL_CHECK(err, cl::Buffer buffer_in4(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Lip.size(), Lip.data(), &err));
-    // OCL_CHECK(err, cl::Buffer buffer_in5(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Llen.size(), Llen.data(), &err));
-    // OCL_CHECK(err, cl::Buffer buffer_in6(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(double) * LUbx.size(), LUbx.data(), &err));
-    // OCL_CHECK(err, cl::Buffer buffer_in7(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * LUsize.size(), LUsize.data(), &err));
-    // OCL_CHECK(err, cl::Buffer buffer_in8(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Uip.size(), Uip.data(), &err));
-    // OCL_CHECK(err, cl::Buffer buffer_in9(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Ulen.size(), Ulen.data(), &err));
-    // OCL_CHECK(err, cl::Buffer buffer_in10(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(double) * Udiag.size(), Udiag.data(), &err));
-    // OCL_CHECK(err, cl::Buffer buffer_in11(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Offp.size(), Offp.data(), &err));
-    // OCL_CHECK(err, cl::Buffer buffer_in12(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(int) * Offi.size(), Offi.data(), &err));
-    // OCL_CHECK(err, cl::Buffer buffer_in13(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(double) * Offx.size(), Offx.data(), &err));
 
     std::vector<cl::Buffer> buffer_inout(num_cu);
 
@@ -259,18 +247,6 @@ int main(int argc, char **argv)
     {
         OCL_CHECK(err, err = krnl_lu[i].setArg(0, buffer_in0));
         OCL_CHECK(err, err = krnl_lu[i].setArg(1, buffer_in1));
-        // OCL_CHECK(err, err = krnl_lu[i].setArg(2, buffer_in2));
-        // OCL_CHECK(err, err = krnl_lu[i].setArg(3, buffer_in3));
-        // OCL_CHECK(err, err = krnl_lu[i].setArg(4, buffer_in4));
-        // OCL_CHECK(err, err = krnl_lu[i].setArg(5, buffer_in5));
-        // OCL_CHECK(err, err = krnl_lu[i].setArg(6, buffer_in6));
-        // OCL_CHECK(err, err = krnl_lu[i].setArg(7, buffer_in7));
-        // OCL_CHECK(err, err = krnl_lu[i].setArg(8, buffer_in8));
-        // OCL_CHECK(err, err = krnl_lu[i].setArg(9, buffer_in9));
-        // OCL_CHECK(err, err = krnl_lu[i].setArg(10, buffer_in10));
-        // OCL_CHECK(err, err = krnl_lu[i].setArg(11, buffer_in11));
-        // OCL_CHECK(err, err = krnl_lu[i].setArg(12, buffer_in12));
-        // OCL_CHECK(err, err = krnl_lu[i].setArg(13, buffer_in13));
 
         OCL_CHECK(err, err = krnl_lu[i].setArg(2, n));
         OCL_CHECK(err, err = krnl_lu[i].setArg(3, Numeric.lusize_sum));
@@ -313,7 +289,7 @@ int main(int argc, char **argv)
         for (int j = 0; j < nrhs; j++)
         {
             int idx = j / chunk_size < num_cu ? j / chunk_size : num_cu - 1;
-            int idy = i + n * (j / chunk_size < num_cu ? j % chunk_size : j + 1 - chunk_size * num_cu);
+            int idy = i + n * (j / chunk_size < num_cu ? j % chunk_size : j - chunk_size * (num_cu - 1));
             if (std::abs(b_cpu[i + n * j] - b[idx][idy]) > 1e-5)
             {
                 std::cout << "Mismatched result x[" << i << "][" << j << "]: CPU x[" << i << "][" << j << "]=" << b_cpu[i + n * j] << ", FPGA x[" << idx << "][" << idy << "]=" << b[idx][idy] << std::endl;

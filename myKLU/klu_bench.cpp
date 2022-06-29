@@ -12,13 +12,13 @@
 
 int main(void)
 {
-    std::vector<std::string> filename = {"rajat11.mtx", "rajat14.mtx"};
-    std::string prefix = "../../Matrix_Sample/Bench/";
+    std::vector<std::string> filename = {"rajat11.mtx", "rajat14.mtx", "rajat05.mtx", "oscil_dcop_01.mtx", "fpga_dcop_01.mtx"};
+    std::string prefix = "../Matrix_Sample/Bench/";
 
     std::vector<int> Ap, Ai;
     std::vector<double> Ax, b;
-    int n, nrhs = 1000;
-    const int runtime = 1000;
+    int n, nrhs = 10;
+    const int runtime = 10;
     klu_common Common;
     std::ofstream data("Bench_Data.csv");
 
@@ -37,39 +37,18 @@ int main(void)
         klu_symbolic Symbolic;
         Symbolic = *klu_analyze(n, Ap.data(), Ai.data(), &Common);
 
-        printf("nblocks=%d,nzoff=%d,maxblock=%d,nnz=%d\n", Symbolic.nblocks, Symbolic.nzoff, Symbolic.maxblock, Symbolic.nz);
+        std::cout << "nblocks=" << Symbolic.nblocks << ",nzoff=" << Symbolic.nzoff << ",maxblock=" << Symbolic.maxblock << ",nnz=" << Symbolic.nz << std::endl;
 
-        int nzoff1 = Symbolic.nzoff + 1, n1 = n + 1;
-        int lusize = n * n;
-
-        Numeric.n = Symbolic.n;
-        Numeric.nblocks = Symbolic.nblocks;
-        Numeric.nzoff = Symbolic.nzoff;
-        Numeric.Pnum = (int *)malloc(n * sizeof(int));
-        Numeric.Offp = (int *)malloc(n1 * sizeof(int));
-        Numeric.Offi = (int *)malloc(nzoff1 * sizeof(int));
-        Numeric.Offx = (double *)malloc(nzoff1 * sizeof(double));
-        Numeric.Lip = (int *)calloc(n, sizeof(int));
-        Numeric.Uip = (int *)malloc(n * sizeof(int));
-        Numeric.Llen = (int *)malloc(n * sizeof(int));
-        Numeric.Ulen = (int *)malloc(n * sizeof(int));
-        Numeric.LUsize = (int *)calloc(Symbolic.nblocks, sizeof(int));
-        Numeric.LUbx = (double *)calloc(lusize * 2, sizeof(double));
-        Numeric.Udiag = (double *)malloc(n * sizeof(double));
-        Numeric.Rs = (double *)malloc(n * sizeof(double));
-        Numeric.Pinv = (int *)malloc(n * sizeof(int));
-        Numeric.worksize = n * sizeof(double) + MAX(n * 3 * sizeof(double), Symbolic.maxblock * 6 * sizeof(int));
-        Numeric.Xwork = (double *)calloc(n * nrhs, sizeof(double));
+        Numeric.Xwork = (double *)malloc(n * nrhs * sizeof(double));
 
         std::chrono::steady_clock::time_point begin[3], end[3];
-        long total[3] = {0};
+        long total[3] = {0, 0, 0};
 
         b.resize(n * nrhs);
 
         for (int i = 0; i < runtime; i++)
         {
             std::iota(b.begin(), b.end(), 0);
-            // read_bmatrix(bmatrix, b, &nrhs);
 
             begin[1] = std::chrono::steady_clock::now();
             klu_factor(Ap.data(), Ai.data(), Ax.data(), &Symbolic, &Numeric, &Common);
@@ -85,14 +64,18 @@ int main(void)
         for (int i = 0; i < n; i++)
         {
             for (int j = 0; j < nrhs - 1; j++)
+            {
+                if (j > 10)
+                    break;
                 printf("x[%d,%d] = %g\t", i, j, b[i + n * j]);
+            }
             printf("x[%d,%d] = %g\n", i, nrhs - 1, b[i + n * (nrhs - 1)]);
             if (i > 10)
                 break;
         }
 
         std::cout << "Analyze time: " << total[0] / (float)runtime << "µs\nFactorization time: " << total[1] / (float)runtime << "µs\nSolving time: " << total[2] / (float)runtime << "µs" << std::endl;
-        printf("lusize=%d\n", Numeric.lusize_sum);
+        std::cout << "lusize_sum=" << Numeric.lusize_sum << std::endl;
 
         data << total[0] / (float)runtime << "," << total[1] / (float)runtime << "," << total[2] / (float)runtime << std::endl;
     }
