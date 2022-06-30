@@ -8,8 +8,8 @@ Simulation Program with Integrated Circuit Emphasis or SPICE has now been widely
 
 ## Team and Project Information
 - University name: the University of Edinburgh
-- Supervisor: Dr Danial Chitnis ([chitnis@ed.ac.uk]((mailto:chitnis@ed.ac.uk)))
-- Student: Yichen Zhang ([s2130520@ed.ac.uk](mailto:s2130520@ed.ac.uk))
+- Supervisor: [Dr Danial Chitnis](https://github.com/danchitnis) (email: [d.chitnis@ed.ac.uk](mailto:d.chitnis@ed.ac.uk))
+- Student: [Yichen Zhang](https://github.com/psdzzm) (email: [s2130520@ed.ac.uk](mailto:s2130520@ed.ac.uk))
 - Board: Alveo U280 Data Center Accelerator Card
 - Software version: v2021.2
 - Video link: [https://youtu.be/Pth-gqt7MiY](https://youtu.be/Pth-gqt7MiY)
