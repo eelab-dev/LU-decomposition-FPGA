@@ -2,10 +2,10 @@
 !*/
 !*.*
 !Makefile
-!latexmkrc
 
 Matrix_Sample/*.mtx
-note.ipynb
+!Matrix_Sample/host.mtx
+!Matrix_Sample/host_b.mtx
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/c,c++,visualstudiocode,latex

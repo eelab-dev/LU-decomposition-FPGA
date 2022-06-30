@@ -42,5 +42,7 @@ Step 4: To run software version of LU decomposition, run `make klu_kernel`. The 
 Step 5: To benchmark it with matrices in directory ../Matrix_Sample, run `make klu_bench`
 
 For FPGA version:
-Step 1: Import the project to Vitis 2021.2
-Step 2: Build the project
+Step 1: Import the project to Vitis 2021.2.
+Step 2: Compile the CPU version above first, FPGA version requires the results from CPU version to verify that the results are correct.
+Step 3: Check the host C/C++ build settings. Ensure the include and lib settings are correct.
+Step 4: Build the project.

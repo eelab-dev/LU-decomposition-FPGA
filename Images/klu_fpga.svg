@@ -171,7 +171,7 @@
     ><text x="-28.5" xml:space="preserve" y="-5" style="stroke:none;"
       >Time/µs</text
     ></g
-    ><g transform="translate(115.2357,329.8062)" style="stroke-linecap:butt; fill:rgb(0,114,189); text-rendering:geometricPrecision; color-rendering:optimizeQuality; image-rendering:optimizeQuality; stroke:rgb(0,114,189); color-interpolation:linearRGB; stroke-width:2.0208;"
+    ><g transform="translate(115.2357,329.8062)" style="stroke-linecap:butt; fill:red; text-rendering:geometricPrecision; color-rendering:optimizeQuality; image-rendering:optimizeQuality; stroke:red; color-interpolation:linearRGB; stroke-width:2.0208;"
     ><path style="fill:none;" d="M-2.8579 -2.8579 L2.8579 2.8579 M-2.8579 2.8579 L2.8579 -2.8579"
       /><path d="M-2.8579 -2.8579 L2.8579 2.8579 M-2.8579 2.8579 L2.8579 -2.8579" style="fill:none;" transform="translate(14.0786,-6.6317)"
       /><path d="M-2.8579 -2.8579 L2.8579 2.8579 M-2.8579 2.8579 L2.8579 -2.8579" style="fill:none;" transform="translate(51.9343,5.3448)"
