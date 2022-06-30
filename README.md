@@ -15,15 +15,7 @@ Simulation Program with Integrated Circuit Emphasis or SPICE has now been widely
 - Video link: [https://youtu.be/b9Mz6KtWnw8](https://youtu.be/b9Mz6KtWnw8)
 - Report: [report_xohw22-006.pdf](report_xohw22-006.pdf)
 
-## File Organisation
-- Matrix_Sample/
-  Some matrices used for test.
-- myKLU/
-  Software version for KLU decomposition
-- Vitis/myKLU/host
-  Host code for FPGA implementation
-- Vitis/myKLU/host
-  Kernel code for FPGA implementation
+
 
 ## Experimental Results
 Matrices used for test
@@ -42,6 +34,19 @@ CPU
 FPGA
 
 For smaller matrices, FPGA tends to take longer time to solve per right hand side vectors than CPU. However, when the matrices becomes larger, FPGA tends to be faster than CPU, with a speedup of about 1.2.
+
+
+## File Organisation
+- Matrix_Sample/
+  Some matrices used for test.
+- myKLU/
+  Software version for KLU decomposition
+- Vitis/myKLU/host
+  Host code for FPGA implementation
+- Vitis/myKLU/host
+  Kernel code for FPGA implementation
+
+
 
 ## Build
 
