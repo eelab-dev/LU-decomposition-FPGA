@@ -21,7 +21,7 @@
 #include "klu_solve.h"
 #include "mmio.h"
 
-auto constexpr num_cu = 3;
+auto constexpr num_cu = 5;
 
 int main(int argc, char **argv)
 {

@@ -82,7 +82,6 @@
 #define KLU_free_symbolic klu_free_symbolic
 #define KLU_free klu_free
 #define KLU_malloc klu_malloc
-#define KLU_realloc klu_realloc
 
 #define BTF_order btf_order
 #define BTF_strongcomp btf_strongcomp

@@ -734,7 +734,7 @@ static int KLU_kernel /* final size of LU on output */
         /* --------------- */
         KLU_common *Common)
 {
-    double pivot = 0, abs_pivot, xsize, nunits;
+    double pivot = 0, abs_pivot, nunits;
     double *Ux;
     int *Li, *Ui;
     double *LU; /* LU factors (pattern and values) */

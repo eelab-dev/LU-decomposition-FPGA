@@ -13,18 +13,16 @@ const int runtime = 10;
 
 int main(void)
 {
-    std::string homeDir = getenv("HOME");
-
     std::string filename, bmatrix;
-    std::cout << "Left matrix file path (default - " << homeDir << "/beng-project/Matrix_Sample/host.mtx): ";
+    std::cout << "Left matrix file path (default - " << "./host.mtx): ";
     std::getline(std::cin, filename);
     if (filename.empty())
-        filename = homeDir + "/beng-project/Matrix_Sample/host.mtx";
+        filename = "./host.mtx";
 
-    std::cout << "B matrix file path (default - " << homeDir << "/beng-project/Matrix_Sample/host_b.mtx): ";
+    std::cout << "B matrix file path (default - " << "./host_b.mtx): ";
     std::getline(std::cin, bmatrix);
     if (bmatrix.empty())
-        bmatrix = homeDir + "/beng-project/Matrix_Sample/host_b.mtx";
+        bmatrix = "./host_b.mtx";
 
     std::vector<int> Ap, Ai;
     std::vector<double> Ax, b;
