@@ -8,8 +8,8 @@ Simulation Program with Integrated Circuit Emphasis or SPICE has now been widely
 
 ## Team and Project Information
 - University name: the University of Edinburgh
-- Supervisor: Dr Danial Chitnis ([chitnis@ed.ac.uk]((mailto:chitnis@ed.ac.uk)))
-- Student: Yichen Zhang ([s2130520@ed.ac.uk](mailto:s2130520@ed.ac.uk))
+- Supervisor: [Dr Danial Chitnis](https://github.com/danchitnis) (email: [d.chitnis@ed.ac.uk](mailto:d.chitnis@ed.ac.uk))
+- Student: [Yichen Zhang](https://github.com/psdzzm) (email: [s2130520@ed.ac.uk](mailto:s2130520@ed.ac.uk))
 - Board: Alveo U280 Data Center Accelerator Card
 - Software version: v2021.2
 - Video link: [https://youtu.be/Pth-gqt7MiY](https://youtu.be/Pth-gqt7MiY)
@@ -42,3 +42,24 @@ CPU
 FPGA
 
 For smaller matrices, FPGA tends to take longer time to solve per right hand side vectors than CPU. However, when the matrices becomes larger, FPGA tends to be faster than CPU, with a speedup of about 1.2.
+
+## Build
+
+Board used: Alveo U280 Data Center Accelerator Card
+
+Vitis Version: v2021.2
+
+Instructions to build and test project
+
+For the CPU version:
+- Step 1: Go to directory ./myKLU
+- Step 2: Check if clang is installed. If not, modify `Makefile` to use appropriate compiler. Typically `GCC` is acceptable.
+- Step 3: To make static library only, run `make library`
+- Step 4: To run software version of LU decomposition, run `make klu_kernel`. The default matrix file should be put in the same directory as the executable program.
+- Step 5: To benchmark it with matrices in directory ../Matrix_Sample, run `make klu_bench`
+
+
+For the FPGA version:
+- Step 1: Import the project to Vitis 2021.2
+- Step 2: Build the project
+
