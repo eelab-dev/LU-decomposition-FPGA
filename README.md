@@ -12,7 +12,7 @@ Simulation Program with Integrated Circuit Emphasis or SPICE has now been widely
 - Student: [Yichen Zhang](https://github.com/psdzzm) (email: [s2130520@ed.ac.uk](mailto:s2130520@ed.ac.uk))
 - Board: Alveo U280 Data Center Accelerator Card
 - Software version: v2021.2
-- Video link: [https://youtu.be/Pth-gqt7MiY](https://youtu.be/Pth-gqt7MiY)
+- Video link: [https://youtu.be/b9Mz6KtWnw8](https://youtu.be/b9Mz6KtWnw8)
 - Report: [report_xohw22-006.pdf](report_xohw22-006.pdf)
 
 ## File Organisation
@@ -60,7 +60,7 @@ For the CPU version:
 
 
 For the FPGA version:
-Step 1: Import the project to Vitis 2021.2.
-Step 2: Compile the CPU version above first, FPGA version requires the results from CPU version to verify that the results are correct.
-Step 3: Check the host C/C++ build settings. Ensure the include and lib settings are correct.
-Step 4: Build the project.
+- Step 1: Import the project to Vitis 2021.2.
+- Step 2: Compile the CPU version above first, FPGA version requires the results from CPU version to verify that the results are correct.
+- Step 3: Check the host C/C++ build settings. Ensure the include and lib settings are correct. The include path should include the directory of `./myKLU/include` and `./myKLU/myKLU` of the Software version. The lib should include the path of `./myKLU/lib` of the Software version and require the library `libklu.a`, `libamd.a`, `libbtf.a`, and `libsuitesparseconfig.a`.
+- Step 4: Build the project.

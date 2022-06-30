@@ -51,18 +51,16 @@ int main(int argc, char **argv)
     std::vector<int, aligned_allocator<int>> Ap, Ai;
     std::vector<double, aligned_allocator<double>> Ax, b_cpu;
 
-    std::string homeDir = getenv("HOME");
-
     std::string filename, bmatrix;
-    std::cout << "Left matrix file path (default - " << homeDir << "/beng-project/Matrix_Sample/host.mtx): ";
-    std::getline(std::cin, filename);
-    if (filename.empty())
-        filename = homeDir + "/beng-project/Matrix_Sample/host.mtx";
+	std::cout << "Left matrix file path (default - " << "./host.mtx): ";
+	std::getline(std::cin, filename);
+	if (filename.empty())
+		filename = "./host.mtx";
 
-    std::cout << "B matrix file path (default - " << homeDir << "/beng-project/Matrix_Sample/host_b.mtx): ";
-    std::getline(std::cin, bmatrix);
-    if (bmatrix.empty())
-        bmatrix = homeDir + "/beng-project/Matrix_Sample/host_b.mtx";
+	std::cout << "B matrix file path (default - " << "./host_b.mtx): ";
+	std::getline(std::cin, bmatrix);
+	if (bmatrix.empty())
+		bmatrix = "./host_b.mtx";
 
     int n, nrhs;
 
@@ -101,21 +99,6 @@ int main(int argc, char **argv)
         if (i > 10)
             break;
     }
-
-    // std::vector<int, aligned_allocator<int>> R(Symbolic.R, Symbolic.R + n + 1),
-    //     Q(Symbolic.Q, Symbolic.Q + n),
-    //     Pnum(Numeric.Pnum, Numeric.Pnum + n),
-    //     Lip(Numeric.Lip, Numeric.Lip + n),
-    //     Llen(Numeric.Llen, Numeric.Llen + n),
-    //     LUsize(Numeric.LUsize, Numeric.LUsize + n),
-    //     Uip(Numeric.Uip, Numeric.Uip + n),
-    //     Ulen(Numeric.Ulen, Numeric.Ulen + n),
-    //     Offp(Numeric.Offp, Numeric.Offp + n + 1),
-    //     Offi(Numeric.Offi, Numeric.Offi + Symbolic.nzoff);
-    // std::vector<double, aligned_allocator<double>> Rs(Numeric.Rs, Numeric.Rs + n),
-    //     LUbx(Numeric.LUbx, Numeric.LUbx + Numeric.lusize_sum),
-    //     Udiag(Numeric.Udiag, Numeric.Udiag + n),
-    //     Offx(Numeric.Offx, Numeric.Offx + Symbolic.nzoff);
 
     // I/O data vectors
     std::vector<int, aligned_allocator<int>> int_lu;
