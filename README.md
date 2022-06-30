@@ -13,7 +13,7 @@ Simulation Program with Integrated Circuit Emphasis or SPICE has now been widely
 - Board: Alveo U280 Data Center Accelerator Card
 - Software version: v2021.2
 - Video link: [https://youtu.be/Pth-gqt7MiY](https://youtu.be/Pth-gqt7MiY)
-- Report: [report_xohw22-006.pdf](../Documents/xohw/out/report_xohw22-006.pdf)
+- Report: [report_xohw22-006.pdf](report_xohw22-006.pdf)
 
 ## File Organisation
 - Matrix_Sample/
@@ -60,6 +60,7 @@ For the CPU version:
 
 
 For the FPGA version:
-- Step 1: Import the project to Vitis 2021.2
-- Step 2: Build the project
-
+Step 1: Import the project to Vitis 2021.2.
+Step 2: Compile the CPU version above first, FPGA version requires the results from CPU version to verify that the results are correct.
+Step 3: Check the host C/C++ build settings. Ensure the include and lib settings are correct.
+Step 4: Build the project.
